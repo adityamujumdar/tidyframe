@@ -1,0 +1,113 @@
+
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.prod
+*.env
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+.eggs/
+*.egg
+
+# Logs
+*.log
+logs/
+log-*.txt
+
+# Test coverage
+.coverage
+.pytest_cache/
+htmlcov/
+.nyc_output
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
+*.cache
+.cache/
+
+# Database files
+*.db
+*.db-journal
+*.db-wal
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+
+# Upload and test data
+uploads/*.csv
+uploads/*.json
+test-data/
+processed_*.csv
+*.parquet
+
+# Development and debug files
+debug_*.html
+test_*.py
+test_*.js
+test_*.html
+test_parses.csv
+
+# Archive directory
+dev-archive/
+
+# Claude Flow generated files
+.claude/settings.local.json
+.mcp.json
+claude-flow.config.json
+.swarm/
+.hive-mind/
+memory/claude-flow-data.json
+memory/sessions/*
+!memory/sessions/README.md
+memory/agents/*
+!memory/agents/README.md
+coordination/memory_bank/*
+coordination/subtasks/*
+coordination/orchestration/*
+claude-flow
+claude-flow.bat
+claude-flow.ps1
+hive-mind-prompt-*.txt
+
+# Docker volumes and compose overrides
+docker-compose.override.yml
+.docker/
+
+# Security and secrets
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+.secrets

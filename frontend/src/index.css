@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@theme {
+  --color-border: 217.2 32.6% 17.5%;
+  --color-input: 217.2 32.6% 17.5%;
+  --color-ring: 224.3 76.3% 94.1%;
+  --color-background: 222.2 47% 11.2%;
+  --color-foreground: 210 40% 98%;
+  --color-primary: 217.2 91.2% 59.8%;
+  --color-primary-foreground: 222.2 47% 11.2%;
+  --color-secondary: 217.2 32.6% 17.5%;
+  --color-secondary-foreground: 210 40% 98%;
+  --color-destructive: 0 62.8% 30.6%;
+  --color-destructive-foreground: 210 40% 98%;
+  --color-muted: 217.2 32.6% 17.5%;
+  --color-muted-foreground: 215 20.2% 65.1%;
+  --color-accent: 217.2 32.6% 17.5%;
+  --color-accent-foreground: 210 40% 98%;
+  --color-popover: 222.2 47% 11.2%;
+  --color-popover-foreground: 210 40% 98%;
+  --color-card: 222.2 47% 11.2%;
+  --color-card-foreground: 210 40% 98%;
+  --color-drop-zone: 217.2 32.6% 20%;
+  --color-drop-zone-active: 217.2 91.2% 59.8%;
+  --color-drop-zone-hover: 217.2 91.2% 70%;
+  --radius: 0.75rem;
+}
+
+.dark {
+  color-scheme: dark;
+  --color-background: 222.2 47% 11.2%;
+  --color-foreground: 210 40% 98%;
+  --color-card: 222.2 47% 11.2%;
+  --color-card-foreground: 210 40% 98%;
+  --color-popover: 222.2 47% 11.2%;
+  --color-popover-foreground: 210 40% 98%;
+  --color-primary: 217.2 91.2% 59.8%;
+  --color-primary-foreground: 222.2 47% 11.2%;
+  --color-secondary: 217.2 32.6% 17.5%;
+  --color-secondary-foreground: 210 40% 98%;
+  --color-muted: 217.2 32.6% 17.5%;
+  --color-muted-foreground: 215 20.2% 65.1%;
+  --color-accent: 217.2 32.6% 17.5%;
+  --color-accent-foreground: 210 40% 98%;
+  --color-destructive: 0 62.8% 30.6%;
+  --color-destructive-foreground: 210 40% 98%;
+  --color-border: 217.2 32.6% 17.5%;
+  --color-input: 217.2 32.6% 17.5%;
+  --color-ring: 224.3 76.3% 94.1%;
+  --color-drop-zone: 217.2 32.6% 20%;
+  --color-drop-zone-active: 217.2 91.2% 59.8%;
+  --color-drop-zone-hover: 217.2 91.2% 70%;
+}
+
+* {
+  border-color: hsl(var(--color-border));
+}
+
+body {
+  background-color: hsl(var(--color-background));
+  color: hsl(var(--color-foreground));
+  margin: 0;
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  min-height: 100vh;
+}
+
+@keyframes accordion-down {
+  from { height: 0 }
+  to { height: var(--radix-accordion-content-height) }
+}
+
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height) }
+  to { height: 0 }
+}
+
+.animate-accordion-down {
+  animation: accordion-down 0.2s ease-out;
+}
+
+.animate-accordion-up {
+  animation: accordion-up 0.2s ease-out;
+}
+
+/* Ensure dropdown menus have proper z-index */
+[data-radix-navigation-menu-content],
+[data-radix-dropdown-menu-content] {
+  z-index: 50 !important;
+}
+
+/* Ensure navigation menu dropdown items have proper hover states */
+[data-radix-navigation-menu-content] a:hover,
+[data-radix-navigation-menu-content] a:focus {
+  background-color: rgb(31 41 55) !important; /* gray-800 equivalent */
+}
+
+/* Theme classes for dark mode */
