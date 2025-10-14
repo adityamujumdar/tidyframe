@@ -92,7 +92,7 @@ export default function DashboardLayout() {
         {/* Sidebar */}
         <aside
           className={cn(
-            'fixed inset-y-0 left-0 z-sidebar w-64 bg-gradient-to-b from-primary/5 to-card border-r transition-transform duration-slow ease-apple lg:translate-x-0',
+            'fixed inset-y-0 left-0 z-sidebar w-64 bg-primary/30 border-r transition-transform duration-slow ease-apple lg:translate-x-0',
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           )}
         >
