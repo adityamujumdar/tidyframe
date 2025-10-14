@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { logger } from '@/utils/logger';
 import { useSearchParams } from 'react-router-dom';
 import { processingService } from '@/services/processingService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -75,7 +76,7 @@ export default function Results() {
 
       setResults(parsedResults);
     } catch (error) {
-      console.error('Failed to fetch job results:', error);
+      logger.error('Failed to fetch job results:', error);
 
       // Handle specific error cases with proper typing
       const errorResponse = error as { response?: { status?: number } };

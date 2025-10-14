@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { logger } from '@/utils/logger';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -107,7 +108,7 @@ export default function PricingPage() {
           }
         } catch (error) {
           toast.error('Failed to create checkout session. Please try again.');
-          console.error('Checkout error:', error);
+          logger.error('Checkout error:', error);
         } finally {
           setIsLoading(false);
         }
@@ -127,7 +128,7 @@ export default function PricingPage() {
   const faqs = [
     {
       question: 'What file formats do you support?',
-      answer: 'We support CSV, Excel (.xlsx, .xls), and plain text files. Files must have a column named "names", "addressee", or "process addressee".'
+      answer: 'We support CSV, Excel (.xlsx, .xls), and plain text files. Files must have a column named "names", "addressee", "process addressee", or "area".'
     },
     {
       question: 'How accurate is the name parsing?',
@@ -167,7 +168,7 @@ export default function PricingPage() {
         <div className="text-center mb-12">
           <div className="flex justify-center mb-8">
             <Link to="/">
-              <img src="/logo-with-name.png" alt="TidyFrame" className="h-32" />
+              <img src="/logo-with-name.png" alt="TidyFrame" className="h-58" />
             </Link>
           </div>
           <h1 className="text-4xl lg:text-5xl font-bold mb-6">

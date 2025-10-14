@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@/utils/logger';
+import { Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -53,7 +55,7 @@ export function PaymentModal({ isOpen, onClose, onSuccess }: PaymentModalProps) 
       }
     } catch (error) {
       toast.error('Failed to load pricing plans');
-      console.error('Error loading plans:', error);
+      logger.error('Error loading plans:', error);
     } finally {
       setLoadingPlans(false);
     }
@@ -72,7 +74,7 @@ export function PaymentModal({ isOpen, onClose, onSuccess }: PaymentModalProps) 
       window.location.href = url;
     } catch (error) {
       toast.error('Failed to create checkout session');
-      console.error('Error creating checkout session:', error);
+      logger.error('Error creating checkout session:', error);
     } finally {
       setIsLoading(false);
     }
@@ -246,7 +248,14 @@ export function PaymentModal({ isOpen, onClose, onSuccess }: PaymentModalProps) 
                 </div>
 
                 <p className="text-caption text-muted-foreground text-center">
-                  By subscribing, you agree to our Terms of Service and Privacy Policy.
+                  By subscribing, you agree to our{' '}
+                  <Link to="/legal/terms-of-service" className="underline hover:text-primary" target="_blank" rel="noopener noreferrer">
+                    Terms of Service
+                  </Link>
+                  {' '}and{' '}
+                  <Link to="/legal/privacy-policy" className="underline hover:text-primary" target="_blank" rel="noopener noreferrer">
+                    Privacy Policy
+                  </Link>.
                   You will be charged immediately upon subscription.
                 </p>
               </>

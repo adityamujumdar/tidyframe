@@ -6,38 +6,41 @@ import { SitePasswordGate } from './components/auth/SitePasswordGate';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Toaster } from 'sonner';
 
-// Public pages
+// Public pages - Load upfront for fast initial render
 import LandingPage from './pages/LandingPage';
 import PricingPage from './pages/PricingPage';
-import ContactPage from './pages/ContactPage';
-import ApiDocsPage from './pages/ApiDocsPage';
 
+// Lazy loaded pages for code splitting
 // Auth pages
-import LoginPage from './pages/auth/LoginPage';
-import RegisterPage from './pages/auth/RegisterPage';
-import PasswordResetPage from './pages/auth/PasswordResetPage';
-import EmailVerificationPage from './pages/auth/EmailVerificationPage';
+const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
+const PasswordResetPage = lazy(() => import('./pages/auth/PasswordResetPage'));
+const EmailVerificationPage = lazy(() => import('./pages/auth/EmailVerificationPage'));
+
+// Contact & Docs
+const ContactPage = lazy(() => import('./pages/ContactPage'));
+const ApiDocsPage = lazy(() => import('./pages/ApiDocsPage'));
 
 // Payment pages
-import PaymentSuccessPage from './pages/payment/PaymentSuccessPage';
-import PaymentCancelledPage from './pages/payment/PaymentCancelledPage';
+const PaymentSuccessPage = lazy(() => import('./pages/payment/PaymentSuccessPage'));
+const PaymentCancelledPage = lazy(() => import('./pages/payment/PaymentCancelledPage'));
 
 // Legal pages
-import TermsOfServicePage from './pages/legal/TermsOfServicePage';
-import PrivacyPolicyPage from './pages/legal/PrivacyPolicyPage';
+const TermsOfServicePage = lazy(() => import('./pages/legal/TermsOfServicePage'));
+const PrivacyPolicyPage = lazy(() => import('./pages/legal/PrivacyPolicyPage'));
 
 // Dashboard pages
 import DashboardLayout from './components/layout/DashboardLayout';
-import DashboardHome from './pages/dashboard/DashboardHome';
-import FileUpload from './pages/dashboard/FileUpload';
-import ProcessingStatus from './pages/dashboard/ProcessingStatus';
-import Results from './pages/dashboard/Results';
-import Analytics from './pages/dashboard/Analytics';
-import Profile from './pages/dashboard/Profile';
-import ApiKeys from './pages/dashboard/ApiKeys';
-import Billing from './pages/dashboard/Billing';
+const DashboardHome = lazy(() => import('./pages/dashboard/DashboardHome'));
+const FileUpload = lazy(() => import('./pages/dashboard/FileUpload'));
+const ProcessingStatus = lazy(() => import('./pages/dashboard/ProcessingStatus'));
+const Results = lazy(() => import('./pages/dashboard/Results'));
+const Analytics = lazy(() => import('./pages/dashboard/Analytics'));
+const Profile = lazy(() => import('./pages/dashboard/Profile'));
+const ApiKeys = lazy(() => import('./pages/dashboard/ApiKeys'));
+const Billing = lazy(() => import('./pages/dashboard/Billing'));
 
-// Admin pages - Lazy loaded for better performance
+// Admin pages
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminDashboardTest = lazy(() => import('./pages/admin/AdminDashboardTest'));
@@ -66,28 +69,68 @@ function App() {
             <Route path="/" element={<PublicLayout />}>
               <Route index element={<LandingPage />} />
               <Route path="pricing" element={<PricingPage />} />
-              <Route path="contact" element={<ContactPage />} />
-              <Route path="docs" element={<ApiDocsPage />} />
+              <Route path="contact" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <ContactPage />
+                </Suspense>
+              } />
+              <Route path="docs" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <ApiDocsPage />
+                </Suspense>
+              } />
             </Route>
 
             {/* Auth routes with navbar */}
             <Route path="/auth" element={<PublicLayout />}>
-              <Route path="login" element={<LoginPage />} />
-              <Route path="register" element={<RegisterPage />} />
-              <Route path="reset-password" element={<PasswordResetPage />} />
-              <Route path="verify-email" element={<EmailVerificationPage />} />
+              <Route path="login" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <LoginPage />
+                </Suspense>
+              } />
+              <Route path="register" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <RegisterPage />
+                </Suspense>
+              } />
+              <Route path="reset-password" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <PasswordResetPage />
+                </Suspense>
+              } />
+              <Route path="verify-email" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <EmailVerificationPage />
+                </Suspense>
+              } />
             </Route>
 
             {/* Payment routes without navbar (clean experience) */}
             <Route path="/payment">
-              <Route path="success" element={<PaymentSuccessPage />} />
-              <Route path="cancelled" element={<PaymentCancelledPage />} />
+              <Route path="success" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <PaymentSuccessPage />
+                </Suspense>
+              } />
+              <Route path="cancelled" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <PaymentCancelledPage />
+                </Suspense>
+              } />
             </Route>
 
             {/* Legal routes with navbar */}
             <Route path="/legal" element={<PublicLayout />}>
-              <Route path="terms-of-service" element={<TermsOfServicePage />} />
-              <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
+              <Route path="terms-of-service" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <TermsOfServicePage />
+                </Suspense>
+              } />
+              <Route path="privacy-policy" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <PrivacyPolicyPage />
+                </Suspense>
+              } />
             </Route>
 
             {/* Protected dashboard routes */}
@@ -99,14 +142,46 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<DashboardHome />} />
-              <Route path="upload" element={<FileUpload />} />
-              <Route path="processing" element={<ProcessingStatus />} />
-              <Route path="results" element={<Results />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="api-keys" element={<ApiKeys />} />
-              <Route path="billing" element={<Billing />} />
+              <Route index element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <DashboardHome />
+                </Suspense>
+              } />
+              <Route path="upload" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <FileUpload />
+                </Suspense>
+              } />
+              <Route path="processing" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <ProcessingStatus />
+                </Suspense>
+              } />
+              <Route path="results" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <Results />
+                </Suspense>
+              } />
+              <Route path="analytics" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <Analytics />
+                </Suspense>
+              } />
+              <Route path="profile" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <Profile />
+                </Suspense>
+              } />
+              <Route path="api-keys" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <ApiKeys />
+                </Suspense>
+              } />
+              <Route path="billing" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <Billing />
+                </Suspense>
+              } />
             </Route>
 
             {/* Protected admin routes */}

@@ -1,4 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
+import { logger } from '@/utils/logger';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -57,8 +58,8 @@ export default function AdminLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
-  console.log('AdminLayout rendering, user:', user);
-  console.log('User plan:', user?.plan);
+  logger.debug('AdminLayout rendering, user:', user);
+  logger.debug('User plan:', user?.plan);
 
   const handleLogout = async () => {
     await logout();
@@ -66,9 +67,9 @@ export default function AdminLayout() {
 
   // Check if user is admin - for development, allow all authenticated users
   // TODO: Implement proper admin role checking in production
-  console.log('AdminLayout: User plan check:', user?.plan);
-  console.log('AdminLayout: NODE_ENV:', process.env.NODE_ENV);
-  console.log('AdminLayout: import.meta.env.DEV:', import.meta.env.DEV);
+  logger.debug('AdminLayout: User plan check:', user?.plan);
+  logger.debug('AdminLayout: NODE_ENV:', process.env.NODE_ENV);
+  logger.debug('AdminLayout: import.meta.env.DEV:', import.meta.env.DEV);
   
   // In development mode, allow all authenticated users to access admin
   // In production, only allow enterprise and standard plan users
@@ -77,7 +78,7 @@ export default function AdminLayout() {
   // Also allow if user exists but has no plan (development scenario)
   const isAdmin = isDevelopment || hasValidPlan || (isDevelopment && user && !user.plan);
   
-  console.log('AdminLayout: Permission check:', { isDevelopment, hasValidPlan, isAdmin });
+  logger.debug('AdminLayout: Permission check:', { isDevelopment, hasValidPlan, isAdmin });
   
   if (!isAdmin) {
     return (
@@ -118,7 +119,7 @@ export default function AdminLayout() {
         {/* Sidebar */}
         <aside
           className={cn(
-            'fixed inset-y-0 left-0 z-sidebar w-64 bg-card border-r transition-transform duration-slow ease-apple lg:translate-x-0',
+            'fixed inset-y-0 left-0 z-sidebar w-64 bg-gradient-to-b from-primary/5 to-card border-r transition-transform duration-slow ease-apple lg:translate-x-0',
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           )}
         >
@@ -126,7 +127,7 @@ export default function AdminLayout() {
             {/* Logo */}
             <div className="flex h-16 items-center border-b px-6">
               <Link to="/" className="flex items-center space-x-2">
-                <img src="/logo-with-name.png" alt="TidyFrame Admin" className="h-20" />
+                <img src="/logo-with-name.png" alt="TidyFrame Admin" className="h-50" />
               </Link>
             </div>
 
@@ -144,8 +145,8 @@ export default function AdminLayout() {
                     className={cn(
                       'flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                       isActive
-                        ? 'bg-accent text-accent-foreground'
-                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                        ? 'bg-primary/30 text-primary font-semibold border-l-4 border-primary'
+                        : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                     )}
                     onClick={() => setSidebarOpen(false)}
                   >

@@ -92,7 +92,7 @@ export default function DashboardLayout() {
         {/* Sidebar */}
         <aside
           className={cn(
-            'fixed inset-y-0 left-0 z-sidebar w-64 bg-card border-r transition-transform duration-slow ease-apple lg:translate-x-0',
+            'fixed inset-y-0 left-0 z-sidebar w-64 bg-gradient-to-b from-primary/5 to-card border-r transition-transform duration-slow ease-apple lg:translate-x-0',
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           )}
         >
@@ -100,7 +100,7 @@ export default function DashboardLayout() {
             {/* Logo */}
             <div className="flex h-16 items-center border-b px-6">
               <Link to="/" className="flex items-center space-x-2">
-                <img src="/logo-with-name.png" alt="TidyFrame" className="h-28" />
+                <img src="/logo-with-name.png" alt="TidyFrame" className="h-50" />
               </Link>
             </div>
 
@@ -117,8 +117,8 @@ export default function DashboardLayout() {
                     className={cn(
                       'flex items-center space-x-3 rounded-md px-3 py-2 text-base font-medium transition-colors',
                       isActive
-                        ? 'bg-primary/15 text-primary font-semibold border-l-2 border-primary'
-                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                        ? 'bg-primary/30 text-primary font-semibold border-l-4 border-primary'
+                        : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                     )}
                     onClick={() => setSidebarOpen(false)}
                   >
@@ -132,7 +132,7 @@ export default function DashboardLayout() {
               {user?.plan === 'enterprise' && (
                 <Link
                   to="/admin"
-                  className="flex items-center space-x-3 rounded-md px-3 py-2 text-base font-medium transition-colors text-muted-foreground hover:bg-accent hover:text-accent-foreground border border-dashed border-muted-foreground/50"
+                  className="flex items-center space-x-3 rounded-md px-3 py-2 text-base font-medium transition-colors text-muted-foreground hover:bg-primary/10 hover:text-primary border border-dashed border-muted-foreground/50"
                   onClick={() => setSidebarOpen(false)}
                 >
                   <Shield className="h-4 w-4" />

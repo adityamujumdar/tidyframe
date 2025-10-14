@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { logger } from '@/utils/logger';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,7 +17,7 @@ export default function PaymentSuccessPage() {
       try {
         // Check if user is already activated
         if (user) {
-          console.log('User already active, redirecting to dashboard');
+          logger.debug('User already active, redirecting to dashboard');
           setActivated(true);
           setTimeout(() => {
             navigate('/dashboard/upload?payment_success=true', { replace: true });
@@ -29,13 +30,13 @@ export default function PaymentSuccessPage() {
         const registrationComplete = localStorage.getItem('registration_complete');
 
         if (!pendingUserStr || !registrationComplete) {
-          console.error('No pending user found, redirecting to login');
+          logger.error('No pending user found, redirecting to login');
           navigate('/auth/login', { replace: true });
           return;
         }
 
         const pendingUser = JSON.parse(pendingUserStr);
-        console.log('Activating pending user:', pendingUser.email);
+        logger.debug('Activating pending user:', pendingUser.email);
 
         // Simulate activation delay for UX (webhook processing)
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -43,12 +44,12 @@ export default function PaymentSuccessPage() {
         // Activate user by fetching current user data with stored token
         const token = localStorage.getItem('token');
         if (token) {
-          console.log('Activating user with stored token');
+          logger.debug('Activating user with stored token');
           try {
             await refreshUser();
-            console.log('User activated successfully');
+            logger.debug('User activated successfully');
           } catch (error) {
-            console.error('Failed to refresh user, continuing anyway:', error);
+            logger.error('Failed to refresh user, continuing anyway:', error);
             // Continue even if refresh fails - user has valid token
           }
         }
@@ -67,7 +68,7 @@ export default function PaymentSuccessPage() {
         }, 1500);
 
       } catch (error) {
-        console.error('Error activating user:', error);
+        logger.error('Error activating user:', error);
         // On error, still try to redirect - user has valid tokens
         setTimeout(() => {
           navigate('/dashboard?payment_success=true', { replace: true });
@@ -103,7 +104,7 @@ export default function PaymentSuccessPage() {
           {!activated && (
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">
-                🎉 Thank you for subscribing to TidyFrame!
+                Thank you for subscribing to TidyFrame!
               </p>
               <p className="text-xs text-muted-foreground">
                 We're setting up your account with 100,000 monthly name parses.

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { logger } from '@/utils/logger';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -27,7 +28,7 @@ export default function ApiDocsPage() {
       setCopiedText(identifier);
       setTimeout(() => setCopiedText(''), 2000);
     } catch (err) {
-      console.error('Failed to copy text: ', err);
+      logger.error('Failed to copy text: ', err);
     }
   };
 
@@ -58,7 +59,7 @@ export default function ApiDocsPage() {
         <div className="text-center mb-12">
           <div className="flex justify-center mb-8">
             <Link to="/">
-              <img src="/logo-with-name.png" alt="TidyFrame" className="h-32" />
+              <img src="/logo-with-name.png" alt="TidyFrame" className="h-58" />
             </Link>
           </div>
           <h1 className="text-hero font-bold mb-6">
@@ -375,7 +376,7 @@ async function processFile() {
   );
 
   const jobId = uploadResponse.data.job_id;
-  console.log('Job ID:', jobId);
+  logger.debug('Job ID:', jobId);
 
   // Poll for completion
   let status = 'pending';
@@ -390,7 +391,7 @@ async function processFile() {
     );
     
     status = statusResponse.data.status;
-    console.log('Status:', status);
+    logger.debug('Status:', status);
   }
 
   // Download results
@@ -403,7 +404,7 @@ async function processFile() {
   );
 
   resultResponse.data.pipe(fs.createWriteStream('results.xlsx'));
-  console.log('Results downloaded!');
+  logger.debug('Results downloaded!');
 }`}
                     </CodeBlock>
                   </div>

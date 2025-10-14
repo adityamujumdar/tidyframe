@@ -80,7 +80,7 @@ export const VALIDATION = {
   EMAIL_REGEX: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   PASSWORD_MIN_LENGTH: 8,
   NAME_MAX_LENGTH: 255,
-  COLUMN_NAMES: ['names', 'addressee', 'process addressee'] as const,
+  COLUMN_NAMES: ['names', 'addressee', 'process addressee', 'area'] as const,
 } as const;
 
 // File types configuration
@@ -133,7 +133,7 @@ export const PRICING = {
 
 // Contact information
 export const CONTACT = {
-  EMAIL: 'tidyframeai@gmail.com',
+  EMAIL: import.meta.env.VITE_ADMIN_EMAIL || 'tidyframeai@gmail.com',
   COMPANY_NAME: 'TidyFrame',
   WEBSITE: 'tidyframe.com',
 } as const;

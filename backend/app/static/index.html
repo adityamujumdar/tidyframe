@@ -5,11 +5,22 @@
     <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TidyFrame - AI-Powered Name Parsing</title>
-    <script type="module" crossorigin src="/assets/index-JewEzBYD.js"></script>
+    <!-- Dark mode initialization - MUST run before page renders to prevent flash -->
+    <script>
+      (function() {
+        try {
+          const theme = localStorage.getItem('theme');
+          if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-JAmaGFlS.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/vendor-gH-7aFTg.js">
-    <link rel="modulepreload" crossorigin href="/assets/router-DzNuREeG.js">
-    <link rel="modulepreload" crossorigin href="/assets/ui-CZ1Inxy_.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-CwCH4MSk.css">
+    <link rel="modulepreload" crossorigin href="/assets/router-Cg06RMiA.js">
+    <link rel="modulepreload" crossorigin href="/assets/ui-D3gUxG3H.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-Bym3QzfQ.css">
   </head>
   <body>
     <div id="root"></div>

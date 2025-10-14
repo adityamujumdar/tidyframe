@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { logger } from '@/utils/logger';
 import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ export default function PaymentCancelledPage() {
     localStorage.removeItem('registration_complete');
 
     // Note: User's plan will be reset to FREE by backend on checkout.session.expired webhook
-    console.log('Payment cancelled - cleaning up local state');
+    logger.debug('Payment cancelled - cleaning up local state');
   }, []);
 
   return (

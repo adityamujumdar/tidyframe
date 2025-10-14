@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { logger } from '@/utils/logger';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -66,7 +67,7 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       setError(null);
-      console.log('AdminDashboard: Loading data...');
+      logger.debug('AdminDashboard: Loading data...');
       
       // For development, use mock data if API fails
       try {
@@ -80,9 +81,9 @@ export default function AdminDashboard() {
         ]);
         setStats(statsData);
         setUsers(usersData);
-        console.log('AdminDashboard: Data loaded successfully', { statsData, usersCount: usersData.length });
+        logger.debug('AdminDashboard: Data loaded successfully', { statsData, usersCount: usersData.length });
       } catch (apiError) {
-        console.warn('AdminDashboard: API failed, using mock data for development', apiError);
+        logger.warn('AdminDashboard: API failed, using mock data for development', apiError);
         
         // Use mock data for development
         const mockStats: SystemStats = {
@@ -130,7 +131,7 @@ export default function AdminDashboard() {
         typeof err.response.data.message === 'string'
         ? err.response.data.message
         : 'Failed to load admin data';
-      console.error('AdminDashboard: Error loading data', err);
+      logger.error('AdminDashboard: Error loading data', err);
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -160,7 +161,7 @@ export default function AdminDashboard() {
       setEditingUser(null);
       loadData();
     } catch (error) {
-      console.error('Failed to update limits:', error);
+      logger.error('Failed to update limits:', error);
       toast.error('Failed to update user limits');
     }
   };
@@ -177,7 +178,7 @@ export default function AdminDashboard() {
       setEditingUser(null);
       loadData();
     } catch (error) {
-      console.error('Failed to update plan:', error);
+      logger.error('Failed to update plan:', error);
       toast.error('Failed to update user plan');
     }
   };
@@ -192,7 +193,7 @@ export default function AdminDashboard() {
       toast.success('User usage reset successfully');
       loadData();
     } catch (error) {
-      console.error('Failed to reset usage:', error);
+      logger.error('Failed to reset usage:', error);
       toast.error('Failed to reset user usage');
     }
   };
@@ -206,7 +207,7 @@ export default function AdminDashboard() {
       toast.success(`User ${user.isActive ? 'deactivated' : 'activated'} successfully`);
       loadData();
     } catch (error) {
-      console.error('Failed to toggle user status:', error);
+      logger.error('Failed to toggle user status:', error);
       toast.error('Failed to update user status');
     }
   };

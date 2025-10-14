@@ -72,7 +72,7 @@ export default function LoginPage() {
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <Link to="/">
-              <img src="/logo-with-name.png" alt="TidyFrame" className="h-16" />
+              <img src="/logo-with-name.png" alt="TidyFrame" className="h-29" />
             </Link>
           </div>
           <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>

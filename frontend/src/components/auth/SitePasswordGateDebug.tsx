@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { logger } from '@/utils/logger';
 import { useSitePassword } from '@/contexts/SitePasswordContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,7 +27,7 @@ export function SitePasswordGate({ children }: SitePasswordGateProps) {
 
   // Debug logging
   useEffect(() => {
-    console.log('SitePasswordGate Debug:', {
+    logger.debug('SitePasswordGate Debug:', {
       currentPath,
       isAdminRoute,
       isEnabled,
@@ -38,7 +39,7 @@ export function SitePasswordGate({ children }: SitePasswordGateProps) {
 
   // If site password is not enabled, user is authenticated, or accessing admin routes, show the content
   if (loading) {
-    console.log('SitePasswordGate: Loading state');
+    logger.debug('SitePasswordGate: Loading state');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <div className="flex flex-col items-center space-y-4">
@@ -50,11 +51,11 @@ export function SitePasswordGate({ children }: SitePasswordGateProps) {
   }
 
   if (!isEnabled || isAuthenticated || isAdminRoute) {
-    console.log('SitePasswordGate: Bypassing gate, showing children');
+    logger.debug('SitePasswordGate: Bypassing gate, showing children');
     return <>{children}</>;
   }
 
-  console.log('SitePasswordGate: Showing password form');
+  logger.debug('SitePasswordGate: Showing password form');
 
   // Show password form
   const handleSubmit = async (e: React.FormEvent) => {

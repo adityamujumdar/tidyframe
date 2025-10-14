@@ -209,7 +209,7 @@ export default function UniversalFileUpload({
         if (!validation.isValid) {
           const detectedHeaders = validation.detectedHeaders?.join(', ') || 'none detected';
           resolve(
-            `${validation.message}\n\nDetected headers: ${detectedHeaders}\nRequired: One of: 'names', 'addressee', or 'process addressee'`
+            `${validation.message}\n\nDetected headers: ${detectedHeaders}\nRequired: One of: 'names', 'addressee', 'process addressee', or 'area'`
           );
         } else {
           resolve(null); // No error
@@ -415,7 +415,7 @@ export default function UniversalFileUpload({
                   {compact && !user && (
                     <div className="mt-4 p-3 bg-secondary/20 rounded-lg border-2 border-secondary">
                       <p className="text-base text-primary font-semibold">
-                        🚀 No signup required • Process {limits.maxParses} names free
+                        No signup required • Process {limits.maxParses} names free
                       </p>
                     </div>
                   )}
@@ -500,7 +500,7 @@ export default function UniversalFileUpload({
                         disabled={uploading}
                       />
                       <p className="text-caption text-muted-foreground mt-1">
-                        Default detection looks for: 'names', 'addressee', or 'process addressee'
+                        Default detection looks for: 'names', 'addressee', 'process addressee', or 'area'
                       </p>
                     </CardContent>
                   </Card>

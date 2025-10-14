@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@/utils/logger';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -72,7 +73,7 @@ export default function Billing() {
         setBillingHistory(historyData.value);
       }
     } catch (error) {
-      console.error('Error loading billing data:', error);
+      logger.error('Error loading billing data:', error);
       toast.error('Failed to load billing information');
     } finally {
       setIsLoading(false);

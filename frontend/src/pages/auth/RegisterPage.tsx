@@ -139,7 +139,7 @@ export default function RegisterPage() {
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <Link to="/">
-              <img src="/logo-with-name.png" alt="TidyFrame" className="h-28" />
+              <img src="/logo-with-name.png" alt="TidyFrame" className="h-50" />
             </Link>
           </div>
           <CardTitle className="text-2xl font-bold">Create your account</CardTitle>

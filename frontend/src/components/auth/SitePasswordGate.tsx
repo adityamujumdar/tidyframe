@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { logger } from '@/utils/logger';
 import { useSitePassword } from '@/contexts/SitePasswordContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,7 +24,7 @@ export function SitePasswordGate({ children }: SitePasswordGateProps) {
   const isAdminRoute = window.location.pathname.startsWith('/admin') || 
                       window.location.pathname.startsWith('/auth');
 
-  console.log('SitePasswordGate:', {
+  logger.debug('SitePasswordGate:', {
     isEnabled,
     isAuthenticated,
     isAdminRoute,

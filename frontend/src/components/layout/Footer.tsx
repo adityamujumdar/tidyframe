@@ -8,7 +8,7 @@ export default function Footer() {
           {/* Company */}
           <div>
             <div className="flex items-center space-x-2 mb-4">
-              <img src="/logo-with-name.png" alt="TidyFrame" className="h-10" />
+              <img src="/logo-with-name.png" alt="TidyFrame" className="h-18" />
             </div>
             <p className="text-sm text-muted-foreground">
               AI-powered name parsing and entity detection for any type of data.
@@ -54,12 +54,12 @@ export default function Footer() {
             <h3 className="text-base font-semibold mb-4">Legal</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <Link to="/legal/privacy-policy" className="hover:text-primary transition-colors">
+                <Link to="/legal/privacy-policy" className="underline hover:text-primary transition-colors">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link to="/legal/terms-of-service" className="hover:text-primary transition-colors">
+                <Link to="/legal/terms-of-service" className="underline hover:text-primary transition-colors">
                   Terms of Service
                 </Link>
               </li>

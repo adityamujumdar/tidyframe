@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { logger } from '@/utils/logger';
 import { authService } from '@/services/authService';
 import { billingService } from '@/services/billingService';
 import { User, LoginResponse } from '@/types/auth';
@@ -43,7 +44,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setHasActiveSubscription(isActive);
       return isActive;
     } catch (error) {
-      console.error('Error checking subscription status:', error);
+      logger.error('Error checking subscription status:', error);
       setHasActiveSubscription(false);
       return false;
     }
@@ -70,7 +71,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           localStorage.removeItem('registration_complete');
         }
       } catch (error) {
-        console.error('Auth initialization error:', error);
+        logger.error('Auth initialization error:', error);
         localStorage.removeItem('token');
       } finally {
         setLoading(false);
@@ -131,7 +132,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       localStorage.removeItem('token');
       setUser(null);
     } catch (error) {
-      console.error('Logout error:', error);
+      logger.error('Logout error:', error);
       // Clear local state even if API call fails
       localStorage.removeItem('token');
       setUser(null);
@@ -166,9 +167,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setHasActiveSubscription(true);
       }
 
-      console.log('User refreshed successfully:', userData.email);
+      logger.debug('User refreshed successfully:', userData.email);
     } catch (error) {
-      console.error('Failed to refresh user:', error);
+      logger.error('Failed to refresh user:', error);
       throw error;
     }
   };

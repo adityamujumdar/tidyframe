@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { logger } from '@/utils/logger';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -57,15 +58,15 @@ export default function LandingPage() {
           <div className="text-center mb-12">
             <div className="flex justify-center mb-8">
               <Link to="/">
-                <img src="/logo-with-name.png" alt="TidyFrame" className="h-40 md:h-48" />
+                <img src="/logo-with-name.png" alt="TidyFrame" className="h-72 md:h-86" />
               </Link>
             </div>
 
             <Badge variant="secondary" className="mb-6">
-              🚀 Now Processing 1M+ Names Monthly
+              Now Processing 1M+ Names Monthly
             </Badge>
 
-            <h1 className="text-[4.8rem] md:text-[6.4rem] leading-none font-black tracking-tight mb-6">
+            <h1 className="text-[6.4rem] md:text-[8.5rem] leading-none font-black tracking-tight mb-6">
               Clean Name Data in
               <span className="text-primary"> Seconds</span>
             </h1>
@@ -101,6 +102,8 @@ export default function LandingPage() {
                         <code className="bg-primary/10 border border-primary/20 px-3 py-1.5 rounded font-mono text-sm font-semibold text-foreground">addressee</code>
                         <span className="text-muted-foreground">or</span>
                         <code className="bg-primary/10 border border-primary/20 px-3 py-1.5 rounded font-mono text-sm font-semibold text-foreground">process addressee</code>
+                        <span className="text-muted-foreground">or</span>
+                        <code className="bg-primary/10 border border-primary/20 px-3 py-1.5 rounded font-mono text-sm font-semibold text-foreground">area</code>
                       </div>
                     </div>
                   </div>
@@ -112,7 +115,7 @@ export default function LandingPage() {
                 compact={true}
                 onUploadSuccess={(jobId) => {
                   // Handle successful upload for landing page
-                  console.log('Upload successful:', jobId);
+                  logger.debug('Upload successful:', jobId);
                   // Could show inline results or navigate to a public status page
                 }}
               />

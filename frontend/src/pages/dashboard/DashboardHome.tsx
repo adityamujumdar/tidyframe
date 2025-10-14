@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@/utils/logger';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { processingService } from '@/services/processingService';
@@ -55,11 +56,11 @@ export default function DashboardHome() {
       try {
         const [jobs, usage] = await Promise.all([
           processingService.getJobs().catch(err => {
-            console.log('Jobs endpoint not available yet, using empty array');
+            logger.debug('Jobs endpoint not available yet, using empty array');
             return [];
           }),
           processingService.getUserUsage().catch(err => {
-            console.log('Usage endpoint not available yet, using defaults');
+            logger.debug('Usage endpoint not available yet, using defaults');
             return {
               parses_this_month: user?.parsesThisMonth || 0,
               monthly_limit: user?.monthlyLimit || PARSE_LIMITS.STANDARD,
@@ -81,7 +82,7 @@ export default function DashboardHome() {
             daysUntilReset: usageResponse?.days_until_reset || BILLING.DEFAULT_CYCLE_DAYS
         });
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        logger.error('Error fetching dashboard data:', error);
         // Set fallback data instead of showing errors
         setRecentJobs([]);
         setUsageStats({
@@ -146,7 +147,7 @@ export default function DashboardHome() {
               </div>
             </div>
             <DialogTitle className="text-center text-2xl">
-              Welcome to TidyFrame! 🎉
+              Welcome to TidyFrame!
             </DialogTitle>
             <DialogDescription className="text-center">
               Your account is now active with 100,000 monthly parses. Let's process your first file!

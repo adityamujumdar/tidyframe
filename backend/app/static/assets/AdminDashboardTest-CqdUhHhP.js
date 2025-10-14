@@ -1,2 +1,0 @@
-import{j as i}from"./ui-CZ1Inxy_.js";import"./router-DzNuREeG.js";import"./vendor-gH-7aFTg.js";function o(){return i.jsxs("div",{style:{padding:"20px",backgroundColor:"#f0f0f0",minHeight:"100vh"},children:[i.jsx("h1",{children:"Admin Dashboard Test Component"}),i.jsx("p",{children:"If you see this, the admin routing is working!"}),i.jsxs("p",{children:["Current URL: ",window.location.pathname]}),i.jsxs("p",{children:["Time: ",new Date().toLocaleTimeString()]})]})}export{o as default};
-//# sourceMappingURL=AdminDashboardTest-CqdUhHhP.js.map

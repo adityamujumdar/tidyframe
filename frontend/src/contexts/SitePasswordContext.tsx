@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { logger } from '@/utils/logger';
 import { sitePasswordService } from '@/services/sitePasswordService';
 
 interface SitePasswordContextType {
@@ -22,24 +23,24 @@ export function SitePasswordProvider({ children }: SitePasswordProviderProps) {
 
   const checkStatus = async () => {
     try {
-      console.log('🔍 SitePasswordContext: Starting status check...');
+      logger.debug('🔍 SitePasswordContext: Starting status check...');
       setLoading(true);
       const status = await sitePasswordService.getStatus();
-      console.log('📋 SitePasswordContext: Setting state:', {
+      logger.debug('📋 SitePasswordContext: Setting state:', {
         enabled: status.enabled,
         authenticated: status.authenticated
       });
       setIsEnabled(status.enabled);
       setIsAuthenticated(status.authenticated);
-      console.log('✅ Site password status loaded:', status);
+      logger.debug('✅ Site password status loaded:', status);
     } catch (error) {
-      console.error('❌ Failed to check site password status:', error);
+      logger.error('❌ Failed to check site password status:', error);
       // Default to enabled and not authenticated if check fails for safety
-      console.log('🛡️ Defaulting to enabled=true, authenticated=false for safety');
+      logger.debug('🛡️ Defaulting to enabled=true, authenticated=false for safety');
       setIsEnabled(true);
       setIsAuthenticated(false);
     } finally {
-      console.log('🏁 SitePasswordContext: Setting loading=false');
+      logger.debug('🏁 SitePasswordContext: Setting loading=false');
       setLoading(false);
     }
   };
@@ -53,7 +54,7 @@ export function SitePasswordProvider({ children }: SitePasswordProviderProps) {
       }
       return false;
     } catch (error) {
-      console.error('Site password authentication failed:', error);
+      logger.error('Site password authentication failed:', error);
       return false;
     }
   };

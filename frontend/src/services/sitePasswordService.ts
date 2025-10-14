@@ -1,4 +1,5 @@
 // Removed unused ApiResponse import
+import { logger } from '@/utils/logger';
 
 // Always use relative path - vite proxy handles it in dev, nginx in prod
 const API_BASE = '';
@@ -16,8 +17,8 @@ interface SitePasswordResponse {
 export const sitePasswordService = {
   async getStatus(): Promise<SitePasswordStatus> {
     try {
-      console.log('🔍 Making site password status request to:', `${API_BASE}/api/site-password/status`);
-      
+      logger.debug('Making site password status request', { url: `${API_BASE}/api/site-password/status` });
+
       const response = await fetch(`${API_BASE}/api/site-password/status`, {
         method: 'GET',
         credentials: 'include', // Include cookies
@@ -26,7 +27,7 @@ export const sitePasswordService = {
         },
       });
 
-      console.log('📡 Status response:', {
+      logger.debug('Site password status response', {
         ok: response.ok,
         status: response.status,
         statusText: response.statusText,
@@ -36,15 +37,15 @@ export const sitePasswordService = {
       if (!response.ok) {
         // Handle 401 gracefully - means site password is enabled and user not authenticated
         if (response.status === 401) {
-          console.log('🔒 Site password required (401 response)');
+          logger.debug('Site password required (401 response)');
           return {
             enabled: true,
             authenticated: false
           };
         }
-        
+
         // For other errors, log but assume enabled/not authenticated for safety
-        console.warn(`⚠️ Site password status check failed: ${response.status} ${response.statusText}`);
+        logger.warn('Site password status check failed', { status: response.status, statusText: response.statusText });
         return {
           enabled: true,
           authenticated: false
@@ -52,10 +53,10 @@ export const sitePasswordService = {
       }
 
       const result = await response.json();
-      console.log('✅ Site password status received:', result);
+      logger.debug('Site password status received', result);
       return result;
     } catch (error) {
-      console.warn('❌ Site password status check network error:', error);
+      logger.warn('Site password status check network error', error);
       // If we can't connect to backend, assume protection is enabled for safety
       return {
         enabled: true,
@@ -65,9 +66,8 @@ export const sitePasswordService = {
   },
 
   async authenticate(password: string): Promise<SitePasswordResponse> {
-    console.log('Authenticating with password:', password);
-    console.log('API_BASE:', API_BASE || '(same origin)');
-    
+    logger.debug('Authenticating with site password', { apiBase: API_BASE || '(same origin)' });
+
     const response = await fetch(`${API_BASE}/api/site-password/authenticate`, {
       method: 'POST',
       credentials: 'include', // Include cookies
@@ -77,11 +77,11 @@ export const sitePasswordService = {
       body: JSON.stringify({ password }),
     });
 
-    console.log('Authentication response status:', response.status);
-    
+    logger.debug('Authentication response received', { status: response.status });
+
     if (!response.ok) {
       if (response.status === 401) {
-        console.log('Got 401 - Invalid password');
+        logger.debug('Invalid password (401 response)');
         return {
           success: false,
           message: 'Invalid password'
@@ -91,7 +91,7 @@ export const sitePasswordService = {
     }
 
     const result = await response.json();
-    console.log('Authentication result:', result);
+    logger.debug('Authentication successful', result);
     return result;
   },
 

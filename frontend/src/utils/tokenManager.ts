@@ -3,6 +3,7 @@
  * Ensures users stay logged in and tokens are refreshed before expiration
  */
 
+import { logger } from '@/utils/logger';
 import { apiService } from '@/services/api';
 
 interface TokenPayload {
@@ -43,7 +44,7 @@ class TokenManager {
       );
       return JSON.parse(jsonPayload);
     } catch (error) {
-      console.error('Failed to decode token:', error);
+      logger.error('Failed to decode token:', error);
       return null;
     }
   }
@@ -134,10 +135,10 @@ class TokenManager {
       // Schedule next refresh
       this.scheduleTokenRefresh();
 
-      console.log('Token refreshed successfully');
+      logger.debug('Token refreshed successfully');
       return true;
     } catch (error) {
-      console.error('Failed to refresh token:', error);
+      logger.error('Failed to refresh token:', error);
       
       // Clear tokens and redirect to login
       localStorage.removeItem('token');
