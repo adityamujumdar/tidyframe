@@ -81,7 +81,11 @@ COPY --chown=appuser:appuser alembic/ ./alembic/
 COPY --chown=appuser:appuser scripts/ ./scripts/
 COPY --chown=appuser:appuser alembic.ini .
 # Copy .env file if it exists (for development)
-COPY --chown=appuser:appuser .env* ./
+# COPY --chown=appuser:appuser .env* ./
+
+# Copy frontend static files (built from frontend/dist)
+# These files are copied during build, not via volume mount
+COPY --chown=appuser:appuser app/static/ ./app/static/
 
 # Create directories with proper permissions
 RUN mkdir -p /app/uploads /app/results /app/logs && \
@@ -102,11 +106,11 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Production-optimized command with Gunicorn
 CMD ["gunicorn", "app.main:app", \
      "--worker-class", "uvicorn.workers.UvicornWorker", \
-     "--workers", "4", \
+     "--workers", "2", \
      "--bind", "0.0.0.0:8000", \
      "--max-requests", "1000", \
      "--max-requests-jitter", "50", \
-     "--timeout", "30", \
+     "--timeout", "90", \
      "--keep-alive", "5", \
      "--log-level", "info", \
      "--access-logfile", "-", \

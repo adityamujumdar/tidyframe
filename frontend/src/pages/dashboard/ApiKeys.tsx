@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { 
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -32,7 +33,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { 
+import {
   Key,
   Plus,
   Trash2,
@@ -46,6 +47,9 @@ import {
 import { toast } from 'sonner';
 import { apiKeyService } from '@/services/apiKeyService';
 import { APIKey, APIKeyCreated } from '@/types/apiKeys';
+import { SkeletonCard } from '@/components/shared/SkeletonCard';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { formatDate, formatDateTime } from '@/utils/format';
 
 export default function ApiKeys() {
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
@@ -132,25 +136,6 @@ export default function ApiKeys() {
     }
   };
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Never';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   const isExpired = (expiresAt?: string) => {
     if (!expiresAt) return false;
     return new Date(expiresAt) < new Date();
@@ -165,13 +150,7 @@ export default function ApiKeys() {
             Manage your API keys for programmatic access
           </p>
         </div>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          </CardContent>
-        </Card>
+        <SkeletonCard variant="table" showHeader rows={3} />
       </div>
     );
   }
@@ -270,15 +249,13 @@ export default function ApiKeys() {
                   </Button>
                 </div>
               </div>
-              <div className="flex items-start gap-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-                <div className="text-sm">
-                  <p className="font-medium text-yellow-800">Important!</p>
-                  <p className="text-yellow-700">
-                    This is the only time you'll see the full API key. Make sure to copy and store it securely.
-                  </p>
-                </div>
-              </div>
+              <Alert variant="default" className="bg-status-warning-bg border-status-warning-border">
+                <AlertTriangle className="h-5 w-5 text-status-warning" />
+                <AlertTitle className="text-status-warning">Important!</AlertTitle>
+                <AlertDescription>
+                  This is the only time you'll see the full API key. Make sure to copy and store it securely.
+                </AlertDescription>
+              </Alert>
             </div>
           )}
           <DialogFooter>
@@ -305,21 +282,15 @@ export default function ApiKeys() {
         </CardHeader>
         <CardContent>
           {apiKeys.length === 0 ? (
-            <div className="text-center py-12">
-              <Key className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No API Keys</h3>
-              <p className="text-muted-foreground mb-4">
-                Create your first API key to start using the TidyFrame API programmatically.
-              </p>
-              <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Your First API Key
-                  </Button>
-                </DialogTrigger>
-              </Dialog>
-            </div>
+            <EmptyState
+              icon={Key}
+              title="No API Keys"
+              description="Create your first API key to start using the TidyFrame API programmatically."
+              actionLabel="Create Your First API Key"
+              onAction={() => setCreateModalOpen(true)}
+              size="lg"
+              showBranding
+            />
           ) : (
             <Table>
               <TableHeader>

@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { 
+import {
   Home,
   Upload,
   Activity,
@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import { PARSE_LIMITS } from '@/config/constants';
 
 const sidebarItems = [
   {
@@ -80,7 +81,7 @@ export default function DashboardLayout() {
       <div className="lg:hidden">
         <Button
           variant="ghost"
-          className="fixed top-4 left-4 z-50"
+          className="fixed top-4 left-4 z-modal"
           onClick={() => setSidebarOpen(!sidebarOpen)}
         >
           <Menu className="h-6 w-6" />
@@ -91,7 +92,7 @@ export default function DashboardLayout() {
         {/* Sidebar */}
         <aside
           className={cn(
-            'fixed inset-y-0 left-0 z-40 w-64 bg-card border-r transition-transform duration-300 ease-in-out lg:translate-x-0',
+            'fixed inset-y-0 left-0 z-sidebar w-64 bg-card border-r transition-transform duration-slow ease-apple lg:translate-x-0',
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           )}
         >
@@ -99,10 +100,7 @@ export default function DashboardLayout() {
             {/* Logo */}
             <div className="flex h-16 items-center border-b px-6">
               <Link to="/" className="flex items-center space-x-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-                  T
-                </div>
-                <span className="text-lg font-bold">tidyframe.com</span>
+                <img src="/logo-with-name.png" alt="TidyFrame" className="h-28" />
               </Link>
             </div>
 
@@ -117,9 +115,9 @@ export default function DashboardLayout() {
                     key={item.href}
                     to={item.href}
                     className={cn(
-                      'flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                      'flex items-center space-x-3 rounded-md px-3 py-2 text-base font-medium transition-colors',
                       isActive
-                        ? 'bg-accent text-accent-foreground'
+                        ? 'bg-primary/15 text-primary font-semibold border-l-2 border-primary'
                         : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                     )}
                     onClick={() => setSidebarOpen(false)}
@@ -134,7 +132,7 @@ export default function DashboardLayout() {
               {user?.plan === 'enterprise' && (
                 <Link
                   to="/admin"
-                  className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium transition-colors text-muted-foreground hover:bg-accent hover:text-accent-foreground border border-dashed border-muted-foreground/50"
+                  className="flex items-center space-x-3 rounded-md px-3 py-2 text-base font-medium transition-colors text-muted-foreground hover:bg-accent hover:text-accent-foreground border border-dashed border-muted-foreground/50"
                   onClick={() => setSidebarOpen(false)}
                 >
                   <Shield className="h-4 w-4" />
@@ -150,15 +148,15 @@ export default function DashboardLayout() {
                   <Button variant="ghost" className="w-full justify-start space-x-2">
                     <Avatar className="h-8 w-8">
                       <AvatarFallback>
-                        {user?.fullName?.charAt(0) || user?.email.charAt(0).toUpperCase()}
+                        {user?.fullName?.charAt(0) || user?.email?.charAt(0)?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col items-start">
                       <span className="text-sm font-medium">
-                        {user?.fullName || user?.email}
+                        {user?.fullName || user?.email || 'User'}
                       </span>
-                      <span className="text-xs text-muted-foreground capitalize">
-                        {user?.plan} Plan
+                      <span className="text-caption text-muted-foreground capitalize">
+                        {user?.plan || 'loading'} Plan
                       </span>
                     </div>
                   </Button>
@@ -201,7 +199,7 @@ export default function DashboardLayout() {
               <div className="lg:hidden" /> {/* Spacer for mobile */}
               <div className="flex items-center space-x-4">
                 <span className="text-sm text-muted-foreground">
-                  {user?.parsesThisMonth || 0} / {user?.plan === 'enterprise' ? '∞' : '100000'} parses this month
+                  {user?.parsesThisMonth || 0} / {user?.plan === 'enterprise' ? '∞' : PARSE_LIMITS.STANDARD.toLocaleString()} parses this month
                 </span>
               </div>
             </div>
@@ -217,7 +215,7 @@ export default function DashboardLayout() {
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-overlay bg-black/50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}

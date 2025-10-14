@@ -8,10 +8,7 @@ export default function Footer() {
           {/* Company */}
           <div>
             <div className="flex items-center space-x-2 mb-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-                T
-              </div>
-              <span className="text-lg font-bold">tidyframe.com</span>
+              <img src="/logo-with-name.png" alt="TidyFrame" className="h-10" />
             </div>
             <p className="text-sm text-muted-foreground">
               AI-powered name parsing and entity detection for any type of data.
@@ -20,7 +17,7 @@ export default function Footer() {
 
           {/* Product */}
           <div>
-            <h3 className="font-semibold mb-4">Product</h3>
+            <h3 className="text-base font-semibold mb-4">Product</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <Link to="/pricing" className="hover:text-primary transition-colors">
@@ -37,7 +34,7 @@ export default function Footer() {
 
           {/* Support */}
           <div>
-            <h3 className="font-semibold mb-4">Support</h3>
+            <h3 className="text-base font-semibold mb-4">Support</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <Link to="/contact" className="hover:text-primary transition-colors">
@@ -54,7 +51,7 @@ export default function Footer() {
 
           {/* Legal */}
           <div>
-            <h3 className="font-semibold mb-4">Legal</h3>
+            <h3 className="text-base font-semibold mb-4">Legal</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <Link to="/legal/privacy-policy" className="hover:text-primary transition-colors">

@@ -109,7 +109,7 @@ export function PaymentModal({ isOpen, onClose, onSuccess }: PaymentModalProps) 
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Star className="h-5 w-5 text-yellow-500" />
+            <Star className="h-5 w-5 text-status-warning" />
             Choose Your Plan
           </DialogTitle>
           <DialogDescription>
@@ -133,12 +133,12 @@ export function PaymentModal({ isOpen, onClose, onSuccess }: PaymentModalProps) 
                     selectedPlan?.id === plan.id
                       ? 'border-primary ring-2 ring-primary/20'
                       : 'hover:border-primary/50'
-                  } ${plan.popular ? 'border-yellow-400 ring-2 ring-yellow-400/20' : ''}`}
+                  } ${plan.popular ? 'border-status-warning ring-2 ring-status-warning/20' : ''}`}
                   onClick={() => setSelectedPlan(plan)}
                 >
                   <CardHeader className="text-center">
                     {plan.popular && (
-                      <Badge className="self-center mb-2 bg-yellow-500 text-yellow-50">
+                      <Badge className="self-center mb-2 bg-status-warning-bg border-status-warning-border text-status-warning">
                         <Star className="h-3 w-3 mr-1" />
                         Most Popular
                       </Badge>
@@ -146,7 +146,7 @@ export function PaymentModal({ isOpen, onClose, onSuccess }: PaymentModalProps) 
                     <div className="flex items-center justify-center mb-2">
                       {getPlanIcon(plan.name)}
                     </div>
-                    <CardTitle className="text-lg">{plan.name}</CardTitle>
+                    <CardTitle className="text-xl">{plan.name}</CardTitle>
                     <CardDescription>{plan.description}</CardDescription>
                     <div className="mt-4">
                       <div className="text-3xl font-bold">
@@ -161,7 +161,7 @@ export function PaymentModal({ isOpen, onClose, onSuccess }: PaymentModalProps) 
                     <ul className="space-y-2">
                       {plan.features.map((feature, index) => (
                         <li key={index} className="flex items-start gap-2 text-sm">
-                          <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                          <Check className="h-4 w-4 text-status-success mt-0.5 flex-shrink-0" />
                           <span>{feature}</span>
                         </li>
                       ))}
@@ -185,7 +185,7 @@ export function PaymentModal({ isOpen, onClose, onSuccess }: PaymentModalProps) 
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-lg">
+                      <p className="font-bold text-xl">
                         {formatCurrency(selectedPlan.amount, selectedPlan.currency)}
                       </p>
                       <p className="text-sm text-muted-foreground">
@@ -196,12 +196,12 @@ export function PaymentModal({ isOpen, onClose, onSuccess }: PaymentModalProps) 
                 </div>
 
                 {/* Payment Info */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-status-info-bg border border-status-info-border rounded-lg p-4">
                   <div className="flex items-start gap-2">
-                    <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <Shield className="h-5 w-5 text-status-info mt-0.5" />
                     <div className="text-sm">
-                      <p className="font-medium text-blue-900">Secure Payment</p>
-                      <p className="text-blue-700">
+                      <p className="font-medium text-status-info">Secure Payment</p>
+                      <p className="text-status-info">
                         Your payment is secured by Stripe. You can cancel anytime.
                       </p>
                     </div>
@@ -209,12 +209,12 @@ export function PaymentModal({ isOpen, onClose, onSuccess }: PaymentModalProps) 
                 </div>
 
                 {/* Immediate Access Info */}
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="bg-status-success-bg border border-status-success-border rounded-lg p-4">
                   <div className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-green-600 mt-0.5" />
+                    <Check className="h-5 w-5 text-status-success mt-0.5" />
                     <div className="text-sm">
-                      <p className="font-medium text-green-900">Immediate Access</p>
-                      <p className="text-green-700">
+                      <p className="font-medium text-status-success">Immediate Access</p>
+                      <p className="text-status-success">
                         Get instant access to all premium features. Cancel anytime.
                       </p>
                     </div>
@@ -245,7 +245,7 @@ export function PaymentModal({ isOpen, onClose, onSuccess }: PaymentModalProps) 
                   </Button>
                 </div>
 
-                <p className="text-xs text-muted-foreground text-center">
+                <p className="text-caption text-muted-foreground text-center">
                   By subscribing, you agree to our Terms of Service and Privacy Policy.
                   You will be charged immediately upon subscription.
                 </p>

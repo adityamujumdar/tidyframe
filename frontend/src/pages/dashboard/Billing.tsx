@@ -115,22 +115,64 @@ export default function Billing() {
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
       case 'paid':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-success/10 text-success border-success/20';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-warning/10 text-warning border-warning/20';
       case 'failed':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-destructive/10 text-destructive border-destructive/20';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-muted/10 text-muted-foreground border-muted/20';
     }
   };
 
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center gap-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <h1 className="text-2xl font-bold">Loading billing information...</h1>
+        {/* Header skeleton */}
+        <div className="space-y-2">
+          <div className="h-8 bg-muted rounded w-64 animate-pulse"></div>
+          <div className="h-4 bg-muted rounded w-96 animate-pulse"></div>
+        </div>
+
+        {/* Content skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            {/* Subscription card skeleton */}
+            <Card className="animate-pulse">
+              <CardHeader>
+                <div className="h-6 bg-muted rounded w-40"></div>
+                <div className="h-4 bg-muted rounded w-full mt-2"></div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="h-20 bg-muted rounded"></div>
+                <div className="h-16 bg-muted rounded"></div>
+              </CardContent>
+            </Card>
+
+            {/* Usage stats skeleton */}
+            <Card className="animate-pulse">
+              <CardHeader>
+                <div className="h-6 bg-muted rounded w-48"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-32 bg-muted rounded"></div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Billing history skeleton */}
+          <div className="space-y-4">
+            <Card className="animate-pulse">
+              <CardHeader>
+                <div className="h-6 bg-muted rounded w-40"></div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-16 bg-muted rounded"></div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     );
@@ -293,7 +335,7 @@ export default function Billing() {
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-green-500" />
+                    <TrendingUp className="h-5 w-5 text-success" />
                     <div>
                       <p className="text-2xl font-bold">{usage.currentMonth.parses.toLocaleString()}</p>
                       <p className="text-sm text-muted-foreground">Parses this month</p>
@@ -305,7 +347,7 @@ export default function Billing() {
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-blue-500" />
+                    <Activity className="h-5 w-5 text-info" />
                     <div>
                       <p className="text-2xl font-bold">{usage.currentMonth.percentage.toFixed(1)}%</p>
                       <p className="text-sm text-muted-foreground">Of monthly limit used</p>
@@ -317,7 +359,7 @@ export default function Billing() {
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-purple-500" />
+                    <Calendar className="h-5 w-5 text-secondary" />
                     <div>
                       <p className="text-2xl font-bold">{usage.peakUsageDay.parses}</p>
                       <p className="text-sm text-muted-foreground">Peak daily usage</p>
@@ -331,7 +373,7 @@ export default function Billing() {
           {/* Support Card */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Need Help?</CardTitle>
+              <CardTitle className="text-xl">Need Help?</CardTitle>
               <CardDescription>
                 Contact our support team for billing assistance.
               </CardDescription>

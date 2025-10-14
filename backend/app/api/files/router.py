@@ -45,14 +45,21 @@ async def upload_file(
     file: UploadFile = File(...),
     config: ProcessingConfig = ProcessingConfig(),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_auth),  # CHANGED: Allow auth users (billing middleware handles payment)
+    current_user: Optional[User] = Depends(get_current_user),  # Allow both authenticated and anonymous users
     _rate_limit: None = Depends(check_user_rate_limit)
 ):
     """Upload file for name parsing - Admin users bypass billing requirements"""
-    
-    # Get client IP for logging
-    client_ip = request.client.host if request.client else "unknown"
-    
+
+    # Get client IP - critical for anonymous user tracking
+    client_ip = request.client.host if request.client else None
+
+    # Validate that we can identify anonymous users by IP
+    if not current_user and not client_ip:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to determine client IP address for anonymous upload. Please ensure proper network configuration."
+        )
+
     # Validate file
     if not file.filename:
         raise HTTPException(

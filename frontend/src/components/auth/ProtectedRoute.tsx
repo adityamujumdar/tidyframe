@@ -1,5 +1,8 @@
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEffect, useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -9,16 +12,64 @@ interface ProtectedRouteProps {
 export default function ProtectedRoute({ children, requireSubscription = true }: ProtectedRouteProps) {
   const { user, loading, hasActiveSubscription } = useAuth();
   const location = useLocation();
-  
-  console.log('ProtectedRoute:', { 
-    user: user ? { id: user.id, email: user.email, plan: user.plan } : null, 
-    loading, 
+  const [searchParams] = useSearchParams();
+  const [gracePeriod, setGracePeriod] = useState(false);
+  const [checkingPendingUser, setCheckingPendingUser] = useState(true);
+
+  // Check for pending user from registration (before Stripe payment)
+  useEffect(() => {
+    const checkPendingUser = () => {
+      if (!user && !loading) {
+        const pendingUserStr = localStorage.getItem('pending_user');
+        const registrationComplete = localStorage.getItem('registration_complete');
+
+        if (pendingUserStr && registrationComplete) {
+          console.log('ProtectedRoute: Pending user detected, allowing temporary access');
+          // User has completed registration but hasn't gone through payment yet
+          // OR has completed payment but hasn't been activated yet
+          // Grant temporary grace period
+          setGracePeriod(true);
+          // Extended grace period for pending users (60 seconds)
+          const timer = setTimeout(() => {
+            console.log('Pending user grace period expired');
+            setGracePeriod(false);
+            setCheckingPendingUser(false);
+          }, 60000);
+          setCheckingPendingUser(false);
+          return () => clearTimeout(timer);
+        }
+      }
+      setCheckingPendingUser(false);
+    };
+
+    checkPendingUser();
+  }, [user, loading]);
+
+  // Check if user just completed payment - give grace period for webhook processing
+  useEffect(() => {
+    const paymentSuccess = searchParams.get('payment_success');
+    if (paymentSuccess === 'true') {
+      console.log('Payment success detected - activating 30 second grace period');
+      setGracePeriod(true);
+      // Give 30 second grace period for Stripe webhook to process
+      const timer = setTimeout(() => {
+        console.log('Grace period expired');
+        setGracePeriod(false);
+      }, 30000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
+
+  console.log('ProtectedRoute:', {
+    user: user ? { id: user.id, email: user.email, plan: user.plan } : null,
+    loading,
     hasActiveSubscription,
+    gracePeriod,
     requireSubscription,
-    path: location.pathname 
+    path: location.pathname
   });
 
-  if (loading) {
+  if (loading || checkingPendingUser) {
     console.log('ProtectedRoute: Still loading, showing spinner');
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -27,19 +78,48 @@ export default function ProtectedRoute({ children, requireSubscription = true }:
     );
   }
 
-  if (!user) {
-    console.log('ProtectedRoute: No user found, redirecting to login');
+  if (!user && !gracePeriod) {
+    console.log('ProtectedRoute: No user found and no grace period, redirecting to login');
     // Redirect to login page with return url
     return <Navigate to="/auth/login" state={{ from: location }} replace />;
   }
 
   // Check subscription requirement
-  if (requireSubscription) {
+  if (requireSubscription && user) {
     // Enterprise users always have access
-    if (user.plan !== 'enterprise' && !hasActiveSubscription) {
-      console.log('ProtectedRoute: No active subscription, redirecting to pricing');
+    // OR user in grace period after payment (webhook processing)
+    // OR has active subscription
+    if (user.plan !== 'enterprise' && !hasActiveSubscription && !gracePeriod) {
+      console.log('ProtectedRoute: No active subscription and not in grace period, redirecting to pricing');
       return <Navigate to="/pricing" replace />;
     }
+
+    if (gracePeriod) {
+      console.log('ProtectedRoute: User in grace period after payment - allowing access');
+    }
+  }
+
+  // If no user but in grace period, show activation loading UI instead of rendering null user
+  if (!user && gracePeriod) {
+    console.log('ProtectedRoute: No user but in grace period, showing activation UI');
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <Card className="w-full max-w-md mx-4">
+          <CardContent className="pt-6 text-center space-y-4">
+            <div className="flex justify-center">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold">Activating Your Account</h3>
+            <p className="text-sm text-muted-foreground">
+              Please wait while we process your subscription and set up your account...
+            </p>
+            <p className="text-xs text-muted-foreground">
+              This usually takes just a few seconds.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   console.log('ProtectedRoute: User authenticated with valid subscription, rendering children');

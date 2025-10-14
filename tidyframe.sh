@@ -71,11 +71,11 @@ setup_environment() {
     
     if [ "$env_mode" = "prod" ] || [ "$env_mode" = "production" ]; then
         ENV_FILE=".env.production"
-        COMPOSE_FILE="docker-compose.prod.yml"
+        COMPOSE_FILE="docker compose.prod.yml"
         ENV_NAME="PRODUCTION"
     else
         ENV_FILE=".env.development"
-        COMPOSE_FILE="docker-compose.yml"
+        COMPOSE_FILE="docker compose.yml"
         ENV_NAME="DEVELOPMENT"
     fi
     
@@ -112,7 +112,7 @@ start_services() {
     mkdir -p backend/uploads backend/results backend/logs
     
     # Start services
-    docker-compose -f "$COMPOSE_FILE" up -d --build
+    docker compose -f "$COMPOSE_FILE" up -d --build
     
     log_success "$ENV_NAME services started!"
     log_info "View logs with: ./tidyframe.sh logs"
@@ -134,8 +134,8 @@ stop_services() {
     log_info "Stopping all services..."
     
     # Try both compose files to ensure everything stops
-    docker-compose -f docker-compose.yml down 2>/dev/null || true
-    docker-compose -f docker-compose.prod.yml down 2>/dev/null || true
+    docker compose -f docker compose.yml down 2>/dev/null || true
+    docker compose -f docker compose.prod.yml down 2>/dev/null || true
     
     log_success "All services stopped"
 }
@@ -143,7 +143,7 @@ stop_services() {
 # Show status
 show_status() {
     log_info "Service Status:"
-    docker-compose ps
+    docker compose ps
     
     echo ""
     log_info "Resource Usage:"
@@ -155,30 +155,30 @@ show_logs() {
     local service="$1"
     
     # Determine which compose file is active
-    if docker-compose -f docker-compose.prod.yml ps 2>/dev/null | grep -q "Up"; then
-        COMPOSE_FILE="docker-compose.prod.yml"
+    if docker compose -f docker compose.prod.yml ps 2>/dev/null | grep -q "Up"; then
+        COMPOSE_FILE="docker compose.prod.yml"
     else
-        COMPOSE_FILE="docker-compose.yml"
+        COMPOSE_FILE="docker compose.yml"
     fi
     
     if [ -z "$service" ]; then
-        docker-compose -f "$COMPOSE_FILE" logs -f --tail=100
+        docker compose -f "$COMPOSE_FILE" logs -f --tail=100
     else
-        docker-compose -f "$COMPOSE_FILE" logs -f --tail=100 "$service"
+        docker compose -f "$COMPOSE_FILE" logs -f --tail=100 "$service"
     fi
 }
 
 # Admin management
 manage_admin() {
     # Determine which compose file is active
-    if docker-compose -f docker-compose.prod.yml ps 2>/dev/null | grep -q "backend.*Up"; then
-        COMPOSE_FILE="docker-compose.prod.yml"
+    if docker compose -f docker compose.prod.yml ps 2>/dev/null | grep -q "backend.*Up"; then
+        COMPOSE_FILE="docker compose.prod.yml"
     else
-        COMPOSE_FILE="docker-compose.yml"
+        COMPOSE_FILE="docker compose.yml"
     fi
     
     log_info "Creating/updating admin user..."
-    docker-compose -f "$COMPOSE_FILE" exec backend python scripts/setup_admin.py
+    docker compose -f "$COMPOSE_FILE" exec backend python scripts/setup_admin.py
 }
 
 # Backup database

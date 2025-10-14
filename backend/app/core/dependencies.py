@@ -289,13 +289,26 @@ async def check_parsing_quota(
                     detail=f"Anonymous usage limit exceeded. Remaining: {remaining} parses. Please sign up for more capacity."
                 )
         else:
-            # First time user - check if within limit
+            # First time anonymous user - check if within limit
             if rows_to_parse > settings.ANONYMOUS_LIFETIME_LIMIT:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail=f"File too large for anonymous usage. Maximum: {settings.ANONYMOUS_LIFETIME_LIMIT} parses. Please sign up for more capacity."
                 )
-        
+
+            # Create AnonymousUsage record for tracking
+            new_anon_user = AnonymousUsage(
+                ip_address=client_ip,
+                parse_count=0  # Will be incremented after processing completes
+            )
+            db.add(new_anon_user)
+            await db.flush()  # Ensure record exists before job processing starts
+
+            logger.info("anonymous_user_initialized",
+                       ip=client_ip,
+                       initial_parse_count=0,
+                       lifetime_limit=settings.ANONYMOUS_LIFETIME_LIMIT)
+
         return True
     
     else:

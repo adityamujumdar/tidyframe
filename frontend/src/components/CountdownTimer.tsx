@@ -81,22 +81,22 @@ export default function CountdownTimer({
 
   const getColorClass = () => {
     if (timeRemaining.isExpired) {
-      return 'text-red-600 dark:text-red-400';
+      return 'text-destructive';
     }
     if (timeRemaining.isWarning) {
-      return 'text-yellow-600 dark:text-yellow-400';
+      return 'text-warning';
     }
-    return 'text-gray-600 dark:text-gray-400';
+    return 'text-muted-foreground';
   };
 
   const getBackgroundClass = () => {
     if (timeRemaining.isExpired) {
-      return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
+      return 'bg-destructive/10 border-destructive/20';
     }
     if (timeRemaining.isWarning) {
-      return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800';
+      return 'bg-warning/10 border-warning/20';
     }
-    return 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700';
+    return 'bg-muted/50 border-border';
   };
 
   const formatTime = (minutes: number, seconds: number) => {
@@ -128,13 +128,13 @@ export default function CountdownTimer({
         </div>
         
         {!timeRemaining.isExpired && (
-          <div className="text-xs text-gray-500 dark:text-gray-400">
+          <div className="text-caption text-muted-foreground">
             Files are automatically deleted after 10 minutes
           </div>
         )}
-        
+
         {timeRemaining.isExpired && (
-          <div className="text-xs text-red-500 dark:text-red-400">
+          <div className="text-caption text-destructive">
             This file has been permanently deleted
           </div>
         )}

@@ -1,0 +1,21 @@
+name,addressee,email
+John Michael Smith,John M. Smith,john@example.com
+Jane Elizabeth Doe,Jane E. Doe,jane@example.com
+Dr. Robert Brown Jr.,Dr. R. Brown,robert@example.com
+Mr. and Mrs. Johnson,Mr. & Mrs. Johnson,johnson@example.com
+Alex Taylor,A. Taylor,alex@example.com
+Casey Morgan,C. Morgan,casey@example.com
+ABC Corporation,ABC Corp,info@abc.com
+Tech Solutions Inc.,Tech Inc.,contact@tech.com
+Smith & Associates LLC,Smith LLC,info@smith.com
+Johnson Properties Group,Johnson Props,contact@johnson.com
+Green Valley Farms LLC,GV Farms,info@gvfarms.com
+Global Enterprises Ltd,Global Ltd,info@global.com
+Smith Family Trust,Smith Trust,trust@smith.com
+The Johnson Revocable Trust,Johnson Trust,trust@johnson.com
+Estate of Mary Williams,Williams Estate,estate@williams.com
+Williams Trust DTD 2020,Williams Trust,trust@williams.com
+The Smith Charitable Trust,Smith Charitable,charity@smith.com
+J. Smith,J. Smith,j@smith.com
+123 Invalid Name!@#,Invalid,
+,,

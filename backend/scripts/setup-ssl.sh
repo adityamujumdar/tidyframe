@@ -45,7 +45,7 @@ mkdir -p certbot/www
 
 # First, ensure nginx is running with HTTP for the challenge
 log_info "Starting nginx with HTTP configuration..."
-docker-compose -f docker-compose.prod.yml up -d nginx
+docker compose -f docker-compose.prod.yml up -d nginx
 
 # Wait for nginx to be ready
 log_info "Waiting for nginx to be ready..."
@@ -61,7 +61,7 @@ fi
 
 # Generate certificates using certbot
 log_info "Generating SSL certificates with Let's Encrypt..."
-docker-compose -f docker-compose.prod.yml run --rm certbot certonly \
+docker compose -f docker-compose.prod.yml run --rm --entrypoint 'certbot' certbot certonly \
   --webroot \
   --webroot-path=/var/www/certbot \
   --email $EMAIL \
@@ -194,7 +194,7 @@ EOF
 
     # Restart nginx with SSL configuration
     log_info "Restarting nginx with SSL enabled..."
-    docker-compose -f docker-compose.prod.yml restart nginx
+    docker compose -f docker-compose.prod.yml restart nginx
 
     # Wait for nginx to restart
     sleep 5

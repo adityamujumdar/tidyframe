@@ -42,8 +42,8 @@ export function SitePasswordGate({ children }: SitePasswordGateProps) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <div className="flex flex-col items-center space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400" />
-          <p className="text-sm text-slate-600 dark:text-slate-400">Loading...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -85,26 +85,26 @@ export function SitePasswordGate({ children }: SitePasswordGateProps) {
       <div className="w-full max-w-md">
         <Card className="border-slate-200 dark:border-slate-700 shadow-xl bg-white dark:bg-slate-900">
           <CardHeader className="space-y-1 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-              <Lock className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <Lock className="h-8 w-8 text-primary" />
             </div>
-            <CardTitle className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+            <CardTitle className="text-2xl font-semibold">
               Welcome to tidyframe.com
             </CardTitle>
-            <CardDescription className="text-slate-600 dark:text-slate-400">
+            <CardDescription className="text-muted-foreground">
               This site is currently in pre-launch mode. Please enter the access password to continue.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <Alert variant="destructive" className="border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950">
-                  <AlertDescription className="text-red-800 dark:text-red-200">{error}</AlertDescription>
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
               
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-slate-700 dark:text-slate-300 font-medium">
+                <Label htmlFor="password" className="font-medium">
                   Access Password
                 </Label>
                 <div className="relative">
@@ -114,7 +114,7 @@ export function SitePasswordGate({ children }: SitePasswordGateProps) {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter access password"
-                    className="pr-10 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400"
+                    className="pr-10"
                     disabled={isAuthenticating}
                     autoFocus
                   />
@@ -125,9 +125,9 @@ export function SitePasswordGate({ children }: SitePasswordGateProps) {
                     disabled={isAuthenticating}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors" />
+                      <EyeOff className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
                     ) : (
-                      <Eye className="h-4 w-4 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors" />
+                      <Eye className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
                     )}
                   </button>
                 </div>
@@ -135,7 +135,7 @@ export function SitePasswordGate({ children }: SitePasswordGateProps) {
               
               <Button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium transition-colors"
+                className="w-full font-medium"
                 disabled={isAuthenticating || !password.trim()}
               >
                 {isAuthenticating ? (
@@ -150,11 +150,11 @@ export function SitePasswordGate({ children }: SitePasswordGateProps) {
             </form>
 
             <div className="mt-6 text-center text-sm">
-              <p className="text-slate-600 dark:text-slate-400">
+              <p className="text-muted-foreground">
                 Need help? Contact support at{' '}
-                <a 
-                  href="mailto:tidyframeai@gmail.com" 
-                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline transition-colors"
+                <a
+                  href="mailto:tidyframeai@gmail.com"
+                  className="text-primary hover:text-primary/80 underline transition-colors"
                 >
                   tidyframeai@gmail.com
                 </a>
@@ -165,7 +165,7 @@ export function SitePasswordGate({ children }: SitePasswordGateProps) {
         
         {/* Optional: Add branding footer */}
         <div className="mt-8 text-center">
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-muted-foreground">
             © 2025 TidyFrame. All rights reserved.
           </p>
         </div>

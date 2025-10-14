@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
+import {
   Upload,
   FileSpreadsheet,
   AlertCircle,
@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateSampleCSV, downloadCSVFile, validateCSVHeaders } from '@/utils/csvUtils';
+import { PLAN_CONFIG, FILE_TYPES, VALIDATION } from '@/config/constants';
 
 interface FileWithPreview extends File {
   preview?: string;
@@ -55,12 +56,13 @@ export default function UniversalFileUpload({
   const getUserLimits = () => {
     if (!user) {
       // Anonymous user
+      const config = PLAN_CONFIG.anonymous;
       return {
-        maxFileSize: 1 * 1024 * 1024, // 1MB
-        maxParses: 5,
-        planName: 'Anonymous Trial',
+        maxFileSize: config.maxFileSize,
+        maxParses: config.maxParses,
+        planName: config.planName,
         planIcon: Info,
-        planColor: 'bg-gray-500',
+        planColor: config.planColor,
         currentUsage: 0
       };
     }
@@ -68,21 +70,15 @@ export default function UniversalFileUpload({
     switch (user.plan) {
       case 'enterprise':
         return {
-          maxFileSize: 200 * 1024 * 1024, // 200MB
-          maxParses: 10000000, // 10M
-          planName: 'Enterprise',
+          ...PLAN_CONFIG.enterprise,
           planIcon: Building,
-          planColor: 'bg-purple-500',
           currentUsage: user.parsesThisMonth || 0
         };
       case 'standard':
       default:
         return {
-          maxFileSize: 50 * 1024 * 1024, // 50MB
-          maxParses: 100000, // 100k
-          planName: 'Standard',
+          ...PLAN_CONFIG.standard,
           planIcon: Crown,
-          planColor: 'bg-blue-500',
           currentUsage: user.parsesThisMonth || 0
         };
     }
@@ -91,12 +87,7 @@ export default function UniversalFileUpload({
   const limits = getUserLimits();
   const PlanIcon = limits.planIcon;
 
-  const acceptedTypes = {
-    'text/csv': ['.csv'],
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-    'application/vnd.ms-excel': ['.xls'],
-    'text/plain': ['.txt']
-  };
+  const acceptedTypes = FILE_TYPES.ACCEPTED;
 
   const onDrop = useCallback(async (acceptedFiles: File[], rejectedFiles: any[]) => {
     setError('');
@@ -267,7 +258,7 @@ export default function UniversalFileUpload({
               <span>{limits.planName} Plan</span>
             </div>
             {!user && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-caption">
                 Try Free
               </Badge>
             )}
@@ -283,7 +274,7 @@ export default function UniversalFileUpload({
           <div>
             <h4 className="font-medium">Monthly Parses</h4>
             <p className="text-sm text-muted-foreground">
-              {user 
+              {user
                 ? `${limits.currentUsage.toLocaleString()} / ${limits.maxParses === 10000000 ? '∞' : limits.maxParses.toLocaleString()}`
                 : `${limits.maxParses} trial parses`
               }
@@ -291,8 +282,8 @@ export default function UniversalFileUpload({
             {user && (
               <div className="mt-1">
                 <div className="w-full bg-gray-200 rounded-full h-1.5">
-                  <div 
-                    className="bg-blue-600 h-1.5 rounded-full transition-all" 
+                  <div
+                    className="bg-primary h-1.5 rounded-full transition-all"
                     style={{ width: `${getUsagePercentage()}%` }}
                   ></div>
                 </div>
@@ -305,7 +296,7 @@ export default function UniversalFileUpload({
               {getRemainingParses().toLocaleString()} parses left
             </p>
             {!user && (
-              <p className="text-xs text-blue-600 mt-1">
+              <p className="text-caption text-primary mt-1">
                 Sign up for 100,000/month!
               </p>
             )}
@@ -325,19 +316,21 @@ export default function UniversalFileUpload({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Alert className="border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30">
-              <AlertCircle className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+            <Alert>
+              <AlertCircle className="h-5 w-5 text-muted-foreground" />
               <AlertDescription>
-                <div className="font-semibold text-base text-slate-800 dark:text-slate-200 mb-2">Required Column Name</div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">
+                <div className="font-semibold text-base mb-2">Required Column Name</div>
+                <div className="text-sm text-muted-foreground">
                   Your file must have a column named one of the following:
                 </div>
                 <ul className="mt-2 ml-4 list-none space-y-1">
-                  <li className="text-sm">• <code className="bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-700 dark:text-slate-300 font-mono text-xs">names</code></li>
-                  <li className="text-sm">• <code className="bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-700 dark:text-slate-300 font-mono text-xs">addressee</code></li>
-                  <li className="text-sm">• <code className="bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-700 dark:text-slate-300 font-mono text-xs">process addressee</code></li>
+                  {VALIDATION.COLUMN_NAMES.map((col) => (
+                    <li key={col} className="text-sm">
+                      • <code className="bg-muted px-2 py-0.5 rounded text-foreground font-mono text-caption">{col}</code>
+                    </li>
+                  ))}
                 </ul>
-                <div className="mt-3 text-xs text-slate-500 dark:text-slate-500">
+                <div className="mt-3 text-caption text-muted-foreground">
                   Note: If multiple matching columns exist, only the first will be used.
                 </div>
               </AlertDescription>
@@ -379,7 +372,7 @@ export default function UniversalFileUpload({
       {/* File Upload Area */}
       <Card>
         <CardHeader className={compact ? 'pb-3' : ''}>
-          <CardTitle className={compact ? 'text-lg' : ''}>
+          <CardTitle className={compact ? 'text-xl' : ''}>
             {compact ? 'Try tidyframe.com' : 'Select File'}
           </CardTitle>
           <CardDescription>
@@ -393,31 +386,38 @@ export default function UniversalFileUpload({
           <div
             {...getRootProps()}
             className={`
-              border-2 border-dashed rounded-lg text-center cursor-pointer transition-all duration-300
-              ${compact ? 'p-6' : 'p-8'}
-              ${isDragActive 
-                ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 scale-[1.02] shadow-lg border-opacity-80' 
-                : 'border-muted-foreground/30 hover:border-blue-400 hover:bg-gradient-to-br hover:from-blue-50/50 hover:to-purple-50/50 dark:hover:from-blue-950/20 dark:hover:to-purple-950/20 hover:shadow-md'
+              border-2 border-dashed rounded-xl text-center cursor-pointer transition-all duration-normal
+              ${compact ? 'p-8' : 'p-12'}
+              ${isDragActive
+                ? 'border-primary bg-primary/20 scale-[1.02] shadow-xl'
+                : 'border-primary/40 bg-primary/5 hover:border-primary hover:bg-primary/10 hover:shadow-md shadow-sm'
               }
             `}
           >
             <input {...getInputProps()} />
-            <div className="flex flex-col items-center gap-4">
-              <Upload className={`${compact ? 'h-8 w-8' : 'h-12 w-12'} transition-colors ${isDragActive ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground hover:text-blue-500'}`} />
+            <div className="flex flex-col items-center gap-6">
+              <div className={`p-4 rounded-full ${isDragActive ? 'bg-primary text-white' : 'bg-primary/20'} transition-all`}>
+                <Upload className={`${compact ? 'h-10 w-10' : 'h-14 w-14'} transition-all ${isDragActive ? 'text-white scale-110' : 'text-primary'}`} />
+              </div>
               {isDragActive ? (
-                <p className={compact ? 'text-base' : 'text-lg'}>Drop the file here...</p>
+                <p className={`${compact ? 'text-xl' : 'text-2xl'} font-bold text-primary`}>Drop the file here...</p>
               ) : (
                 <div>
-                  <p className={`${compact ? 'text-base' : 'text-lg'} font-medium`}>
-                    Drag and drop your file here, or click to select
+                  <p className={`${compact ? 'text-xl' : 'text-2xl'} font-bold text-primary mb-2`}>
+                    Drag and drop your file here
                   </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Supports CSV, Excel, and TXT files up to {limits.maxFileSize / (1024 * 1024)}MB
+                  <p className="text-base text-muted-foreground">
+                    or click to browse
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-3 font-medium">
+                    Supports CSV, Excel, and TXT • Max {limits.maxFileSize / (1024 * 1024)}MB
                   </p>
                   {compact && !user && (
-                    <p className="text-xs text-blue-600 mt-2">
-                      🚀 No signup required • Process {limits.maxParses} names free
-                    </p>
+                    <div className="mt-4 p-3 bg-secondary/20 rounded-lg border-2 border-secondary">
+                      <p className="text-base text-primary font-semibold">
+                        🚀 No signup required • Process {limits.maxParses} names free
+                      </p>
+                    </div>
                   )}
                 </div>
               )}
@@ -438,7 +438,7 @@ export default function UniversalFileUpload({
               {files.map((file, index) => (
                 <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex items-center gap-3">
-                    <FileSpreadsheet className="h-8 w-8 text-green-600" />
+                    <FileSpreadsheet className="h-8 w-8 text-status-success" />
                     <div>
                       <p className="font-medium">{file.name}</p>
                       <p className="text-sm text-muted-foreground">
@@ -485,7 +485,7 @@ export default function UniversalFileUpload({
                   <Card className="border-dashed">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-sm">Custom Column Name</CardTitle>
-                      <CardDescription className="text-xs">
+                      <CardDescription className="text-caption">
                         Specify the column that contains names to process. Leave blank to use default detection.
                       </CardDescription>
                     </CardHeader>
@@ -499,7 +499,7 @@ export default function UniversalFileUpload({
                         className="mt-1"
                         disabled={uploading}
                       />
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-caption text-muted-foreground mt-1">
                         Default detection looks for: 'names', 'addressee', or 'process addressee'
                       </p>
                     </CardContent>

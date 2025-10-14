@@ -85,8 +85,8 @@ def update_job_status(
             elif status == JobStatus.COMPLETED:
                 from datetime import timedelta
                 job.completed_at = current_time
-                # Set expiry time to 10 minutes after completion
-                job.expires_at = current_time + timedelta(minutes=10)
+                # Set expiry time using configured retention period
+                job.expires_at = current_time + timedelta(minutes=settings.POST_PROCESSING_RETENTION_MINUTES)
                 
                 # Update processing results if provided
                 if processing_results:
@@ -141,9 +141,8 @@ def update_job_status(
                                 if user.stripe_customer_id and not user.is_admin:
                                     try:
                                         import stripe
-                                        from app.core.config import settings
-                                        
-                                        # Initialize Stripe with API key
+
+                                        # Initialize Stripe with API key (settings already imported at module level)
                                         stripe.api_key = settings.STRIPE_SECRET_KEY
                                         
                                         # Report usage immediately using Meter Events API v2
@@ -223,11 +222,24 @@ def update_job_status(
                                 rows_parsed = job.processed_rows
                             if rows_parsed and rows_parsed > 0:
                                 anon_usage.parse_count = (anon_usage.parse_count or 0) + rows_parsed
-                                anon_usage.last_used_at = current_time
+                                anon_usage.last_used = current_time  # Fixed: Column name is last_used, not last_used_at
                                 logger.info("anonymous_parse_count_updated",
                                            ip=job.anonymous_ip,
                                            rows_parsed=rows_parsed,
                                            new_total=anon_usage.parse_count)
+                        else:
+                            # Create AnonymousUsage record if it doesn't exist (defensive fallback)
+                            from app.models.anonymous_usage import AnonymousUsage
+                            rows_parsed = processing_results.get('successful_parses', job.processed_rows)
+                            if rows_parsed and rows_parsed > 0:
+                                anon_usage = AnonymousUsage(
+                                    ip_address=job.anonymous_ip,
+                                    parse_count=rows_parsed
+                                )
+                                db.add(anon_usage)
+                                logger.info("anonymous_usage_created_on_completion",
+                                           ip=job.anonymous_ip,
+                                           rows_parsed=rows_parsed)
                 
                 logger.info("job_completed_updated", 
                            job_id=job_id, 

@@ -107,7 +107,7 @@ export default function AdminLayout() {
       <div className="lg:hidden">
         <Button
           variant="ghost"
-          className="fixed top-4 left-4 z-50"
+          className="fixed top-4 left-4 z-modal"
           onClick={() => setSidebarOpen(!sidebarOpen)}
         >
           <Menu className="h-6 w-6" />
@@ -118,7 +118,7 @@ export default function AdminLayout() {
         {/* Sidebar */}
         <aside
           className={cn(
-            'fixed inset-y-0 left-0 z-40 w-64 bg-card border-r transition-transform duration-300 ease-in-out lg:translate-x-0',
+            'fixed inset-y-0 left-0 z-sidebar w-64 bg-card border-r transition-transform duration-slow ease-apple lg:translate-x-0',
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           )}
         >
@@ -126,10 +126,7 @@ export default function AdminLayout() {
             {/* Logo */}
             <div className="flex h-16 items-center border-b px-6">
               <Link to="/" className="flex items-center space-x-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-                  T
-                </div>
-                <span className="text-lg font-bold">TidyFrame Admin</span>
+                <img src="/logo-with-name.png" alt="TidyFrame Admin" className="h-20" />
               </Link>
             </div>
 
@@ -183,7 +180,7 @@ export default function AdminLayout() {
                       <span className="text-sm font-medium">
                         {user?.fullName || user?.email}
                       </span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-caption text-muted-foreground">
                         Administrator
                       </span>
                     </div>
@@ -232,7 +229,7 @@ export default function AdminLayout() {
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-overlay bg-black/50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}

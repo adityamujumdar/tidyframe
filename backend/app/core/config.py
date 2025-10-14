@@ -36,12 +36,36 @@ class Settings(BaseSettings):
     
     # CORS and Security Headers
     # Use str type and convert to list in property to avoid pydantic-settings JSON parsing
-    ALLOWED_HOSTS_STR: str = "tidyframe.com,www.tidyframe.com,api.tidyframe.com,app.tidyframe.com,localhost,127.0.0.1,0.0.0.0"
-    
+    ALLOWED_HOSTS_STR: str = "tidyframe.com,www.tidyframe.com,api.tidyframe.com,app.tidyframe.com"
+
     @property
     def ALLOWED_HOSTS(self) -> List[str]:
-        """Parse ALLOWED_HOSTS from comma-separated string"""
-        return [host.strip() for host in self.ALLOWED_HOSTS_STR.split(",")]
+        """
+        Parse ALLOWED_HOSTS from comma-separated string and add dynamic hosts.
+        Supports wildcard '*' for maximum flexibility (useful in Docker environments).
+        Automatically includes Docker service names and localhost variants.
+        """
+        # Parse base hosts from config
+        hosts = [host.strip() for host in self.ALLOWED_HOSTS_STR.split(",") if host.strip()]
+
+        # If wildcard is present, return it alone (FastAPI TrustedHostMiddleware accepts this)
+        if "*" in hosts:
+            return ["*"]
+
+        # Auto-add common Docker and local hosts for infrastructure (health checks, internal routing)
+        infrastructure_hosts = [
+            "localhost",
+            "localhost:8000",
+            "127.0.0.1",
+            "0.0.0.0",
+            "backend",
+            "backend:8000",
+        ]
+
+        # Combine and deduplicate
+        all_hosts = list(set(hosts + infrastructure_hosts))
+
+        return all_hosts
     
     # Database Configuration
     DATABASE_URL: str = Field(default="postgresql+asyncpg://tidyframe:password@localhost:5432/tidyframe")
@@ -90,7 +114,7 @@ class Settings(BaseSettings):
     # Processing Limits
     STANDARD_TIER_MONTHLY_LIMIT: int = 100000  # 100k names included in $80/month
     ENTERPRISE_TIER_MONTHLY_LIMIT: int = 10000000  # 10M for enterprise
-    ANONYMOUS_LIFETIME_LIMIT: int = 5  # Free anonymous trial
+    ANONYMOUS_LIFETIME_LIMIT: int = 5  # Free anonymous trial (5 parses total per IP, lifetime)
     STANDARD_OVERAGE_PRICE: float = 0.002  # $0.002 per name after 100k
     MAX_ROWS_PER_FILE: int = 1000000
     PROCESSING_TIMEOUT_MINUTES: int = 60
@@ -131,7 +155,10 @@ class Settings(BaseSettings):
     # Email Configuration
     FROM_EMAIL: str = "noreply@tidyframe.com"
     SUPPORT_EMAIL: str = "support@tidyframe.com"
-    
+
+    # Frontend URL Configuration (environment-aware for Stripe redirects)
+    FRONTEND_URL: str = Field(default="http://localhost:3000")
+
     # Monitoring and Logging
     LOG_LEVEL: str = "INFO"
     ENABLE_METRICS: bool = True
@@ -171,8 +198,15 @@ class Settings(BaseSettings):
     # These MUST be loaded from environment variables, not defaults
     ENABLE_SITE_PASSWORD: bool = Field(default=False, env="ENABLE_SITE_PASSWORD")
     SITE_PASSWORD: str = Field(default="", env="SITE_PASSWORD")
-    
-    
+
+    # Admin Configuration
+    ADMIN_EMAIL: str = Field(default="admin@tidyframe.com", env="ADMIN_EMAIL")
+    ADMIN_PASSWORD: str = Field(default="", env="ADMIN_PASSWORD")
+
+    # File Retention
+    POST_PROCESSING_RETENTION_MINUTES: int = Field(default=10, env="POST_PROCESSING_RETENTION_MINUTES")
+
+
     class Config:
         # Intelligently select environment file based on ENVIRONMENT variable
         # Priority: 1) .env (copied by tidyframe.sh), 2) .env.production/development, 3) fallback to .env
@@ -222,14 +256,19 @@ class Settings(BaseSettings):
                 errors.append("DEBUG must be False in production")
             
             # Check required production API keys
-            production_keys = [
-                ('STRIPE_SECRET_KEY', self.STRIPE_SECRET_KEY),
+            # STRIPE_SECRET_KEY is optional - only needed for paid tier billing
+            # Anonymous users (≤5 names) and admin users don't require Stripe
+            required_keys = [
                 ('GEMINI_API_KEY', self.GEMINI_API_KEY)
             ]
-            
-            for key_name, key_value in production_keys:
-                if not key_value or key_value.startswith("your-") or key_value.startswith("sk_test_"):
+
+            for key_name, key_value in required_keys:
+                if not key_value or key_value.startswith("your-"):
                     errors.append(f"{key_name} must be set with production values")
+
+            # Warn about Stripe if not set, but don't block startup
+            if not self.STRIPE_SECRET_KEY or self.STRIPE_SECRET_KEY.startswith("your-"):
+                print("⚠️  STRIPE_SECRET_KEY not configured - paid tier billing disabled")
         
         # Check site password configuration
         if self.ENABLE_SITE_PASSWORD:

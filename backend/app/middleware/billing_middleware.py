@@ -57,14 +57,24 @@ class BillingMiddleware(BaseHTTPMiddleware):
             "/api/billing/portal",
             "/api/site-password",
             "/api/jobs",        # Dashboard jobs API - protected by site password
-            "/api/usage",       # Dashboard usage API - protected by site password  
+            "/api/usage",       # Dashboard usage API - protected by site password
+            # SECURITY: Removed /api/upload - billing middleware now enforces payment
             "/docs",
             "/redoc",
             "/openapi.json",
             "/api/docs",
             "/api/redoc",
             "/api/openapi.json",
-            "/favicon.ico"
+            "/favicon.ico",
+            # Frontend paths (protected by site password middleware)
+            "/",                # Frontend root
+            "/assets/",         # Frontend assets
+            "/static/",         # Static files
+            "/auth/",           # Auth pages
+            "/dashboard/",      # Dashboard pages (user auth required at app level)
+            "/pricing",         # Public pages
+            "/contact",
+            "/legal/"
         ]
     
     async def dispatch(self, request: Request, call_next):
@@ -101,9 +111,33 @@ class BillingMiddleware(BaseHTTPMiddleware):
                     'is_admin': True
                 }
                 return await call_next(request)
-            
-            # Check if user has FREE plan - require payment
+
+            # GRACE PERIOD: Allow new users temporary access during Stripe webhook processing
+            # This prevents 402 errors in the 0-60 second window after payment before webhook processes
             from app.models.user import PlanType
+            from datetime import datetime, timezone, timedelta
+
+            # Check if user was created very recently (< 5 minutes)
+            user_age = datetime.now(timezone.utc) - user.created_at
+            is_new_user = user_age < timedelta(minutes=5)
+
+            # If new user in grace period, allow access temporarily
+            if is_new_user and (user.plan == PlanType.FREE or not user.stripe_subscription_id):
+                logger.info("grace_period_access_granted",
+                           user_id=str(user.id),
+                           user_age_seconds=user_age.total_seconds(),
+                           plan=str(user.plan))
+                # Add temporary billing info
+                request.state.billing_info = {
+                    'usage': 0,
+                    'limit': 100000,  # Standard plan limit
+                    'overage': 0,
+                    'is_admin': False,
+                    'grace_period': True
+                }
+                return await call_next(request)
+
+            # Check if user has FREE plan - require payment
             if user.plan == PlanType.FREE or not user.stripe_subscription_id:
                 # User has FREE plan or no subscription - require payment
                 return JSONResponse(
@@ -202,9 +236,9 @@ class BillingMiddleware(BaseHTTPMiddleware):
             try:
                 result = await db.execute(
                     select(User).where(
-                        User.id == user_id, 
-                        User.is_active == True,
-                        User.email_verified == True  # SECURITY: Require verified email
+                        User.id == user_id,
+                        User.is_active == True
+                        # User.email_verified == True  # SECURITY: Disabled for now (email verification disabled)
                     )
                 )
                 user = result.scalar_one_or_none()

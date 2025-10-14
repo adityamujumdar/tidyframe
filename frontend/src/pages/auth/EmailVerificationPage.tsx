@@ -54,6 +54,11 @@ export default function EmailVerificationPage() {
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
+            <div className="flex justify-center mb-6">
+              <Link to="/">
+                <img src="/logo-with-name.png" alt="TidyFrame" className="h-12" />
+              </Link>
+            </div>
             <div className="flex justify-center mb-4">
               <Loader2 className="h-12 w-12 text-primary animate-spin" />
             </div>
@@ -72,10 +77,15 @@ export default function EmailVerificationPage() {
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <CheckCircle className="h-12 w-12 text-green-500" />
+            <div className="flex justify-center mb-6">
+              <Link to="/">
+                <img src="/logo-with-name.png" alt="TidyFrame" className="h-12" />
+              </Link>
             </div>
-            <CardTitle className="text-2xl font-bold text-green-600">
+            <div className="flex justify-center mb-4">
+              <CheckCircle className="h-12 w-12 text-status-success" />
+            </div>
+            <CardTitle className="text-2xl font-bold text-status-success">
               Email verified successfully!
             </CardTitle>
             <CardDescription>
@@ -99,10 +109,15 @@ export default function EmailVerificationPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <XCircle className="h-12 w-12 text-red-500" />
+          <div className="flex justify-center mb-6">
+            <Link to="/">
+              <img src="/logo-with-name.png" alt="TidyFrame" className="h-12" />
+            </Link>
           </div>
-          <CardTitle className="text-2xl font-bold text-red-600">
+          <div className="flex justify-center mb-4">
+            <XCircle className="h-12 w-12 text-status-error" />
+          </div>
+          <CardTitle className="text-2xl font-bold text-status-error">
             Email verification failed
           </CardTitle>
           <CardDescription>

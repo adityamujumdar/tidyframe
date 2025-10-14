@@ -1,0 +1,108 @@
+# ================================
+# Root .dockerignore
+# Project-wide exclusions for Docker builds
+# ================================
+
+# ================================
+# Version Control & CI/CD
+# ================================
+.git/
+.gitignore
+.github/
+.travis.yml
+.circleci/
+Jenkinsfile
+.gitlab-ci.yml
+
+# ================================
+# Development & IDE
+# ================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ================================
+# Documentation & README
+# ================================
+*.md
+docs/
+documentation/
+
+# ================================
+# Environment Files
+# ================================
+.env*
+!.env.example
+*.env
+
+# ================================
+# Logs & Temporary Files
+# ================================
+logs/
+*.log
+tmp/
+temp/
+.tmp/
+
+# ================================
+# OS Files
+# ================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ================================
+# Build Artifacts
+# ================================
+node_modules/
+dist/
+build/
+coverage/
+
+# ================================
+# Docker Files (avoid recursion)
+# ================================
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# ================================
+# Test Data & Mock Files
+# ================================
+test-data/
+sample_data/
+mock/
+fixtures/
+__tests__/
+test_results/
+*.test.*
+*.spec.*
+
+# ================================
+# Backup Files
+# ================================
+*.bak
+*.backup
+*.old
+backup/
+backups/
+archived_files/
+dev-archive/
+
+# ================================
+# Security & Secrets
+# ================================
+*.pem
+*.key
+*.crt
+secrets/
+credentials.json
+
+# ================================
+# Performance & Profiling
+# ================================
+*.prof
+.prof/
+profile/

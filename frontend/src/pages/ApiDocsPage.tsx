@@ -1,15 +1,16 @@
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  Code2, 
-  Key, 
-  Upload, 
-  CheckCircle, 
-  Download, 
-  AlertCircle, 
-  Clock, 
+import {
+  Code2,
+  Key,
+  Upload,
+  CheckCircle,
+  Download,
+  AlertCircle,
+  Clock,
   FileText,
   Shield,
   Database,
@@ -55,11 +56,16 @@ export default function ApiDocsPage() {
       <div className="container mx-auto px-4 max-w-6xl">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">
+          <div className="flex justify-center mb-8">
+            <Link to="/">
+              <img src="/logo-with-name.png" alt="TidyFrame" className="h-32" />
+            </Link>
+          </div>
+          <h1 className="text-hero font-bold mb-6">
             tidyframe.com API Documentation
           </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Integrate AI-powered name parsing directly into your applications with our REST API. 
+          <p className="text-base text-muted-foreground max-w-3xl mx-auto">
+            Integrate AI-powered name parsing directly into your applications with our REST API.
             Process names, detect entities, and extract insights programmatically.
           </p>
         </div>
@@ -78,15 +84,15 @@ export default function ApiDocsPage() {
           <CardContent>
             <div className="grid md:grid-cols-3 gap-4 text-sm">
               <div className="flex items-center gap-3 p-3 bg-primary/5 border rounded-lg">
-                <div className="flex-shrink-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold">1</div>
+                <div className="flex-shrink-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-caption font-bold">1</div>
                 <span>Get your API key from the dashboard</span>
               </div>
               <div className="flex items-center gap-3 p-3 bg-primary/5 border rounded-lg">
-                <div className="flex-shrink-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold">2</div>
+                <div className="flex-shrink-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-caption font-bold">2</div>
                 <span>Upload your file via API</span>
               </div>
               <div className="flex items-center gap-3 p-3 bg-primary/5 border rounded-lg">
-                <div className="flex-shrink-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold">3</div>
+                <div className="flex-shrink-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-caption font-bold">3</div>
                 <span>Download processed results</span>
               </div>
             </div>
@@ -96,12 +102,12 @@ export default function ApiDocsPage() {
         {/* Main Content */}
         <Tabs defaultValue="authentication" className="space-y-6">
           <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="authentication">Authentication</TabsTrigger>
-            <TabsTrigger value="endpoints">Endpoints</TabsTrigger>
-            <TabsTrigger value="examples">Examples</TabsTrigger>
-            <TabsTrigger value="responses">Responses</TabsTrigger>
-            <TabsTrigger value="limits">Rate Limits</TabsTrigger>
-            <TabsTrigger value="formats">File Formats</TabsTrigger>
+            <TabsTrigger value="authentication" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold">Authentication</TabsTrigger>
+            <TabsTrigger value="endpoints" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold">Endpoints</TabsTrigger>
+            <TabsTrigger value="examples" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold">Examples</TabsTrigger>
+            <TabsTrigger value="responses" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold">Responses</TabsTrigger>
+            <TabsTrigger value="limits" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold">Rate Limits</TabsTrigger>
+            <TabsTrigger value="formats" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold">File Formats</TabsTrigger>
           </TabsList>
 
           {/* Authentication Tab */}
@@ -118,7 +124,7 @@ export default function ApiDocsPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold mb-3">Getting Your API Key</h3>
+                  <h3 className="text-xl font-semibold mb-3">Getting Your API Key</h3>
                   <div className="bg-muted/50 border p-4 rounded-lg mb-4">
                     <div className="flex items-start gap-3">
                       <Shield className="h-5 w-5 text-primary mt-1" />
@@ -138,7 +144,7 @@ export default function ApiDocsPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold mb-3">Using Your API Key</h3>
+                  <h3 className="text-xl font-semibold mb-3">Using Your API Key</h3>
                   <p className="text-muted-foreground mb-4">
                     Include your API key in the Authorization header of every request:
                   </p>
@@ -318,7 +324,7 @@ export default function ApiDocsPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">Step 1: Upload File</h3>
+                    <h3 className="text-xl font-semibold mb-3">Step 1: Upload File</h3>
                     <CodeBlock identifier="curl-upload">
 {`curl -X POST https://tidyframe.com/api/upload \\
   -H "Authorization: Bearer YOUR_API_KEY_HERE" \\
@@ -328,7 +334,7 @@ export default function ApiDocsPage() {
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">Step 2: Check Job Status</h3>
+                    <h3 className="text-xl font-semibold mb-3">Step 2: Check Job Status</h3>
                     <CodeBlock identifier="curl-status">
 {`curl -X GET https://tidyframe.com/api/jobs/job_123456789 \\
   -H "Authorization: Bearer YOUR_API_KEY_HERE"`}
@@ -336,7 +342,7 @@ export default function ApiDocsPage() {
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">Step 3: Download Results (when completed)</h3>
+                    <h3 className="text-xl font-semibold mb-3">Step 3: Download Results (when completed)</h3>
                     <CodeBlock identifier="curl-download">
 {`curl -X GET https://tidyframe.com/api/jobs/job_123456789/download \\
   -H "Authorization: Bearer YOUR_API_KEY_HERE" \\
@@ -345,7 +351,7 @@ export default function ApiDocsPage() {
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">JavaScript/Node.js Example</h3>
+                    <h3 className="text-xl font-semibold mb-3">JavaScript/Node.js Example</h3>
                     <CodeBlock identifier="js-example">
 {`const FormData = require('form-data');
 const fs = require('fs');
@@ -403,7 +409,7 @@ async function processFile() {
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">Python Example</h3>
+                    <h3 className="text-xl font-semibold mb-3">Python Example</h3>
                     <CodeBlock identifier="python-example">
 {`import requests
 import time
@@ -473,7 +479,7 @@ process_file()`}
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">Processed Data Fields</h3>
+                    <h3 className="text-xl font-semibold mb-3">Processed Data Fields</h3>
                     <p className="text-muted-foreground mb-4">
                       The downloaded Excel file contains the original data plus these additional columns:
                     </p>
@@ -508,7 +514,7 @@ process_file()`}
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">Example Processed Data</h3>
+                    <h3 className="text-xl font-semibold mb-3">Example Processed Data</h3>
                     <CodeBlock identifier="processed-data">
 {`Original Name: "John A. Smith"
 ├─ entity_type: "person"
@@ -543,7 +549,7 @@ Original Name: "Smith Family Trust"
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">Error Responses</h3>
+                    <h3 className="text-xl font-semibold mb-3">Error Responses</h3>
                     <div className="space-y-4">
                       <div>
                         <h4 className="font-medium mb-2">Authentication Error (401)</h4>
@@ -609,7 +615,7 @@ Original Name: "Smith Family Trust"
                 <CardContent className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="border rounded-lg p-4">
-                      <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                      <h3 className="text-xl font-semibold mb-3 flex items-center gap-2">
                         <Clock className="h-5 w-5 text-foreground" />
                         API Rate Limits
                       </h3>
@@ -630,7 +636,7 @@ Original Name: "Smith Family Trust"
                     </div>
 
                     <div className="border rounded-lg p-4">
-                      <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                      <h3 className="text-xl font-semibold mb-3 flex items-center gap-2">
                         <Database className="h-5 w-5 text-foreground" />
                         Monthly Quotas
                       </h3>
@@ -652,7 +658,7 @@ Original Name: "Smith Family Trust"
                   </div>
 
                   <div className="bg-muted/50 border p-6 rounded-lg">
-                    <h3 className="text-lg font-semibold mb-3">How Rate Limiting Works</h3>
+                    <h3 className="text-xl font-semibold mb-3">How Rate Limiting Works</h3>
                     <div className="space-y-3 text-sm">
                       <p>
                         <strong>Request Limits:</strong> Rate limits are enforced per API key using a sliding window. 
@@ -670,7 +676,7 @@ Original Name: "Smith Family Trust"
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">Best Practices</h3>
+                    <h3 className="text-xl font-semibold mb-3">Best Practices</h3>
                     <div className="grid gap-4">
                       <div className="flex gap-3 p-4 bg-primary/5 border rounded-lg">
                         <CheckCircle className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
@@ -721,7 +727,7 @@ Original Name: "Smith Family Trust"
                 <CardContent className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-4">
-                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <h3 className="text-xl font-semibold flex items-center gap-2">
                         <FileText className="h-5 w-5 text-foreground" />
                         Supported Formats
                       </h3>
@@ -751,7 +757,7 @@ Original Name: "Smith Family Trust"
                     </div>
 
                     <div className="space-y-4">
-                      <h3 className="text-lg font-semibold">File Requirements</h3>
+                      <h3 className="text-xl font-semibold">File Requirements</h3>
                       <div className="space-y-3 text-sm">
                         <div className="flex items-start gap-2">
                           <CheckCircle className="h-4 w-4 text-foreground mt-0.5 flex-shrink-0" />
@@ -774,7 +780,7 @@ Original Name: "Smith Family Trust"
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">Column Identification</h3>
+                    <h3 className="text-xl font-semibold mb-3">Column Identification</h3>
                     <p className="text-muted-foreground mb-4">
                       tidyframe.com automatically detects name columns, but you can specify the column name for better accuracy:
                     </p>
@@ -801,7 +807,7 @@ Original Name: "Smith Family Trust"
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">Sample File Formats</h3>
+                    <h3 className="text-xl font-semibold mb-3">Sample File Formats</h3>
                     <div className="space-y-4">
                       <div>
                         <h4 className="font-medium mb-2">CSV Format Example</h4>
@@ -850,7 +856,7 @@ Dr. Sarah Johnson`}
         <div className="text-center mt-16 p-8 bg-gradient-to-r from-primary/10 to-blue-600/10 rounded-lg">
           <h3 className="text-2xl font-bold mb-4">Ready to Start Building?</h3>
           <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-            Get your API key from the dashboard and start integrating AI-powered name parsing 
+            Get your API key from the dashboard and start integrating AI-powered name parsing
             into your applications today.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

@@ -1,29 +1,31 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  AlertTriangle, 
-  CheckCircle, 
-  Activity,
+import {
+  AlertTriangle,
   Brain,
   Zap,
   BarChart3,
   ChevronDown,
   ChevronUp,
-  Info
+  Info,
+  Activity,
+  CheckCircle,
+  TrendingUp
 } from 'lucide-react';
 import { ParseResult, ProcessingJob } from '@/types/processing';
-import { 
-  calculateQualityMetrics, 
-  getQualityRecommendations, 
+import {
+  calculateQualityMetrics,
+  getQualityRecommendations,
   shouldShowQualityAlert,
-  QualityMetrics 
+  QualityMetrics
 } from '@/utils/warningHelpers';
+import { MetricCard } from '@/components/shared/MetricCard';
+import { ProgressBar } from '@/components/shared/ProgressBar';
+import { getQualityScoreColor, getQualityScoreIcon, getQualityScoreLabel, getQualityScoreBadgeVariant } from '@/utils/status';
+import { formatCompact } from '@/utils/format';
 
 // Helper function to extract quality metrics from job analytics data
 function getMetricsFromJob(job: ProcessingJob): QualityMetrics {
@@ -70,17 +72,7 @@ export default function QualityMetricsPanel({ results, job, className = '' }: Qu
     return null;
   }
 
-  const getQualityScoreColor = (score: number) => {
-    if (score >= 85) return 'text-green-600 dark:text-green-400';
-    if (score >= 70) return 'text-yellow-600 dark:text-yellow-400';
-    return 'text-red-600 dark:text-red-400';
-  };
-
-  const getQualityScoreIcon = (score: number) => {
-    if (score >= 85) return <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />;
-    if (score >= 70) return <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />;
-    return <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />;
-  };
+  const QualityIcon = getQualityScoreIcon(metrics.qualityScore);
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -120,7 +112,7 @@ export default function QualityMetricsPanel({ results, job, className = '' }: Qu
           {/* Quality Score */}
           <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
             <div className="flex items-center gap-3">
-              {getQualityScoreIcon(metrics.qualityScore)}
+              <QualityIcon className="h-5 w-5" />
               <div>
                 <p className="font-semibold">Overall Quality Score</p>
                 <p className="text-sm text-muted-foreground">Combined parsing quality rating</p>
@@ -130,79 +122,60 @@ export default function QualityMetricsPanel({ results, job, className = '' }: Qu
               <p className={`text-3xl font-bold ${getQualityScoreColor(metrics.qualityScore)}`}>
                 {metrics.qualityScore}%
               </p>
-              <Badge variant={metrics.qualityScore >= 85 ? 'default' : metrics.qualityScore >= 70 ? 'secondary' : 'destructive'}>
-                {metrics.qualityScore >= 85 ? 'Excellent' : metrics.qualityScore >= 70 ? 'Good' : 'Needs Review'}
+              <Badge variant={getQualityScoreBadgeVariant(metrics.qualityScore)}>
+                {getQualityScoreLabel(metrics.qualityScore)}
               </Badge>
             </div>
           </div>
 
           {/* Key Metrics Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Gemini API Usage */}
-            <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
-              <Brain className="h-6 w-6 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {metrics.geminiSuccessCount.toLocaleString()}
-              </p>
-              <p className="text-sm text-muted-foreground">AI Parsed</p>
-              <p className="text-xs text-blue-600 dark:text-blue-400">
-                {Math.round((metrics.geminiSuccessCount / metrics.totalRows) * 100)}%
-              </p>
-            </div>
-
-            {/* Fallback Usage */}
-            <div className="text-center p-4 bg-orange-50 dark:bg-orange-950/30 rounded-lg border border-orange-200 dark:border-orange-800">
-              <Zap className="h-6 w-6 text-orange-600 dark:text-orange-400 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                {metrics.fallbackCount.toLocaleString()}
-              </p>
-              <p className="text-sm text-muted-foreground">Fallback Used</p>
-              <p className="text-xs text-orange-600 dark:text-orange-400">
-                {Math.round(metrics.fallbackUsagePercentage * 100)}%
-              </p>
-            </div>
-
-            {/* High Quality Results */}
-            <div className="text-center p-4 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
-              <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {(metrics.totalRows - metrics.lowConfidenceCount).toLocaleString()}
-              </p>
-              <p className="text-sm text-muted-foreground">High Quality</p>
-              <p className="text-xs text-green-600 dark:text-green-400">
-                {Math.round(metrics.successRate * 100)}%
-              </p>
-            </div>
-
-            {/* Low Confidence Warnings */}
-            <div className="text-center p-4 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800">
-              <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                {metrics.lowConfidenceCount.toLocaleString()}
-              </p>
-              <p className="text-sm text-muted-foreground">Low Confidence</p>
-              <p className="text-xs text-red-600 dark:text-red-400">
-                {Math.round((metrics.lowConfidenceCount / metrics.totalRows) * 100)}%
-              </p>
-            </div>
+            <MetricCard
+              value={metrics.geminiSuccessCount}
+              label="AI Parsed"
+              subtitle={`${Math.round((metrics.geminiSuccessCount / metrics.totalRows) * 100)}%`}
+              variant="info"
+              icon={Brain}
+            />
+            <MetricCard
+              value={metrics.fallbackCount}
+              label="Fallback Used"
+              subtitle={`${Math.round(metrics.fallbackUsagePercentage * 100)}%`}
+              variant="warning"
+              icon={Zap}
+            />
+            <MetricCard
+              value={metrics.totalRows - metrics.lowConfidenceCount}
+              label="High Quality"
+              subtitle={`${Math.round(metrics.successRate * 100)}%`}
+              variant="success"
+              icon={CheckCircle}
+            />
+            <MetricCard
+              value={metrics.lowConfidenceCount}
+              label="Low Confidence"
+              subtitle={`${Math.round((metrics.lowConfidenceCount / metrics.totalRows) * 100)}%`}
+              variant="error"
+              icon={AlertTriangle}
+            />
           </div>
 
           {/* Average Confidence */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium flex items-center gap-2">
-                <Activity className="h-4 w-4" />
-                Average Confidence Score
-              </span>
-              <span className={`font-bold ${getQualityScoreColor(metrics.avgConfidence * 100)}`}>
-                {Math.round(metrics.avgConfidence * 100)}%
-              </span>
-            </div>
-            <Progress 
-              value={metrics.avgConfidence * 100} 
-              className="h-2"
-            />
-          </div>
+          <ProgressBar
+            value={metrics.avgConfidence * 100}
+            max={100}
+            showLabel
+            label={`Average Confidence: ${Math.round(metrics.avgConfidence * 100)}%`}
+            dangerZone={70}
+            size="sm"
+            variant={
+              metrics.avgConfidence * 100 >= 85
+                ? 'success'
+                : metrics.avgConfidence * 100 >= 70
+                ? 'primary'
+                : 'warning'
+            }
+          />
 
           {/* Expanded Details */}
           {isExpanded && (
@@ -216,13 +189,13 @@ export default function QualityMetricsPanel({ results, job, className = '' }: Qu
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div className="flex justify-between">
                     <span>Gemini API Success:</span>
-                    <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950/30">
+                    <Badge variant="outline" className="bg-status-info-bg border-status-info-border">
                       {Math.round((metrics.geminiSuccessCount / metrics.totalRows) * 100)}%
                     </Badge>
                   </div>
                   <div className="flex justify-between">
                     <span>Fallback Usage:</span>
-                    <Badge variant="outline" className="bg-orange-50 dark:bg-orange-950/30">
+                    <Badge variant="outline" className="bg-status-warning-bg border-status-warning-border">
                       {Math.round(metrics.fallbackUsagePercentage * 100)}%
                     </Badge>
                   </div>
@@ -230,11 +203,11 @@ export default function QualityMetricsPanel({ results, job, className = '' }: Qu
               </div>
 
               {/* Cost Analysis */}
-              <div className="p-3 bg-slate-50 dark:bg-slate-950/30 rounded-lg">
+              <div className="p-3 bg-muted/50 rounded-lg">
                 <h4 className="font-semibold text-sm mb-2">Cost Analysis</h4>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-caption text-muted-foreground">
                   Fallback parsing saved approximately{' '}
-                  <span className="font-medium text-green-600 dark:text-green-400">
+                  <span className="font-medium text-status-success">
                     ${(metrics.fallbackCount * 0.001).toFixed(3)}
                   </span>{' '}
                   in API costs ({metrics.fallbackCount} API calls avoided)
@@ -250,7 +223,7 @@ export default function QualityMetricsPanel({ results, job, className = '' }: Qu
                 <div className="space-y-2">
                   {recommendations.map((recommendation, index) => (
                     <div key={index} className="flex items-start gap-2 p-2 bg-muted/50 rounded text-sm">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
+                      <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
                       <p>{recommendation}</p>
                     </div>
                   ))}

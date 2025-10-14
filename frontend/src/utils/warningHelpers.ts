@@ -94,32 +94,35 @@ export function getParsingWarning(result: ParseResult): ParsingWarning | null {
 
 /**
  * Gets the appropriate color class for confidence scores
+ * Uses semantic status colors for consistent theming
  */
 export function getConfidenceColor(confidence: number): string {
-  if (confidence >= 0.9) return 'text-green-600 dark:text-green-400';
-  if (confidence >= 0.7) return 'text-yellow-600 dark:text-yellow-400';
-  if (confidence >= 0.5) return 'text-orange-600 dark:text-orange-400';
-  return 'text-red-600 dark:text-red-400';
+  if (confidence >= 0.9) return 'text-status-success';
+  if (confidence >= 0.7) return 'text-status-warning';
+  if (confidence >= 0.5) return 'text-status-warning';
+  return 'text-status-error';
 }
 
 /**
  * Gets the appropriate background color class for parsing method
+ * Uses semantic status colors for consistent theming
  */
 export function getMethodColor(method: ParsingMethod): string {
-  return method === 'gemini' 
-    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200'
-    : 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200';
+  return method === 'gemini'
+    ? 'bg-status-info-bg text-status-info border-status-info-border'
+    : 'bg-status-warning-bg text-status-warning border-status-warning-border';
 }
 
 /**
  * Gets the appropriate color class for warning level
+ * Uses semantic status colors for consistent theming
  */
 export function getWarningColor(level: WarningLevel): string {
   switch (level) {
-    case 'info': return 'text-blue-600 dark:text-blue-400';
-    case 'warning': return 'text-yellow-600 dark:text-yellow-400';
-    case 'error': return 'text-red-600 dark:text-red-400';
-    default: return 'text-gray-600 dark:text-gray-400';
+    case 'info': return 'text-status-info';
+    case 'warning': return 'text-status-warning';
+    case 'error': return 'text-status-error';
+    default: return 'text-muted-foreground';
   }
 }
 

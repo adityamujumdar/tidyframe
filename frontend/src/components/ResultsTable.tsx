@@ -14,27 +14,23 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { 
-  AlertTriangle, 
-  CheckCircle, 
-  Brain, 
-  Zap, 
-  User, 
-  Building, 
-  Shield, 
-  FileText, 
-  Users,
+import {
+  AlertTriangle,
+  Brain,
+  Zap,
   Info,
   AlertCircle
 } from 'lucide-react';
-import { 
-  getParsingMethod, 
-  getParsingWarning, 
-  getConfidenceColor, 
-  getMethodColor, 
-  getWarningColor, 
-  formatFallbackReason 
+import {
+  getParsingMethod,
+  getParsingWarning,
+  getConfidenceColor,
+  getMethodColor,
+  getWarningColor,
+  formatFallbackReason
 } from '@/utils/warningHelpers';
+import { getEntityIcon, getEntityBadgeVariant } from '@/utils/entities';
+import { EmptyState } from '@/components/shared/EmptyState';
 
 interface ResultsTableProps {
   results: ParseResult[];
@@ -50,42 +46,6 @@ export default function ResultsTable({ results, searchTerm = '', className = '' 
     result.lastName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getEntityIcon = (entityType: string) => {
-    switch (entityType?.toLowerCase()) {
-      case 'person':
-        return <User className="h-4 w-4" />;
-      case 'company':
-      case 'corporation':
-      case 'business':
-        return <Building className="h-4 w-4" />;
-      case 'trust':
-      case 'foundation':
-        return <Shield className="h-4 w-4" />;
-      case 'unknown':
-        return <FileText className="h-4 w-4" />;
-      default:
-        return <Users className="h-4 w-4" />;
-    }
-  };
-
-  const getEntityBadgeVariant = (entityType: string): "default" | "secondary" | "outline" | "destructive" => {
-    switch (entityType?.toLowerCase()) {
-      case 'person':
-        return 'default';
-      case 'company':
-      case 'corporation':
-      case 'business':
-        return 'secondary';
-      case 'trust':
-      case 'foundation':
-        return 'outline';
-      case 'unknown':
-        return 'destructive';
-      default:
-        return 'destructive';
-    }
-  };
-
   const getGenderDisplay = (gender: string | undefined, confidence?: number) => {
     if (!gender || gender === 'unknown') return '-';
     
@@ -95,7 +55,7 @@ export default function ResultsTable({ results, searchTerm = '', className = '' 
       <div className="flex items-center gap-2">
         <span>{displayGender}</span>
         {confidence && (
-          <span className={`text-xs ${getConfidenceColor(confidence)}`}>
+          <span className={`text-caption ${getConfidenceColor(confidence)}`}>
             {Math.round(confidence * 100)}%
           </span>
         )}
@@ -135,7 +95,7 @@ export default function ResultsTable({ results, searchTerm = '', className = '' 
                 }
               </p>
               {warning?.reason && (
-                <p className="text-xs mt-1 text-muted-foreground">
+                <p className="text-caption mt-1 text-muted-foreground">
                   {formatFallbackReason(warning.reason)}
                 </p>
               )}
@@ -167,12 +127,12 @@ export default function ResultsTable({ results, searchTerm = '', className = '' 
                 {warning.message}
               </p>
               {warning.reason && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-caption text-muted-foreground">
                   {formatFallbackReason(warning.reason)}
                 </p>
               )}
               {warning.confidence && (
-                <p className="text-xs mt-1">
+                <p className="text-caption mt-1">
                   Confidence: {Math.round(warning.confidence * 100)}%
                 </p>
               )}
@@ -215,9 +175,9 @@ export default function ResultsTable({ results, searchTerm = '', className = '' 
           </TableHeader>
           <TableBody>
             {displayResults.map((result, index) => (
-              <TableRow 
+              <TableRow
                 key={index}
-                className={getParsingMethod(result) === 'fallback' ? 'bg-orange-50/30 dark:bg-orange-950/10' : ''}
+                className={getParsingMethod(result) === 'fallback' ? 'bg-status-warning-bg/30' : ''}
               >
                 <TableCell className="font-medium max-w-xs">
                   <div className="truncate" title={result.originalText}>
@@ -227,11 +187,14 @@ export default function ResultsTable({ results, searchTerm = '', className = '' 
                 <TableCell>{result.firstName || '-'}</TableCell>
                 <TableCell>{result.lastName || '-'}</TableCell>
                 <TableCell>
-                  <Badge 
+                  <Badge
                     variant={getEntityBadgeVariant(result.entityType)}
                     className="flex items-center gap-1 w-fit"
                   >
-                    {getEntityIcon(result.entityType)}
+                    {(() => {
+                      const Icon = getEntityIcon(result.entityType);
+                      return <Icon className="h-4 w-4" />;
+                    })()}
                     {result.entityType}
                   </Badge>
                 </TableCell>
@@ -257,13 +220,12 @@ export default function ResultsTable({ results, searchTerm = '', className = '' 
         )}
         
         {filteredResults.length === 0 && (
-          <div className="p-8 text-center">
-            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No results found</h3>
-            <p className="text-muted-foreground">
-              {searchTerm ? 'No results match your search criteria' : 'No results available for this job'}
-            </p>
-          </div>
+          <EmptyState
+            icon={Info}
+            title="No results found"
+            description={searchTerm ? 'No results match your search criteria' : 'No results available for this job'}
+            size="md"
+          />
         )}
       </div>
     </div>

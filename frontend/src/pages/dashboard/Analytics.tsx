@@ -16,7 +16,7 @@ export default function Analytics() {
       <Card>
         <CardContent className="p-12 text-center">
           <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Analytics Dashboard Coming Soon</h3>
+          <h3 className="text-xl font-semibold mb-2">Analytics Dashboard Coming Soon</h3>
           <p className="text-muted-foreground mb-4">
             We're working on comprehensive analytics to help you understand your data processing patterns
           </p>

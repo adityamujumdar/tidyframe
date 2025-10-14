@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mail } from 'lucide-react';
 
@@ -7,10 +8,15 @@ export default function ContactPage() {
       <div className="container mx-auto px-4 max-w-3xl">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">
+          <div className="flex justify-center mb-8">
+            <Link to="/">
+              <img src="/logo-with-name.png" alt="TidyFrame" className="h-32" />
+            </Link>
+          </div>
+          <h1 className="text-hero font-bold mb-6">
             Contact Us
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-base text-muted-foreground max-w-2xl mx-auto">
             We're here to help with any questions about TidyFrame.
           </p>
         </div>
@@ -24,10 +30,10 @@ export default function ContactPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-6 pb-12">
-            <p className="text-lg text-muted-foreground leading-relaxed">
+            <p className="text-base text-muted-foreground leading-relaxed">
               For any questions, support, or inquiries, please send an email to{' '}
-              <a 
-                href="mailto:tidyframeai@gmail.com" 
+              <a
+                href="mailto:tidyframeai@gmail.com"
                 className="text-primary hover:underline font-medium"
               >
                 tidyframeai@gmail.com

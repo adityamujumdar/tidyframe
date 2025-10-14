@@ -45,8 +45,13 @@ export default function PasswordResetPage() {
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
+            <div className="flex justify-center mb-6">
+              <Link to="/">
+                <img src="/logo-with-name.png" alt="TidyFrame" className="h-12" />
+              </Link>
+            </div>
             <div className="flex justify-center mb-4">
-              <CheckCircle className="h-12 w-12 text-green-500" />
+              <CheckCircle className="h-12 w-12 text-status-success" />
             </div>
             <CardTitle className="text-2xl font-bold">Check your email</CardTitle>
             <CardDescription>
@@ -87,9 +92,9 @@ export default function PasswordResetPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-xl">
-              T
-            </div>
+            <Link to="/">
+              <img src="/logo-with-name.png" alt="TidyFrame" className="h-16" />
+            </Link>
           </div>
           <CardTitle className="text-2xl font-bold">Reset your password</CardTitle>
           <CardDescription>

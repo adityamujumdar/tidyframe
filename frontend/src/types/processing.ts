@@ -86,7 +86,25 @@ export interface ProcessingJob {
   error?: string;
 }
 
+// Backend API response format for individual parse results (snake_case)
+export interface ParseResultResponse {
+  original_name_text: string;
+  first_name?: string;
+  last_name?: string;
+  entity_type: 'person' | 'company' | 'trust' | 'unknown';
+  gender?: 'male' | 'female' | 'unknown';
+  gender_confidence?: number;
+  parsing_confidence: number;
+  parsing_method?: 'gemini' | 'fallback' | 'regex' | 'unknown';
+  has_warnings?: boolean;
+  warnings?: string;
+  gemini_used?: boolean;
+  fallback_reason?: string;
+}
+
+// Frontend format for ParseResult (camelCase)
 export interface ParseResult {
+  id?: string;
   firstName?: string;
   lastName?: string;
   middleInitial?: string;
@@ -95,11 +113,22 @@ export interface ParseResult {
   genderConfidence?: number;
   parsingConfidence: number;
   originalText: string;
+  hasWarnings?: boolean;
   warnings: string[];
   // Optional: Parsing method indicators for fallback detection
-  parsingMethod?: 'gemini' | 'fallback' | 'regex';
-  fallbackReason?: string;
+  parsingMethod?: 'gemini' | 'fallback' | 'regex' | 'unknown';
+  fallbackReason?: string | null;
+  geminiUsed?: boolean;
   apiCallSuccess?: boolean;
+}
+
+// Job results API response
+export interface JobResultsResponse {
+  job_id: string;
+  filename: string;
+  total_rows: number;
+  returned_rows: number;
+  results: ParseResultResponse[];
 }
 
 export interface FileUploadResponse {
@@ -124,4 +153,13 @@ export interface UsageStats {
   remainingParses: number;
   usagePercentage: number;
   daysUntilReset: number;
+}
+
+// Backend API response format (snake_case)
+export interface UsageStatsResponse {
+  parses_this_month: number;
+  monthly_limit: number;
+  remaining_parses: number;
+  usage_percentage: number;
+  days_until_reset: number;
 }

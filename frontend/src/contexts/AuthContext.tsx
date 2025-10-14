@@ -1,20 +1,20 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authService } from '@/services/authService';
 import { billingService } from '@/services/billingService';
-import { User } from '@/types/auth';
+import { User, LoginResponse } from '@/types/auth';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   hasActiveSubscription: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, fullName?: string, consent?: any) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
+  register: (email: string, password: string, fullName?: string, consent?: any) => Promise<LoginResponse>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   verifyEmail: (token: string) => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
   checkSubscriptionStatus: () => Promise<boolean>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -57,13 +57,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (token) {
           const userData = await authService.getCurrentUser();
           setUser(userData);
-          
+
           // Check subscription status after setting user
           if (userData.plan !== 'enterprise') {
             await checkSubscriptionStatus();
           } else {
             setHasActiveSubscription(true);
           }
+
+          // Clean up stale registration flags after successful auth
+          localStorage.removeItem('pending_user');
+          localStorage.removeItem('registration_complete');
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
@@ -98,23 +102,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const register = async (email: string, password: string, fullName?: string, consent?: any) => {
     const response = await authService.register(email, password, fullName, consent);
+
+    // CRITICAL: Check for checkout URL BEFORE setting user state
+    // Setting user causes RegisterPage to re-render and redirect to /pricing
+    if (response.checkout_url) {
+      // Store tokens but DON'T set user yet (prevents premature re-render)
+      localStorage.setItem('token', response.access_token);
+      localStorage.setItem('refreshToken', response.refresh_token);
+      localStorage.setItem('registration_complete', 'true');
+      localStorage.setItem('pending_user', JSON.stringify(response.user));
+
+      // Immediate redirect to Stripe - synchronous, no re-render
+      window.location.href = response.checkout_url;
+      return response; // Never reached but for TypeScript
+    }
+
+    // No checkout URL - normal registration flow
     localStorage.setItem('token', response.access_token);
     localStorage.setItem('refreshToken', response.refresh_token);
     setUser(response.user);
-    
-    // If checkout URL is provided, redirect to Stripe for payment
-    if (response.checkout_url) {
-      // Store a flag to show success message after redirect back
-      localStorage.setItem('registration_complete', 'true');
-      window.location.href = response.checkout_url;
-    }
-    
-    return response;
-  };
 
-  const loginWithGoogle = async () => {
-    // Redirect to Google OAuth endpoint
-    window.location.href = `/api/auth/google`;
+    return response;
   };
 
   const logout = async () => {
@@ -146,18 +154,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setUser(updatedUser);
   };
 
+  const refreshUser = async (): Promise<void> => {
+    try {
+      const userData = await authService.getCurrentUser();
+      setUser(userData);
+
+      // Also refresh subscription status
+      if (userData.plan !== 'enterprise') {
+        await checkSubscriptionStatus();
+      } else {
+        setHasActiveSubscription(true);
+      }
+
+      console.log('User refreshed successfully:', userData.email);
+    } catch (error) {
+      console.error('Failed to refresh user:', error);
+      throw error;
+    }
+  };
+
   const value = {
     user,
     loading,
     hasActiveSubscription,
     login,
     register,
-    loginWithGoogle,
     logout,
     resetPassword,
     verifyEmail,
     updateProfile,
     checkSubscriptionStatus,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -279,7 +279,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.total_users || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-caption text-muted-foreground">
               {stats?.active_users || 0} active
             </p>
           </CardContent>
@@ -292,7 +292,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.total_jobs || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-caption text-muted-foreground">
               {stats?.jobs_today || 0} today
             </p>
           </CardContent>
@@ -305,7 +305,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.total_parses || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-caption text-muted-foreground">
               {stats?.parses_today || 0} today
             </p>
           </CardContent>
@@ -318,7 +318,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.storage_used_gb?.toFixed(1) || 0} GB</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-caption text-muted-foreground">
               System storage
             </p>
           </CardContent>
@@ -402,7 +402,7 @@ export default function AdminDashboard() {
                         {user.monthlyLimit === 999999999 ? '∞' : user.monthlyLimit.toLocaleString()}
                       </div>
                       {user.customMonthlyLimit && (
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-caption text-muted-foreground">
                           Custom limit
                         </div>
                       )}
@@ -420,12 +420,12 @@ export default function AdminDashboard() {
                     </TableCell>
                     <TableCell>
                       {user.isActive ? (
-                        <div className="flex items-center text-green-600">
+                        <div className="flex items-center text-status-success">
                           <UserCheck className="h-4 w-4 mr-1" />
                           Active
                         </div>
                       ) : (
-                        <div className="flex items-center text-red-600">
+                        <div className="flex items-center text-status-error">
                           <UserX className="h-4 w-4 mr-1" />
                           Inactive
                         </div>

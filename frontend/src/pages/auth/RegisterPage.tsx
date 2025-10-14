@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { LoginResponse } from '@/types/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +12,9 @@ import { Loader2, Mail, Lock, Eye, EyeOff, User } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function RegisterPage() {
-  const { user, register, loginWithGoogle } = useAuth();
+  const { user, register } = useAuth();
+  const [searchParams] = useSearchParams();
+  const billingPeriod = (searchParams.get('billing') as 'monthly' | 'yearly') || 'monthly';
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -21,18 +24,15 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
-  // Legal compliance state
-  const [ageVerified, setAgeVerified] = useState(false);
+  // Legal compliance state - simplified (age, location, arbitration now in ToS Article 2.4)
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
-  const [arbitrationAcknowledged, setArbitrationAcknowledged] = useState(false);
-  const [locationConfirmed, setLocationConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Redirect if already authenticated
-  if (user) {
-    return <Navigate to="/pricing" replace />;
+  // Redirect if already authenticated (but not during registration loading)
+  if (user && !loading) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   const validateForm = () => {
@@ -51,8 +51,8 @@ export default function RegisterPage() {
       return false;
     }
     // Enhanced password validation
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters');
+    if (formData.password.length < 12) {
+      setError('Password must be at least 12 characters');
       return false;
     }
     const hasUpper = /[A-Z]/.test(formData.password);
@@ -69,20 +69,9 @@ export default function RegisterPage() {
       return false;
     }
     // Legal compliance validation - CRITICAL FOR LAWSUIT PROTECTION
-    if (!ageVerified) {
-      setError('You must be at least 18 years old to create an account');
-      return false;
-    }
-    if (!locationConfirmed) {
-      setError('This service is only available to users in the United States');
-      return false;
-    }
-    if (!arbitrationAcknowledged) {
-      setError('You must acknowledge the mandatory arbitration clause');
-      return false;
-    }
+    // Age, location, and arbitration are now attestations in Terms of Service Article 2.4
     if (!termsAccepted) {
-      setError('You must accept the Terms of Service');
+      setError('You must accept the Terms of Service (which includes attestations for age 18+, US location, and arbitration agreement)');
       return false;
     }
     if (!privacyAccepted) {
@@ -103,22 +92,23 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // Include consent data in registration (convert to snake_case for backend)
-      const response = await register(
-        formData.email, 
-        formData.password, 
+      // Include consent data and billing period in registration (attestations in ToS Article 2.4)
+      const response: LoginResponse = await register(
+        formData.email,
+        formData.password,
         formData.fullName,
         {
-          age_verified: ageVerified,
+          age_verified: true,              // Attested via ToS acceptance
           terms_accepted: termsAccepted,
           privacy_accepted: privacyAccepted,
-          arbitration_acknowledged: arbitrationAcknowledged,
-          location_confirmed: locationConfirmed,
+          arbitration_acknowledged: true,   // Attested via ToS acceptance
+          location_confirmed: true,         // Attested via ToS acceptance
           consent_timestamp: new Date().toISOString(),
-          user_agent: navigator.userAgent
+          user_agent: navigator.userAgent,
+          billing_period: billingPeriod     // Pass selected billing period for Stripe checkout
         }
       );
-      
+
       // Only show success toast if not redirecting to checkout
       if (!response?.checkout_url) {
         toast.success('Account created successfully! Please complete your subscription to access all features.');
@@ -142,22 +132,15 @@ export default function RegisterPage() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleGoogleRegister = async () => {
-    try {
-      await loginWithGoogle();
-    } catch {  // Error not used, so omit parameter
-      toast.error('Google registration failed. Please try again.');
-    }
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-xl">
-              T
-            </div>
+            <Link to="/">
+              <img src="/logo-with-name.png" alt="TidyFrame" className="h-28" />
+            </Link>
           </div>
           <CardTitle className="text-2xl font-bold">Create your account</CardTitle>
           <CardDescription>
@@ -226,8 +209,8 @@ export default function RegisterPage() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Must be at least 8 characters with mixed case, numbers, and symbols
+              <p className="text-caption text-muted-foreground">
+                Must be at least 12 characters with mixed case, numbers, and symbols
               </p>
             </div>
             
@@ -256,16 +239,10 @@ export default function RegisterPage() {
             
             {/* Legal Compliance Checkboxes - CRITICAL FOR LEGAL PROTECTION */}
             <ConsentCheckboxes
-              ageVerified={ageVerified}
-              onAgeVerifiedChange={setAgeVerified}
               termsAccepted={termsAccepted}
               onTermsAcceptedChange={setTermsAccepted}
               privacyAccepted={privacyAccepted}
               onPrivacyAcceptedChange={setPrivacyAccepted}
-              arbitrationAcknowledged={arbitrationAcknowledged}
-              onArbitrationAcknowledgedChange={setArbitrationAcknowledged}
-              locationConfirmed={locationConfirmed}
-              onLocationConfirmedChange={setLocationConfirmed}
             />
           </CardContent>
           
@@ -280,45 +257,7 @@ export default function RegisterPage() {
                 'Create account'
               )}
             </Button>
-            
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
-                </span>
-              </div>
-            </div>
-            
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={handleGoogleRegister}
-            >
-              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                <path
-                  fill="currentColor"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
-              </svg>
-              Continue with Google
-            </Button>
-            
+
             <p className="text-center text-sm text-muted-foreground">
               Already have an account?{' '}
               <Link to="/auth/login" className="text-primary hover:underline">

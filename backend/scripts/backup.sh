@@ -321,7 +321,7 @@ Backup Information:
 System Information:
   OS: $(uname -a)
   Docker Version: $(docker --version 2>/dev/null || echo "Not available")
-  Docker Compose Version: $(docker-compose --version 2>/dev/null || echo "Not available")
+  Docker Compose Version: $(docker compose --version 2>/dev/null || echo "Not available")
 
 TidyFrame Version:
   Git Commit: $(cd "$PROJECT_ROOT" && git rev-parse HEAD 2>/dev/null || echo "Not available")
@@ -335,7 +335,7 @@ File Sizes:
 $(find "$BACKUP_DIR" -type f -exec du -sh {} \; | sort -k1,1h | sed 's/^/  /')
 
 Docker Services Status:
-$(docker-compose -f "$PROJECT_ROOT/docker-compose.prod.yml" ps 2>/dev/null || echo "  Docker Compose not available")
+$(docker compose -f "$PROJECT_ROOT/docker-compose.prod.yml" ps 2>/dev/null || echo "  Docker Compose not available")
 
 Total Backup Size: $(get_file_size "$BACKUP_DIR")
 EOF

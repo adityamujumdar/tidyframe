@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import { SitePasswordProvider } from './contexts/SitePasswordContext';
 import { SitePasswordGate } from './components/auth/SitePasswordGate';
@@ -17,6 +18,10 @@ import RegisterPage from './pages/auth/RegisterPage';
 import PasswordResetPage from './pages/auth/PasswordResetPage';
 import EmailVerificationPage from './pages/auth/EmailVerificationPage';
 
+// Payment pages
+import PaymentSuccessPage from './pages/payment/PaymentSuccessPage';
+import PaymentCancelledPage from './pages/payment/PaymentCancelledPage';
+
 // Legal pages
 import TermsOfServicePage from './pages/legal/TermsOfServicePage';
 import PrivacyPolicyPage from './pages/legal/PrivacyPolicyPage';
@@ -32,14 +37,21 @@ import Profile from './pages/dashboard/Profile';
 import ApiKeys from './pages/dashboard/ApiKeys';
 import Billing from './pages/dashboard/Billing';
 
-// Admin pages
-import AdminLayout from './pages/admin/AdminLayout';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminDashboardTest from './pages/admin/AdminDashboardTest';
+// Admin pages - Lazy loaded for better performance
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminDashboardTest = lazy(() => import('./pages/admin/AdminDashboardTest'));
 
 // Layout components
 import PublicLayout from './components/layout/PublicLayout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+
+// Loading component for Suspense
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-pulse text-muted-foreground">Loading...</div>
+  </div>
+);
 
 function App() {
   return (
@@ -58,15 +70,25 @@ function App() {
               <Route path="docs" element={<ApiDocsPage />} />
             </Route>
 
-            {/* Auth routes */}
-            <Route path="/auth/login" element={<LoginPage />} />
-            <Route path="/auth/register" element={<RegisterPage />} />
-            <Route path="/auth/reset-password" element={<PasswordResetPage />} />
-            <Route path="/auth/verify-email" element={<EmailVerificationPage />} />
+            {/* Auth routes with navbar */}
+            <Route path="/auth" element={<PublicLayout />}>
+              <Route path="login" element={<LoginPage />} />
+              <Route path="register" element={<RegisterPage />} />
+              <Route path="reset-password" element={<PasswordResetPage />} />
+              <Route path="verify-email" element={<EmailVerificationPage />} />
+            </Route>
 
-            {/* Legal routes */}
-            <Route path="/legal/terms-of-service" element={<TermsOfServicePage />} />
-            <Route path="/legal/privacy-policy" element={<PrivacyPolicyPage />} />
+            {/* Payment routes without navbar (clean experience) */}
+            <Route path="/payment">
+              <Route path="success" element={<PaymentSuccessPage />} />
+              <Route path="cancelled" element={<PaymentCancelledPage />} />
+            </Route>
+
+            {/* Legal routes with navbar */}
+            <Route path="/legal" element={<PublicLayout />}>
+              <Route path="terms-of-service" element={<TermsOfServicePage />} />
+              <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
+            </Route>
 
             {/* Protected dashboard routes */}
             <Route
@@ -93,18 +115,48 @@ function App() {
               element={
                 <ErrorBoundary>
                   <ProtectedRoute>
-                    <AdminLayout />
+                    <Suspense fallback={<LoadingFallback />}>
+                      <AdminLayout />
+                    </Suspense>
                   </ProtectedRoute>
                 </ErrorBoundary>
               }
             >
-              <Route index element={<AdminDashboard />} />
-              <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="users" element={<AdminDashboard />} />
-              <Route path="stats" element={<AdminDashboard />} />
-              <Route path="jobs" element={<AdminDashboard />} />
-              <Route path="webhooks" element={<AdminDashboard />} />
-              <Route path="test" element={<AdminDashboardTest />} />
+              <Route index element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <AdminDashboard />
+                </Suspense>
+              } />
+              <Route path="dashboard" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <AdminDashboard />
+                </Suspense>
+              } />
+              <Route path="users" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <AdminDashboard />
+                </Suspense>
+              } />
+              <Route path="stats" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <AdminDashboard />
+                </Suspense>
+              } />
+              <Route path="jobs" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <AdminDashboard />
+                </Suspense>
+              } />
+              <Route path="webhooks" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <AdminDashboard />
+                </Suspense>
+              } />
+              <Route path="test" element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <AdminDashboardTest />
+                </Suspense>
+              } />
             </Route>
           </Routes>
           <Toaster position="top-right" richColors />

@@ -311,18 +311,52 @@ def create_application() -> FastAPI:
         from app.api.billing.router import stripe_webhook
         return await stripe_webhook(request, db)
 
-    @app.post("/api/stripe/meter/webhook")  
+    @app.post("/api/stripe/meter/webhook")
     async def stripe_meter_webhook_alias(request: Request, db: AsyncSession = Depends(get_db)):
         """Alias to match Stripe meter webhook URL"""
         from app.api.billing.router import stripe_meter_webhook
         return await stripe_meter_webhook(request, db)
-    
+
+    # Catch-all route for SPA - MUST come after API routes but before static mount
+    # This serves index.html for all frontend routes (React Router handles client-side routing)
+    from fastapi.responses import FileResponse
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        """
+        Catch-all route to serve index.html for React SPA routes.
+        This ensures frontend routes like /auth/register, /dashboard, /pricing work properly.
+        API routes take precedence since they're registered first.
+        """
+        # If path starts with 'api/', it should have matched an API route above
+        # If we're here, it means the API endpoint doesn't exist - return 404
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="API endpoint not found")
+
+        # For all other paths (frontend routes), serve the React SPA index.html
+        # Determine static directory (same logic as below)
+        static_dir = "/app/app/static"
+        if settings.ENVIRONMENT != "production":
+            frontend_dist = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "frontend", "dist")
+            if os.path.exists(frontend_dist):
+                static_dir = frontend_dist
+
+        index_path = os.path.join(static_dir, "index.html")
+
+        if os.path.exists(index_path):
+            return FileResponse(index_path)
+        else:
+            # If index.html doesn't exist, application hasn't been deployed
+            raise HTTPException(status_code=500, detail="Application not deployed - index.html not found")
+
     # Mount static files AFTER all middleware and routers
     # This ensures site password middleware protects static files
-    static_dir = "/app/static"
+    # Static files are at /app/app/static in Docker (Dockerfile copies to app/static within /app workdir)
+    static_dir = "/app/app/static"
     if settings.ENVIRONMENT == "production":
-        # In production, frontend files are in shared volume
-        static_dir = "/app/static"
+        # In production, frontend files are copied to backend/app/static by deploy.sh
+        # Docker image structure: /app/app/static (workdir is /app, files at app/static)
+        static_dir = "/app/app/static"
     else:
         # In development, use local frontend dist directory
         frontend_dist = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "frontend", "dist")

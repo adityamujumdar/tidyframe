@@ -86,11 +86,11 @@ export default function Profile() {
                     placeholder="Enter your email"
                   />
                   {user?.emailVerified ? (
-                    <Badge className="absolute right-2 top-2 h-6 text-xs">
+                    <Badge className="absolute right-2 top-2 h-6 text-caption">
                       Verified
                     </Badge>
                   ) : (
-                    <Badge variant="destructive" className="absolute right-2 top-2 h-6 text-xs">
+                    <Badge variant="destructive" className="absolute right-2 top-2 h-6 text-caption">
                       Unverified
                     </Badge>
                   )}

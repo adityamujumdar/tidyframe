@@ -108,7 +108,8 @@ async def register_user(
         company_name=user_data.company_name,
         plan=PlanType.FREE,
         email_verification_token=verification_token,
-        email_verification_sent_at=current_time
+        email_verification_sent_at=current_time,
+        email_verified=True  # Auto-verify for now (email verification disabled)
     )
     
     # Add legal compliance data if provided
@@ -172,14 +173,15 @@ async def register_user(
             user.stripe_customer_id = customer_id
             await db.commit()
         
-        # Create checkout session for standard monthly plan
-        price_id = settings.STRIPE_STANDARD_MONTHLY_PRICE_ID
+        # Create checkout session for standard plan (monthly or yearly based on user selection)
+        billing_period = getattr(user_data.consent, 'billing_period', 'monthly')
+        price_id = settings.STRIPE_STANDARD_YEARLY_PRICE_ID if billing_period == 'yearly' else settings.STRIPE_STANDARD_MONTHLY_PRICE_ID
         if price_id:
             checkout_url = await stripe_service.create_checkout_session(
                 customer_id=user.stripe_customer_id,
                 price_id=price_id,
-                success_url="https://app.tidyframe.com/billing/success?session_id={CHECKOUT_SESSION_ID}",
-                cancel_url="https://app.tidyframe.com/billing/cancelled",
+                success_url=f"{settings.FRONTEND_URL}/payment/success?session_id={{CHECKOUT_SESSION_ID}}",
+                cancel_url=f"{settings.FRONTEND_URL}/payment/cancelled",
                 metadata={
                     "user_id": str(user.id),
                     "plan": "standard"

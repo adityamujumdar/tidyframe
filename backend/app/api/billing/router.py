@@ -111,9 +111,9 @@ async def create_checkout_session(
     
     # Create checkout session
     try:
-        success_url = "https://app.tidyframe.com/billing/success?session_id={CHECKOUT_SESSION_ID}"
-        cancel_url = "https://app.tidyframe.com/billing/cancelled"
-        
+        success_url = f"{settings.FRONTEND_URL}/payment/success?session_id={{CHECKOUT_SESSION_ID}}"
+        cancel_url = f"{settings.FRONTEND_URL}/payment/cancelled"
+
         checkout_url = await stripe_service.create_checkout_session(
             customer_id=current_user.stripe_customer_id,
             price_id=price_id,
@@ -389,6 +389,8 @@ async def process_stripe_event(event, db: AsyncSession) -> dict:
     try:
         if event_type == "checkout.session.completed":
             return await handle_checkout_completed(data, db)
+        elif event_type == "checkout.session.expired":
+            return await handle_checkout_expired(data, db)
         elif event_type == "customer.subscription.created":
             return await handle_subscription_created(data, db)
         elif event_type == "customer.subscription.updated":
@@ -445,6 +447,43 @@ async def handle_checkout_completed(session_data: dict, db: AsyncSession) -> dic
     else:
         logger.error("checkout_completed_user_not_found", customer_id=customer_id)
     
+    return {"processed": True}
+
+async def handle_checkout_expired(session_data: dict, db: AsyncSession) -> dict:
+    """Handle checkout session expiration - reset user plan to FREE if payment was cancelled"""
+
+    customer_id = session_data.get("customer")
+    metadata = session_data.get("metadata", {})
+
+    if not customer_id:
+        logger.warning("checkout_expired_no_customer", session_id=session_data.get("id"))
+        return {"processed": False, "reason": "No customer ID in session"}
+
+    # Find user by Stripe customer ID
+    from sqlalchemy import select
+    result = await db.execute(
+        select(User).where(User.stripe_customer_id == customer_id)
+    )
+    user = result.scalar_one_or_none()
+
+    if user:
+        # If user still has FREE plan (webhook from completed never fired), keep it FREE
+        # If user somehow got upgraded before expiry, reset back to FREE
+        original_plan = str(user.plan)
+        user.plan = PlanType.FREE
+        user.stripe_subscription_id = None  # Clear any pending subscription
+
+        await db.commit()
+
+        logger.info("checkout_expired_processed",
+                   user_id=user.id,
+                   user_email=user.email,
+                   original_plan=original_plan,
+                   reset_to="FREE",
+                   session_id=session_data.get("id"))
+    else:
+        logger.warning("checkout_expired_user_not_found", customer_id=customer_id)
+
     return {"processed": True}
 
 async def handle_subscription_created(subscription_data: dict, db: AsyncSession) -> dict:

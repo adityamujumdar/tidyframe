@@ -88,12 +88,16 @@ services:
       # Application
       ENVIRONMENT: ${ENVIRONMENT:-production}
       SECRET_KEY: ${SECRET_KEY}
-      DEBUG: false
+      DEBUG: "false"
       
       # Site Password Protection
       ENABLE_SITE_PASSWORD: ${ENABLE_SITE_PASSWORD:-false}
       SITE_PASSWORD: ${SITE_PASSWORD}
-      
+
+      # Admin Configuration
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+
       # Token Settings
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
       REFRESH_TOKEN_EXPIRE_MINUTES: ${REFRESH_TOKEN_EXPIRE_MINUTES:-43200}
@@ -117,6 +121,7 @@ services:
       ANONYMOUS_DATA_RETENTION_HOURS: ${ANONYMOUS_DATA_RETENTION_HOURS:-1}
       STANDARD_DATA_RETENTION_HOURS: ${STANDARD_DATA_RETENTION_HOURS:-24}
       ENTERPRISE_DATA_RETENTION_HOURS: ${ENTERPRISE_DATA_RETENTION_HOURS:-720}
+      POST_PROCESSING_RETENTION_MINUTES: ${POST_PROCESSING_RETENTION_MINUTES:-10}
       
       # Plan Limits
       STANDARD_TIER_MONTHLY_LIMIT: ${STANDARD_TIER_MONTHLY_LIMIT:-100000}
@@ -130,7 +135,6 @@ services:
       - ./backend/uploads:/app/uploads
       - ./backend/results:/app/results
       - ./backend/logs:/app/logs
-      - frontend_dist:/app/static:ro
       - /tmp:/tmp
     
     depends_on:
@@ -178,6 +182,7 @@ services:
       ENVIRONMENT: ${ENVIRONMENT:-production}
       UPLOAD_DIR: /app/uploads
       RESULTS_DIR: /app/results
+      POST_PROCESSING_RETENTION_MINUTES: ${POST_PROCESSING_RETENTION_MINUTES:-10}
       # Memory optimization
       CELERY_WORKER_MAX_MEMORY_PER_CHILD: 400000  # 400MB in KB
     
@@ -224,7 +229,8 @@ services:
       CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/1
       CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/2
       ENVIRONMENT: ${ENVIRONMENT:-production}
-    
+      POST_PROCESSING_RETENTION_MINUTES: ${POST_PROCESSING_RETENTION_MINUTES:-10}
+
     volumes:
       - ./backend/logs:/app/logs
     
@@ -250,31 +256,12 @@ services:
           memory: 96M         # Reduced from 128M
           cpus: '0.1'
 
-  # Frontend Builder - builds and copies to volume
-  frontend-builder:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      target: builder
-    volumes:
-      - frontend_dist:/app/dist
-    command: sh -c "echo 'Frontend build complete' && ls -la /app/dist && du -sh /app/dist"
-    networks:
-      - tidyframe-network
-    deploy:
-      resources:
-        limits:
-          memory: 512M        # Added explicit limit
-          cpus: '0.5'
-        reservations:
-          memory: 256M
-          cpus: '0.25'
-
   # Nginx Reverse Proxy - Optimized for memory
   nginx:
     image: nginx:alpine
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
@@ -282,7 +269,6 @@ services:
       - ./certbot/www:/var/www/certbot:ro
     depends_on:
       - backend
-      - frontend-builder
     healthcheck:
       test: ["CMD", "nginx", "-t"]
       interval: 30s
@@ -319,7 +305,6 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  frontend_dist:
 
 networks:
   tidyframe-network:
@@ -327,15 +312,15 @@ networks:
 
 # Total Memory Allocation Summary:
 # postgres:      384M limit (192M reservation)
-# redis:         192M limit (96M reservation)  
-# backend:       768M limit (384M reservation)
+# redis:         192M limit (96M reservation)
+# backend:       768M limit (384M reservation) - includes static files
 # celery-worker: 512M limit (256M reservation)
 # celery-beat:   192M limit (96M reservation)
 # nginx:         96M limit (48M reservation)
 # certbot:       64M limit
-# frontend:      512M limit (256M reservation) - temporary
-# 
-# TOTAL LIMITS:  2.72GB (vs original 3.15GB)
-# TOTAL RESERVATIONS: 1.33GB (vs original 1.6GB)
-# 
-# Remaining for system: ~4.8GB (adequate buffer for 8GB droplet)
+#
+# TOTAL LIMITS:  2.21GB (optimized - no frontend-builder needed)
+# TOTAL RESERVATIONS: 1.07GB
+#
+# Remaining for system: ~5.3GB (excellent buffer for 8GB droplet)
+# Note: Frontend static files now bundled in backend Docker image

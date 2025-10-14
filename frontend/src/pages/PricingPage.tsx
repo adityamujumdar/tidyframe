@@ -5,13 +5,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { 
+import {
   Check,
   Star,
   Users,
   ArrowRight,
   Building2,
-  Loader2
+  Loader2,
+  Brain,
+  Zap,
+  Shield,
+  FileText,
+  Download
 } from 'lucide-react';
 
 export default function PricingPage() {
@@ -40,7 +45,7 @@ export default function PricingPage() {
         'Email support'
       ],
       additionalPricing: '$0.01 per name over 100,000 ($10 per 1,000)',
-      cta: 'Get Started',
+      cta: 'Subscribe Now',
       href: '/auth/register',
       popular: true
     },
@@ -82,16 +87,16 @@ export default function PricingPage() {
             credentials: 'include', // Include cookies for site password
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('access_token')}` // Use correct key
+              'Authorization': `Bearer ${localStorage.getItem('token')}` // Use correct token key
             },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
               plan: 'standard',
-              billing_period: billingPeriod 
+              billing_period: billingPeriod
             })
           });
-          
+
           const data = await response.json();
-          
+
           // Redirect to Stripe checkout
           if (data.checkout_url) {
             window.location.href = data.checkout_url;
@@ -111,8 +116,11 @@ export default function PricingPage() {
         window.location.href = href;
       }
     } else {
-      // User not logged in, redirect to registration
-      window.location.href = href;
+      // User not logged in, redirect to registration with billing period
+      const registerUrl = planName === 'Standard'
+        ? `/auth/register?plan=standard&billing=${billingPeriod}`
+        : href;
+      window.location.href = registerUrl;
     }
   };
 
@@ -157,75 +165,114 @@ export default function PricingPage() {
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">
+          <div className="flex justify-center mb-8">
+            <Link to="/">
+              <img src="/logo-with-name.png" alt="TidyFrame" className="h-32" />
+            </Link>
+          </div>
+          <h1 className="text-4xl lg:text-5xl font-bold mb-6">
             Simple, Transparent Pricing
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-            Choose the plan that fits your needs. Try it free with 5 anonymous parses - no signup required.
+          <p className="text-base text-muted-foreground max-w-2xl mx-auto mb-8">
+            Professional name parsing powered by AI. Choose the plan that fits your business needs.
           </p>
         </div>
 
-        {/* Billing Period Toggle */}
-        <div className="flex justify-center mb-8">
-          <div className="inline-flex items-center gap-4 p-1 bg-muted rounded-lg">
+        {/* Billing Period Toggle - Ultra Distinct */}
+        <div className="flex justify-center mb-12">
+          <div className="inline-flex items-center gap-3 p-2 bg-muted/50 rounded-xl border-2 border-muted shadow-sm">
             <button
               onClick={() => setBillingPeriod('monthly')}
-              className={`px-4 py-2 rounded-md font-medium transition-all ${
+              className={`px-8 py-4 rounded-lg font-bold text-base transition-all duration-300 ${
                 billingPeriod === 'monthly'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-primary text-primary-foreground shadow-lg scale-105 border-2 border-primary'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 scale-95'
               }`}
             >
               Monthly
             </button>
             <button
               onClick={() => setBillingPeriod('yearly')}
-              className={`px-4 py-2 rounded-md font-medium transition-all flex items-center gap-2 ${
+              className={`px-8 py-4 rounded-lg font-bold text-base transition-all duration-300 flex items-center gap-2 ${
                 billingPeriod === 'yearly'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-primary text-primary-foreground shadow-lg scale-105 border-2 border-primary'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 scale-95'
               }`}
             >
               Yearly
-              <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+              <Badge variant="default" className="bg-success text-success-foreground font-bold text-xs">
                 Save 20%
               </Badge>
             </button>
           </div>
         </div>
 
-        {/* Anonymous Trial Info */}
-        <div className="max-w-2xl mx-auto mb-8">
-          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200">
-            <CardContent className="p-6 text-center">
-              <h3 className="text-lg font-semibold mb-2">Try it Free - No Signup Required</h3>
-              <p className="text-muted-foreground">
-                Test our AI-powered name parsing with <strong>5 anonymous parses</strong> before committing to a plan. 
-                Perfect for evaluating our accuracy and features.
-              </p>
-            </CardContent>
-          </Card>
+
+        {/* Features Grid */}
+        <div className="mb-16 max-w-6xl mx-auto">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+            {[
+              { icon: Brain, title: '95%+ Accuracy', description: 'Enterprise-grade AI' },
+              { icon: Zap, title: 'Lightning Fast', description: '1000 names/min' },
+              { icon: Shield, title: 'Secure', description: '10-min auto-delete' },
+              { icon: FileText, title: 'Entity Detection', description: 'Trusts & businesses' },
+              { icon: Download, title: 'Easy Export', description: 'CSV & Excel' }
+            ].map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <Card key={index} className="text-center transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-primary/20">
+                  <CardContent className="p-4">
+                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-3">
+                      <Icon className="h-6 w-6 text-primary" />
+                    </div>
+                    <h4 className="font-bold text-sm mb-1">{feature.title}</h4>
+                    <p className="text-xs text-muted-foreground">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </div>
+
+        {/* Anonymous Trial Info */}
+        <Link to="/">
+          <div className="max-w-2xl mx-auto mb-12">
+            <Card className="bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/20 cursor-pointer hover:shadow-md transition-shadow">
+              <CardContent className="p-6 text-center">
+                <h3 className="text-xl font-semibold mb-2">Try it Free - No Signup Required</h3>
+                <p className="text-muted-foreground">
+                  Test our AI-powered name parsing with <strong>5 anonymous parses</strong> before committing to a plan.
+                  Perfect for evaluating our accuracy and features.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </Link>
 
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16">
           {plans.map((plan, index) => (
-            <Card key={index} className={`relative ${plan.popular ? 'border-primary shadow-xl' : 'border-muted'}`}>
+            <div key={index} className="flex flex-col">
+              {/* Badge ABOVE card with padding */}
               {plan.badge && (
-                <Badge 
-                  className="absolute -top-3 left-1/2 transform -translate-x-1/2"
-                  variant={plan.popular ? "default" : "secondary"}
-                >
-                  {plan.badge}
-                </Badge>
+                <div className="text-center mb-4">
+                  <Badge
+                    className="text-sm font-bold px-6 py-2"
+                    variant={plan.popular ? "default" : "secondary"}
+                  >
+                    {plan.badge}
+                  </Badge>
+                </div>
               )}
+
+              <Card className={`flex flex-col flex-1 transition-all duration-300 hover:shadow-2xl hover:scale-105 ${plan.popular ? 'border-primary border-2 shadow-xl' : 'border-muted hover:border-primary/50'}`}>
               
               <CardHeader className="text-center">
                 <div className="flex items-center justify-center mb-4">
                   {plan.name === 'Enterprise' ? (
-                    <Building2 className="h-8 w-8 text-purple-500" />
+                    <Building2 className="h-8 w-8 text-secondary" />
                   ) : (
-                    <Users className="h-8 w-8 text-blue-500" />
+                    <Users className="h-8 w-8 text-primary" />
                   )}
                 </div>
                 
@@ -233,20 +280,20 @@ export default function PricingPage() {
                 <CardDescription className="text-base mb-4">
                   {plan.description}
                 </CardDescription>
-                
+
                 <div className="mb-4">
-                  <div className="text-5xl font-bold text-primary">
+                  <div className="text-4xl lg:text-5xl font-bold text-primary">
                     {typeof plan.price === 'number' ? (
                       <>
                         ${plan.price}
-                        <span className="text-lg text-muted-foreground">{plan.priceLabel}</span>
+                        <span className="text-base text-muted-foreground">{plan.priceLabel}</span>
                       </>
                     ) : (
                       <span className="text-3xl">{plan.price}</span>
                     )}
                   </div>
                   {plan.savings && (
-                    <p className="text-sm text-green-600 dark:text-green-400 font-medium mt-1">
+                    <p className="text-sm text-success font-medium mt-2">
                       {plan.savings}
                     </p>
                   )}
@@ -256,25 +303,25 @@ export default function PricingPage() {
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-6">
-                <div>
-                  <h4 className="font-semibold mb-3 flex items-center">
-                    <Check className="h-4 w-4 text-green-500 mr-2" />
+              <CardContent className="flex flex-col flex-1 space-y-6">
+                <div className="flex-1">
+                  <h4 className="font-semibold mb-4 flex items-center">
+                    <Check className="h-4 w-4 text-success mr-2" />
                     {plan.name === 'Enterprise' ? 'Everything Custom' : 'Everything Included'}
                   </h4>
-                  <ul className="space-y-3">
+                  <ul className="space-y-4">
                     {plan.features.map((feature, featureIndex) => (
                       <li key={featureIndex} className="flex items-start">
-                        <Check className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                        <Check className="h-4 w-4 text-success mr-2 flex-shrink-0 mt-0.5" />
                         <span className="text-sm">{feature}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                <Button 
-                  className="w-full" 
-                  size="lg" 
+                <Button
+                  className="w-full mt-auto"
+                  size="lg"
                   variant={plan.popular ? "default" : "outline"}
                   onClick={() => handlePlanClick(plan.name, plan.href)}
                   disabled={isLoading}
@@ -293,37 +340,38 @@ export default function PricingPage() {
                 </Button>
               </CardContent>
             </Card>
+            </div>
           ))}
         </div>
 
         {/* Value Proposition */}
-        <Card className="mb-16 bg-gradient-to-r from-primary/10 to-blue-600/10">
+        <Card className="mb-16 bg-gradient-to-r from-primary/10 to-secondary/10">
           <CardContent className="p-8 text-center">
             <h3 className="text-2xl font-bold mb-4">Why Choose tidyframe.com?</h3>
             <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
               <div>
-                <div className="h-12 w-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mx-auto mb-3">
-                  <Star className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Star className="h-6 w-6 text-primary" />
                 </div>
-                <h4 className="font-semibold mb-2">Industry-Leading Accuracy</h4>
+                <h4 className="text-lg font-semibold mb-2">Industry-Leading Accuracy</h4>
                 <p className="text-sm text-muted-foreground">
                   AI-powered parsing with cutting-edge ML for exceptional results
                 </p>
               </div>
               <div>
-                <div className="h-12 w-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center mx-auto mb-3">
-                  <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
+                <div className="h-12 w-12 bg-success/10 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Check className="h-6 w-6 text-success" />
                 </div>
-                <h4 className="font-semibold mb-2">No Surprises</h4>
+                <h4 className="text-lg font-semibold mb-2">No Surprises</h4>
                 <p className="text-sm text-muted-foreground">
                   Transparent pricing with clear per-parse rates for overages
                 </p>
               </div>
               <div>
-                <div className="h-12 w-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center mx-auto mb-3">
-                  <Users className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                <div className="h-12 w-12 bg-secondary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Users className="h-6 w-6 text-secondary" />
                 </div>
-                <h4 className="font-semibold mb-2">Full Support</h4>
+                <h4 className="text-lg font-semibold mb-2">Full Support</h4>
                 <p className="text-sm text-muted-foreground">
                   Dedicated support to help you succeed
                 </p>
@@ -337,12 +385,12 @@ export default function PricingPage() {
           <h2 className="text-3xl font-bold text-center mb-12">
             Frequently Asked Questions
           </h2>
-          
+
           <div className="space-y-6">
             {faqs.map((faq, index) => (
               <Card key={index}>
                 <CardHeader>
-                  <CardTitle className="text-lg">{faq.question}</CardTitle>
+                  <CardTitle className="text-xl">{faq.question}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">{faq.answer}</p>
@@ -367,7 +415,7 @@ export default function PricingPage() {
             </Link>
             <Link to="/auth/register">
               <Button size="lg">
-                Start Subscription
+                Subscribe Now
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
