@@ -24,6 +24,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -33,6 +34,9 @@ export default defineConfig({
         },
       },
     },
+  },
+  esbuild: {
+    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
   },
   define: {
     'process.env.VITE_API_URL': JSON.stringify(process.env.VITE_BACKEND_URL || process.env.VITE_API_URL || 'http://backend:8000'),
