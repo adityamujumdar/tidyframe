@@ -325,6 +325,7 @@ def create_application() -> FastAPI:
     async def serve_spa(full_path: str):
         """
         Catch-all route to serve index.html for React SPA routes.
+        Excludes static files which are handled by the StaticFiles mount below.
         This ensures frontend routes like /auth/register, /dashboard, /pricing work properly.
         API routes take precedence since they're registered first.
         """
@@ -333,7 +334,27 @@ def create_application() -> FastAPI:
         if full_path.startswith("api/"):
             raise HTTPException(status_code=404, detail="API endpoint not found")
 
-        # For all other paths (frontend routes), serve the React SPA index.html
+        # Exclude paths that are static files (let StaticFiles mount handle them)
+        # Check for common static file extensions
+        static_extensions = {
+            '.js', '.css', '.map', '.json',
+            '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.webp',
+            '.woff', '.woff2', '.ttf', '.eot', '.otf',
+            '.pdf', '.txt', '.xml', '.html'
+        }
+
+        # Check if path has a file extension that matches static files
+        path_lower = full_path.lower()
+        if any(path_lower.endswith(ext) for ext in static_extensions):
+            # Don't handle this - let it fall through to StaticFiles mount
+            # Raise 404 to pass control to the mount
+            raise HTTPException(status_code=404)
+
+        # Also exclude the assets directory entirely
+        if full_path.startswith("assets/") or "/assets/" in full_path:
+            raise HTTPException(status_code=404)
+
+        # For all other paths (SPA routes), serve the React SPA index.html
         # Determine static directory (same logic as below)
         static_dir = "/app/app/static"
         if settings.ENVIRONMENT != "production":
