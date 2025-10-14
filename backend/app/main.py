@@ -322,10 +322,10 @@ def create_application() -> FastAPI:
     from fastapi.responses import FileResponse
 
     @app.get("/{full_path:path}")
-    async def serve_spa(full_path: str):
+    async def serve_spa(full_path: str, request: Request):
         """
         Catch-all route to serve index.html for React SPA routes.
-        Excludes static files which are handled by the StaticFiles mount below.
+        Excludes static files which are handled by directly serving them here.
         This ensures frontend routes like /auth/register, /dashboard, /pricing work properly.
         API routes take precedence since they're registered first.
         """
@@ -334,34 +334,34 @@ def create_application() -> FastAPI:
         if full_path.startswith("api/"):
             raise HTTPException(status_code=404, detail="API endpoint not found")
 
-        # Exclude paths that are static files (let StaticFiles mount handle them)
-        # Check for common static file extensions
-        static_extensions = {
-            '.js', '.css', '.map', '.json',
-            '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.webp',
-            '.woff', '.woff2', '.ttf', '.eot', '.otf',
-            '.pdf', '.txt', '.xml', '.html'
-        }
-
-        # Check if path has a file extension that matches static files
-        path_lower = full_path.lower()
-        if any(path_lower.endswith(ext) for ext in static_extensions):
-            # Don't handle this - let it fall through to StaticFiles mount
-            # Raise 404 to pass control to the mount
-            raise HTTPException(status_code=404)
-
-        # Also exclude the assets directory entirely
-        if full_path.startswith("assets/") or "/assets/" in full_path:
-            raise HTTPException(status_code=404)
-
-        # For all other paths (SPA routes), serve the React SPA index.html
-        # Determine static directory (same logic as below)
+        # Determine static directory (same logic as mount below)
         static_dir = "/app/app/static"
         if settings.ENVIRONMENT != "production":
             frontend_dist = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "frontend", "dist")
             if os.path.exists(frontend_dist):
                 static_dir = frontend_dist
 
+        # Check if this is a request for a static file
+        static_extensions = {
+            '.js', '.css', '.map', '.json',
+            '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.webp',
+            '.woff', '.woff2', '.ttf', '.eot', '.otf',
+            '.pdf', '.txt', '.xml'
+        }
+
+        path_lower = full_path.lower()
+        is_static_file = any(path_lower.endswith(ext) for ext in static_extensions) or full_path.startswith("assets/")
+
+        if is_static_file:
+            # Try to serve the static file directly
+            file_path = os.path.join(static_dir, full_path)
+            if os.path.isfile(file_path):
+                return FileResponse(file_path)
+            else:
+                # Static file not found
+                raise HTTPException(status_code=404, detail="File not found")
+
+        # For all other paths (SPA routes), serve the React SPA index.html
         index_path = os.path.join(static_dir, "index.html")
 
         if os.path.exists(index_path):
