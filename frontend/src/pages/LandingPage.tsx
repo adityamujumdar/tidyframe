@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { logger } from '@/utils/logger';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -56,13 +55,13 @@ export default function LandingPage() {
       <section className="py-12 px-4">
         <div className="container mx-auto">
           <div className="text-center mb-12">
-            <h1 className="text-[6.4rem] md:text-[8.5rem] leading-none font-black tracking-tight mb-6">
-              Clean Name Data in
-              <span className="text-primary"> Seconds</span>
+            <h1 className="text-[5.1rem] md:text-[6.8rem] leading-none font-black tracking-tight mb-6">
+              Name Parsing, Entity Detection.
+              <span className="text-primary"> Instantly.</span>
             </h1>
 
             <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-              AI-powered name parsing with 95%+ accuracy. Process thousands of names instantly.
+              AI that splits first/last names AND identifies gender + entity type (person/company/trust) with 95%+ accuracy.
             </p>
           </div>
 
@@ -100,14 +99,9 @@ export default function LandingPage() {
                 </div>
               </div>
               
-              <UniversalFileUpload 
-                showTitle={false} 
+              <UniversalFileUpload
+                showTitle={false}
                 compact={true}
-                onUploadSuccess={(jobId) => {
-                  // Handle successful upload for landing page
-                  logger.debug('Upload successful:', jobId);
-                  // Could show inline results or navigate to a public status page
-                }}
               />
             </div>
           </div>

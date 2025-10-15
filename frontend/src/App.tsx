@@ -133,6 +133,15 @@ function App() {
               } />
             </Route>
 
+            {/* Public status route for anonymous job tracking */}
+            <Route path="/status" element={<PublicLayout />}>
+              <Route index element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <ProcessingStatus />
+                </Suspense>
+              } />
+            </Route>
+
             {/* Protected dashboard routes */}
             <Route
               path="/dashboard"

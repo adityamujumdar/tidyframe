@@ -154,17 +154,16 @@ export default function UniversalFileUpload({
       );
 
       toast.success('File uploaded successfully! Processing started.');
-      
+
       // Call onUploadSuccess callback or navigate
       if (onUploadSuccess) {
         onUploadSuccess(response.job_id);
       } else if (user) {
-        // Navigate to dashboard for authenticated users
+        // Navigate authenticated users to dashboard
         navigate(`/dashboard/processing?jobId=${response.job_id}`);
       } else {
-        // For anonymous users, show a different flow or message
-        toast.info('Processing started! You can check the status or sign up for more features.');
-        // Could navigate to a public status page or show inline results
+        // Navigate anonymous users to public status page
+        navigate(`/status?jobId=${response.job_id}`);
       }
     } catch (err: unknown) {
       const error = err as Error & { response?: { data?: { message?: string }; status?: number } };
