@@ -109,22 +109,17 @@ async def create_checkout_session(
                 detail="Failed to create customer"
             )
     
-    # Create checkout session
+    # Create checkout session - uses centralized URL generation
     try:
-        success_url = f"{settings.FRONTEND_URL}/payment/success?session_id={{CHECKOUT_SESSION_ID}}"
-        cancel_url = f"{settings.FRONTEND_URL}/payment/cancelled"
-
         checkout_url = await stripe_service.create_checkout_session(
             customer_id=current_user.stripe_customer_id,
             price_id=price_id,
-            success_url=success_url,
-            cancel_url=cancel_url,
             metadata={
                 "user_id": str(current_user.id),
                 "plan": checkout_data.plan
             }
         )
-        
+
         return {"checkout_url": checkout_url}
         
     except Exception as e:

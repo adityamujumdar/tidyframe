@@ -56,16 +56,6 @@ export default function LandingPage() {
       <section className="py-12 px-4">
         <div className="container mx-auto">
           <div className="text-center mb-12">
-            <div className="flex justify-center mb-8">
-              <Link to="/">
-                <img src="/logo-with-name.png" alt="TidyFrame" className="h-72 md:h-86" />
-              </Link>
-            </div>
-
-            <Badge variant="secondary" className="mb-6">
-              Now Processing 1M+ Names Monthly
-            </Badge>
-
             <h1 className="text-[6.4rem] md:text-[8.5rem] leading-none font-black tracking-tight mb-6">
               Clean Name Data in
               <span className="text-primary"> Seconds</span>

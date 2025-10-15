@@ -8,11 +8,6 @@ export default function ContactPage() {
       <div className="container mx-auto px-4 max-w-3xl">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="flex justify-center mb-8">
-            <Link to="/">
-              <img src="/logo-with-name.png" alt="TidyFrame" className="h-32" />
-            </Link>
-          </div>
           <h1 className="text-hero font-bold mb-6">
             Contact Us
           </h1>

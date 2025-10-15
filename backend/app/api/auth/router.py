@@ -177,11 +177,10 @@ async def register_user(
         billing_period = getattr(user_data.consent, 'billing_period', 'monthly')
         price_id = settings.STRIPE_STANDARD_YEARLY_PRICE_ID if billing_period == 'yearly' else settings.STRIPE_STANDARD_MONTHLY_PRICE_ID
         if price_id:
+            # Use centralized URL generation from stripe_service (no need to pass URLs)
             checkout_url = await stripe_service.create_checkout_session(
                 customer_id=user.stripe_customer_id,
                 price_id=price_id,
-                success_url=f"{settings.FRONTEND_URL}/payment/success?session_id={{CHECKOUT_SESSION_ID}}",
-                cancel_url=f"{settings.FRONTEND_URL}/payment/cancelled",
                 metadata={
                     "user_id": str(user.id),
                     "plan": "standard"

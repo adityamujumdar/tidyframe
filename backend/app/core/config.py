@@ -269,7 +269,17 @@ class Settings(BaseSettings):
             # Warn about Stripe if not set, but don't block startup
             if not self.STRIPE_SECRET_KEY or self.STRIPE_SECRET_KEY.startswith("your-"):
                 print("⚠️  STRIPE_SECRET_KEY not configured - paid tier billing disabled")
-        
+
+            # CRITICAL: Validate FRONTEND_URL in production
+            if "localhost" in self.FRONTEND_URL.lower():
+                errors.append("FRONTEND_URL cannot use localhost in production - Stripe redirects will fail")
+
+            if not self.FRONTEND_URL.startswith("https://"):
+                errors.append("FRONTEND_URL must use HTTPS in production for security")
+
+            if "tidyframe.com" not in self.FRONTEND_URL:
+                print(f"⚠️  FRONTEND_URL is set to: {self.FRONTEND_URL} - verify this is correct")
+
         # Check site password configuration
         if self.ENABLE_SITE_PASSWORD:
             if not self.SITE_PASSWORD:

@@ -60,7 +60,43 @@ class StripeService:
         self.meter_webhook_secret = os.getenv('STRIPE_BILLING_METER_WEBHOOK_SECRET')
         
         logger.info(f"Stripe service initialized with product {self.product_id}")
-    
+
+    def get_checkout_urls(self) -> dict:
+        """
+        Centralized checkout URL generation - single source of truth
+
+        Returns dict with 'success' and 'cancel' URLs for Stripe checkout sessions.
+        Validates that localhost is not used in production.
+        """
+        from app.core.config import settings
+
+        base_url = settings.FRONTEND_URL
+
+        # CRITICAL: Warn if using localhost in production
+        if "localhost" in base_url.lower():
+            logger.warning(
+                "🚨 Using localhost in Stripe checkout URLs",
+                frontend_url=base_url,
+                environment=settings.ENVIRONMENT
+            )
+            if settings.ENVIRONMENT == "production":
+                logger.error("CRITICAL: localhost URLs will break Stripe redirects in production!")
+
+        success_url = f"{base_url}/payment/success?session_id={{CHECKOUT_SESSION_ID}}"
+        cancel_url = f"{base_url}/payment/cancelled"
+
+        logger.info(
+            "Generated checkout URLs",
+            success_url=success_url,
+            cancel_url=cancel_url,
+            environment=settings.ENVIRONMENT
+        )
+
+        return {
+            "success": success_url,
+            "cancel": cancel_url
+        }
+
     async def create_customer(self, email: str, name: str = None, 
                             metadata: Dict[str, str] = None) -> str:
         """Create a Stripe customer"""
@@ -186,7 +222,13 @@ class StripeService:
         """Create checkout session for new subscriptions"""
         try:
             price_id = price_id or self.price_monthly
-            
+
+            # Use centralized URL generation if not explicitly provided
+            if not success_url or not cancel_url:
+                urls = self.get_checkout_urls()
+                success_url = success_url or urls["success"]
+                cancel_url = cancel_url or urls["cancel"]
+
             session = self.stripe.checkout.Session.create(
                 payment_method_types=['card'],
                 line_items=[{
@@ -195,14 +237,14 @@ class StripeService:
                 }],
                 mode='subscription',
                 customer=customer_id,
-                success_url=success_url or 'https://tidyframe.com/success',
-                cancel_url=cancel_url or 'https://tidyframe.com/cancel',
+                success_url=success_url,
+                cancel_url=cancel_url,
                 metadata=metadata or {
                     'product': 'tidyframe_standard'
                 }
             )
-            
-            logger.info(f"Created checkout session {session.id}")
+
+            logger.info(f"Created checkout session {session.id} with URLs success={success_url}, cancel={cancel_url}")
             return session.url
             
         except stripe.error.StripeError as e:

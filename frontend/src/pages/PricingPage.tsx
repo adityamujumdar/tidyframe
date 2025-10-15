@@ -166,11 +166,6 @@ export default function PricingPage() {
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="flex justify-center mb-8">
-            <Link to="/">
-              <img src="/logo-with-name.png" alt="TidyFrame" className="h-58" />
-            </Link>
-          </div>
           <h1 className="text-4xl lg:text-5xl font-bold mb-6">
             Simple, Transparent Pricing
           </h1>
@@ -181,7 +176,7 @@ export default function PricingPage() {
 
         {/* Billing Period Toggle - Ultra Distinct */}
         <div className="flex justify-center mb-12">
-          <div className="inline-flex items-center gap-3 p-2 bg-muted/50 rounded-xl border-2 border-muted shadow-sm">
+          <div className="inline-flex items-center gap-3 p-2 bg-muted/50 rounded-xl border border-border/50 shadow-sm">
             <button
               onClick={() => setBillingPeriod('monthly')}
               className={`px-8 py-4 rounded-lg font-bold text-base transition-all duration-300 ${
@@ -211,7 +206,7 @@ export default function PricingPage() {
 
         {/* Features Grid */}
         <div className="mb-16 max-w-6xl mx-auto">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             {[
               { icon: Brain, title: '95%+ Accuracy', description: 'Enterprise-grade AI' },
               { icon: Zap, title: 'Lightning Fast', description: '1000 names/min' },
@@ -221,7 +216,7 @@ export default function PricingPage() {
             ].map((feature, index) => {
               const Icon = feature.icon;
               return (
-                <Card key={index} className="text-center transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-primary/20">
+                <Card key={index} className="text-center transition-all duration-300 hover:shadow-lg hover:scale-105 border-l-4 border-primary/40 bg-gradient-to-r from-primary/5 to-transparent">
                   <CardContent className="p-4">
                     <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-3">
                       <Icon className="h-6 w-6 text-primary" />
@@ -266,7 +261,7 @@ export default function PricingPage() {
                 </div>
               )}
 
-              <Card className={`flex flex-col flex-1 transition-all duration-300 hover:shadow-2xl hover:scale-105 ${plan.popular ? 'border-primary border-2 shadow-xl' : 'border-muted hover:border-primary/50'}`}>
+              <Card className={`flex flex-col flex-1 transition-all duration-300 hover:shadow-2xl hover:scale-105 ${plan.popular ? 'border-l-4 border-primary bg-gradient-to-r from-primary/5 to-transparent shadow-xl' : 'border-l-4 border-secondary/30 bg-gradient-to-r from-secondary/5 to-transparent hover:border-primary/50'}`}>
               
               <CardHeader className="text-center">
                 <div className="flex items-center justify-center mb-4">
@@ -387,9 +382,9 @@ export default function PricingPage() {
             Frequently Asked Questions
           </h2>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             {faqs.map((faq, index) => (
-              <Card key={index}>
+              <Card key={index} className="border-l-4 border-secondary/40 bg-gradient-to-r from-secondary/5 to-transparent hover:shadow-md transition-shadow">
                 <CardHeader>
                   <CardTitle className="text-xl">{faq.question}</CardTitle>
                 </CardHeader>

@@ -227,7 +227,7 @@
   color-scheme: dark;
 
   /* DARK MODE - TidyFrame Brand Colors */
-  --color-background: 0 0% 7%;                /* #121212 - Near black */
+  --color-background: 0 0% 12%;               /* #1f1f1f - Dark grey instead of pure black */
   --color-foreground: 0 0% 98%;               /* #fafafa - Near white */
 
   /* Primary Brand Color - Adjusted for dark mode (slightly brighter) */
@@ -259,13 +259,13 @@
   --color-secondary-foreground: 0 0% 0%;
 
   /* Neutral/Muted */
-  --color-muted: 0 0% 15%;                    /* #262626 - Dark gray */
-  --color-muted-foreground: 0 0% 60%;         /* #999999 - Light gray */
+  --color-muted: 0 0% 18%;                    /* #2e2e2e - Lighter dark gray for better visibility */
+  --color-muted-foreground: 0 0% 65%;         /* #a6a6a6 - Lighter gray for better contrast */
 
   /* Cards & Popovers (elevated surfaces) */
-  --color-card: 0 0% 14%;                     /* #242424 - 1.5:1 contrast with bg (was 10%) */
+  --color-card: 0 0% 16%;                     /* #292929 - Better contrast with new background */
   --color-card-foreground: 0 0% 98%;
-  --color-popover: 0 0% 14%;                  /* Match card elevation */
+  --color-popover: 0 0% 16%;                  /* Match card elevation */
   --color-popover-foreground: 0 0% 98%;
 
   /* Accent - Brand tinted */
@@ -319,8 +319,8 @@
   --color-status-processing-border: var(--color-secondary-100);
 
   /* Borders (dark mode) */
-  --color-border: 0 0% 22%;                   /* #383838 - Better visibility (was 20%) */
-  --color-input: 0 0% 22%;                    /* Match border */
+  --color-border: 0 0% 28%;                   /* #474747 - Lighter for better visibility */
+  --color-input: 0 0% 28%;                    /* Match border */
   --color-ring: 192 92% 76%;                  /* Secondary blue focus (bright) */
 
   /* Drop Zone */
