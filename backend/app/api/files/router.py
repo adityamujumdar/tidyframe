@@ -578,21 +578,90 @@ async def download_results(
     # Update download count
     job.download_count += 1
     await db.commit()
-    
+
     # Generate download filename - always CSV
     original_name_without_ext = os.path.splitext(job.original_filename)[0]
     download_filename = f"tidyframe_results_{original_name_without_ext}_{datetime.now().strftime('%Y%m%d')}.csv"
-    
-    logger.info("file_downloaded", 
-               job_id=job.id,
-               user_id=current_user.id if current_user else None,
-               download_count=job.download_count)
-    
-    return FileResponse(
-        job.result_file_path,
-        filename=download_filename,
-        media_type='text/csv'
-    )
+
+    # Two-tier download: authenticated users get full data, anonymous users get cleaned columns only
+    if current_user:
+        # Authenticated user: return full results file with all columns
+        logger.info("file_downloaded",
+                   job_id=job.id,
+                   user_id=current_user.id,
+                   download_type="full",
+                   download_count=job.download_count)
+
+        return FileResponse(
+            job.result_file_path,
+            filename=download_filename,
+            media_type='text/csv'
+        )
+    else:
+        # Anonymous user: return cleaned columns only (no original data)
+        import pandas as pd
+        import tempfile
+
+        try:
+            # Read full results file
+            df = pd.read_csv(job.result_file_path)
+
+            # Define cleaned columns (processed data only, no original input)
+            cleaned_columns = [
+                'first_name', 'last_name', 'entity_type', 'gender',
+                'gender_confidence', 'parsing_confidence', 'parsing_method'
+            ]
+
+            # Filter to only columns that exist in the file
+            available_cols = [col for col in cleaned_columns if col in df.columns]
+
+            if not available_cols:
+                # Fallback: if no cleaned columns found, return minimal data
+                available_cols = [col for col in df.columns if col in cleaned_columns]
+
+            df_cleaned = df[available_cols]
+
+            # Create temporary file for cleaned results
+            temp_fd, temp_path = tempfile.mkstemp(suffix='.csv', prefix=f'cleaned_{job_id}_')
+            os.close(temp_fd)  # Close the file descriptor, we'll write with pandas
+
+            # Write cleaned data to temp file
+            df_cleaned.to_csv(temp_path, index=False)
+
+            logger.info("file_downloaded",
+                       job_id=job.id,
+                       user_id=None,
+                       anonymous_ip=client_ip,
+                       download_type="cleaned",
+                       columns_included=len(available_cols),
+                       download_count=job.download_count)
+
+            # Return cleaned file and clean up temp file after response
+            response = FileResponse(
+                temp_path,
+                filename=download_filename,
+                media_type='text/csv',
+                background=None  # We'll handle cleanup manually
+            )
+
+            # Schedule temp file cleanup after response is sent
+            import atexit
+            atexit.register(lambda: os.path.exists(temp_path) and os.remove(temp_path))
+
+            return response
+
+        except Exception as e:
+            logger.error("anonymous_download_filter_failed",
+                        job_id=job.id,
+                        error=str(e))
+            # Fallback: return full file if filtering fails
+            logger.warning("anonymous_download_fallback_to_full",
+                          job_id=job.id)
+            return FileResponse(
+                job.result_file_path,
+                filename=download_filename,
+                media_type='text/csv'
+            )
 
 
 @router.delete("/jobs/{job_id}")
