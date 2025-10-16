@@ -229,17 +229,15 @@ class NameValidator:
             corrected_result['gender_confidence'] = max(0, min(1, gender_confidence))
             validation_warnings.append('Gender confidence was out of valid range')
         
-        # Validate gender logic and apply male default
+        # Validate gender logic - trust Gemini's determination
         gender = result.get('gender', '')
         if gender not in ['male', 'female', 'unknown']:
-            corrected_result['gender'] = 'male'  # Default to male for invalid values
+            # Only fix truly invalid values - default to male
+            corrected_result['gender'] = 'male'
             corrected_result['gender_confidence'] = 0.3
             validation_warnings.append('Invalid gender value, defaulted to male')
-        elif gender == 'unknown' and entity_type == 'person':
-            # Default unknown gender to male for person entities
-            corrected_result['gender'] = 'male'
-            corrected_result['gender_confidence'] = max(0.3, corrected_result.get('gender_confidence', 0.0))
-            validation_warnings.append('Gender unknown for person, defaulted to male')
+        # Trust Gemini's 'unknown' determination - don't override it
+        # Gemini already defaults to male for ambiguous names (see improved_gemini_prompt.py line 237)
         
         # Check for missing middle initial when it should be extracted
         if entity_type == 'person' and first_name:

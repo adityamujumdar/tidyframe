@@ -1,6 +1,0 @@
-entity_type,first_name,last_name,gender,gender_confidence,parsing_confidence,parsing_method,fallback_reason,gemini_used,has_warnings,low_confidence,warnings,original_name_text,name,processing_timestamp,source_name_columns,row_index
-person,Norman,Moore,male,0.8,0.93,gemini,,False,False,False,,,Moore Norman H,2025-09-10T22:59:57.402292+00:00,name,0
-person,Glenn,Brugman,male,0.8,0.93,gemini,,False,False,False,,,Brugman Glenn A,2025-09-10T22:59:57.402292+00:00,name,1
-trust,,,unknown,0.0,0.98,gemini,,False,False,False,,,Baker Family Trust,2025-09-10T22:59:57.402292+00:00,name,2
-company,,,unknown,0.0,0.98,gemini,,False,False,False,,,ABC Farms LLC,2025-09-10T22:59:57.402292+00:00,name,3
-person,John,Smith,male,0.8,0.88,gemini,,False,False,False,,,Smith John & Mary,2025-09-10T22:59:57.402292+00:00,name,4

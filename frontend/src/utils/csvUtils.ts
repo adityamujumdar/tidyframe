@@ -81,24 +81,21 @@ export const validateCSVHeaders = (csvText: string): { isValid: boolean; message
     const headers = firstLine.split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''));
     
     // Check for required columns in priority order
-    const hasNamesColumn = headers.includes('names');
-    const hasAddresseeColumn = headers.includes('addressee');
-    const hasProcessAddresseeColumn = headers.includes('process addressee');
-    
+    const hasNameColumn = headers.includes('name');
+    const hasParseStringColumn = headers.includes('parse_string');
+
     // Determine which column will be used (first match in priority order)
     let selectedColumn: string | undefined;
-    if (hasNamesColumn) {
-      selectedColumn = 'names';
-    } else if (hasAddresseeColumn) {
-      selectedColumn = 'addressee';
-    } else if (hasProcessAddresseeColumn) {
-      selectedColumn = 'process addressee';
+    if (hasNameColumn) {
+      selectedColumn = 'name';
+    } else if (hasParseStringColumn) {
+      selectedColumn = 'parse_string';
     }
-    
+
     if (!selectedColumn) {
       return {
         isValid: false,
-        message: 'Missing required column: Your file must contain a column named "names", "addressee", or "process addressee".',
+        message: 'Missing required column: Your file must contain a column named "name" or "parse_string".',
         detectedHeaders: headers
       };
     }
@@ -116,5 +113,5 @@ export const validateCSVHeaders = (csvText: string): { isValid: boolean; message
   }
 };
 
-export const REQUIRED_COLUMNS = ['name', 'addressee'] as const;
+export const REQUIRED_COLUMNS = ['name', 'parse_string'] as const;
 export const OPTIONAL_COLUMNS = ['email', 'phone', 'address'] as const;

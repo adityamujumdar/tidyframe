@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import {
@@ -128,7 +129,7 @@ export default function PricingPage() {
   const faqs = [
     {
       question: 'What file formats do you support?',
-      answer: 'We support CSV, Excel (.xlsx, .xls), and plain text files. Files must have a column named "names", "addressee", "process addressee", or "area".'
+      answer: 'We support CSV, Excel (.xlsx, .xls), and plain text files. Files must have a column named "name" or "parse_string".'
     },
     {
       question: 'How accurate is the name parsing?',
@@ -176,23 +177,23 @@ export default function PricingPage() {
 
         {/* Billing Period Toggle - Ultra Distinct */}
         <div className="flex justify-center mb-12">
-          <div className="inline-flex items-center gap-3 p-2 bg-muted/50 rounded-xl border border-border/50 shadow-sm">
+          <div className="inline-flex items-center gap-2 sm:gap-3 p-2 bg-muted/50 rounded-xl">
             <button
               onClick={() => setBillingPeriod('monthly')}
-              className={`px-8 py-4 rounded-lg font-bold text-base transition-all duration-300 ${
+              className={`px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-bold text-sm sm:text-base min-h-touch transition-all duration-300 ${
                 billingPeriod === 'monthly'
                   ? 'bg-primary text-primary-foreground shadow-lg scale-105 border-2 border-primary'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 scale-95'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-foreground/10 dark:hover:bg-foreground/5 hover:scale-100 scale-95'
               }`}
             >
               Monthly
             </button>
             <button
               onClick={() => setBillingPeriod('yearly')}
-              className={`px-8 py-4 rounded-lg font-bold text-base transition-all duration-300 flex items-center gap-2 ${
+              className={`px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-bold text-sm sm:text-base min-h-touch transition-all duration-300 flex items-center gap-2 ${
                 billingPeriod === 'yearly'
                   ? 'bg-primary text-primary-foreground shadow-lg scale-105 border-2 border-primary'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 scale-95'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-foreground/10 dark:hover:bg-foreground/5 hover:scale-100 scale-95'
               }`}
             >
               Yearly
@@ -205,8 +206,8 @@ export default function PricingPage() {
 
 
         {/* Features Grid */}
-        <div className="mb-16 max-w-6xl mx-auto">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <div className="mb-8 max-w-6xl mx-auto">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {[
               { icon: Brain, title: '95%+ Accuracy', description: 'Enterprise-grade AI' },
               { icon: Zap, title: 'Lightning Fast', description: '1000 names/min' },
@@ -232,7 +233,7 @@ export default function PricingPage() {
 
         {/* Anonymous Trial Info */}
         <Link to="/">
-          <div className="max-w-2xl mx-auto mb-12">
+          <div className="max-w-2xl mx-auto mb-8">
             <Card className="bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/20 cursor-pointer hover:shadow-md transition-shadow">
               <CardContent className="p-6 text-center">
                 <h3 className="text-xl font-semibold mb-2">Try it Free - No Signup Required</h3>
@@ -246,7 +247,7 @@ export default function PricingPage() {
         </Link>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16">
+        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-12">
           {plans.map((plan, index) => (
             <div key={index} className="flex flex-col">
               {/* Badge ABOVE card with padding */}
@@ -341,7 +342,7 @@ export default function PricingPage() {
         </div>
 
         {/* Value Proposition */}
-        <Card className="mb-16 bg-gradient-to-r from-primary/10 to-secondary/10">
+        <Card className="mb-12 bg-gradient-to-r from-primary/10 to-secondary/10">
           <CardContent className="p-8 text-center">
             <h3 className="text-2xl font-bold mb-4">Why Choose tidyframe.com?</h3>
             <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
@@ -382,18 +383,22 @@ export default function PricingPage() {
             Frequently Asked Questions
           </h2>
 
-          <div className="space-y-4">
+          <Accordion type="single" collapsible defaultValue="item-0" className="space-y-4">
             {faqs.map((faq, index) => (
-              <Card key={index} className="border-l-4 border-secondary/40 bg-gradient-to-r from-secondary/5 to-transparent hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <CardTitle className="text-xl">{faq.question}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{faq.answer}</p>
-                </CardContent>
-              </Card>
+              <AccordionItem
+                key={index}
+                value={`item-${index}`}
+                className="border-l-4 border-secondary/40 bg-gradient-to-r from-secondary/5 to-transparent hover:shadow-md transition-shadow rounded-lg px-6"
+              >
+                <AccordionTrigger className="text-xl font-semibold hover:no-underline">
+                  {faq.question}
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  {faq.answer}
+                </AccordionContent>
+              </AccordionItem>
             ))}
-          </div>
+          </Accordion>
         </div>
 
         {/* Final CTA */}

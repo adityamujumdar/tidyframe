@@ -64,13 +64,9 @@ class FileService:
         
         name_columns = []
         
-        # Common name column patterns (case insensitive)
-        name_patterns = [
-            'name', 'addressee', 'recipient', 'customer', 'client', 'person',
-            'first_name', 'last_name', 'full_name', 'firstname', 'lastname',
-            'fname', 'lname', 'given_name', 'family_name', 'surname',
-            'contact', 'owner', 'buyer', 'seller', 'payee', 'payor'
-        ]
+        # Required name column patterns (case insensitive)
+        # ONLY accept 'name' and 'parse_string' - no other patterns
+        name_patterns = ['name', 'parse_string']
         
         for column in df.columns:
             column_lower = column.lower().strip()

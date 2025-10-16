@@ -111,3 +111,41 @@ docker-compose.override.yml
 *.pfx
 secrets/
 .secrets
+
+# Deployment artifacts
+*.tar.gz
+backend-deploy*.tar.gz
+
+# Cookies and authentication
+*_cookies.txt
+*cookies.txt
+
+# Zone Identifier and Windows metadata
+*.Zone.Identifier
+*.mshield
+
+# Test CSV files in root
+test_*.csv
+deployment_test_results.csv
+
+# Logo and image files in root (keep in assets)
+/*.png
+/*.jpg
+/*.jpeg
+/*.pdf
+
+# Nginx disabled configs
+nginx/conf.d/*.disabled*
+nginx/conf.d/temp-*.conf
+
+# Empty SSL directory
+nginx/ssl/
+
+# Documentation (in docs/ folder)
+/DEPLOYMENT*.md
+/FIXES*.md
+/E2E_TEST*.md
+/test-*.md
+
+# Scripts load test
+scripts/load_test.py

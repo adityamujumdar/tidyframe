@@ -253,10 +253,10 @@ def cleanup_anonymous_usage() -> Dict[str, int]:
         with SessionLocal() as db:
             # Delete anonymous usage records older than 30 days
             cutoff_date = datetime.now(timezone.utc) - timedelta(days=30)
-            
+
             old_records = db.execute(
                 select(AnonymousUsage).where(
-                    AnonymousUsage.created_at < cutoff_date
+                    AnonymousUsage.first_used < cutoff_date
                 )
             ).scalars().all()
             

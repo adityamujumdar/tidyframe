@@ -157,13 +157,13 @@ export default function UniversalFileUpload({
 
       // Call onUploadSuccess callback or navigate
       if (onUploadSuccess) {
-        onUploadSuccess(response.job_id);
+        onUploadSuccess(response.jobId);
       } else if (user) {
         // Navigate authenticated users to dashboard
-        navigate(`/dashboard/processing?jobId=${response.job_id}`);
+        navigate(`/dashboard/processing?jobId=${response.jobId}`);
       } else {
         // Navigate anonymous users to public status page
-        navigate(`/status?jobId=${response.job_id}`);
+        navigate(`/status?jobId=${response.jobId}`);
       }
     } catch (err: unknown) {
       const error = err as Error & { response?: { data?: { message?: string }; status?: number } };
@@ -208,7 +208,7 @@ export default function UniversalFileUpload({
         if (!validation.isValid) {
           const detectedHeaders = validation.detectedHeaders?.join(', ') || 'none detected';
           resolve(
-            `${validation.message}\n\nDetected headers: ${detectedHeaders}\nRequired: One of: 'names', 'addressee', 'process addressee', or 'area'`
+            `${validation.message}\n\nDetected headers: ${detectedHeaders}\nRequired: One of: 'name' or 'parse_string'`
           );
         } else {
           resolve(null); // No error
@@ -385,8 +385,8 @@ export default function UniversalFileUpload({
           <div
             {...getRootProps()}
             className={`
-              border-2 border-dashed rounded-xl text-center cursor-pointer transition-all duration-normal
-              ${compact ? 'p-8' : 'p-12'}
+              border-2 border-dashed rounded-xl text-center cursor-pointer transition-all duration-normal min-h-touch
+              ${compact ? 'p-6 sm:p-8' : 'p-8 sm:p-10 md:p-12'}
               ${isDragActive
                 ? 'border-primary bg-primary/20 scale-[1.02] shadow-xl'
                 : 'border-primary/40 bg-primary/5 hover:border-primary hover:bg-primary/10 hover:shadow-md shadow-sm'
@@ -394,21 +394,21 @@ export default function UniversalFileUpload({
             `}
           >
             <input {...getInputProps()} />
-            <div className="flex flex-col items-center gap-6">
-              <div className={`p-4 rounded-full ${isDragActive ? 'bg-primary text-white' : 'bg-primary/20'} transition-all`}>
-                <Upload className={`${compact ? 'h-10 w-10' : 'h-14 w-14'} transition-all ${isDragActive ? 'text-white scale-110' : 'text-primary'}`} />
+            <div className="flex flex-col items-center gap-4 sm:gap-6">
+              <div className={`p-3 sm:p-4 rounded-full ${isDragActive ? 'bg-primary text-white' : 'bg-primary/20'} transition-all`}>
+                <Upload className={`${compact ? 'h-8 w-8 sm:h-10 sm:w-10' : 'h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14'} transition-all ${isDragActive ? 'text-white scale-110' : 'text-primary'}`} />
               </div>
               {isDragActive ? (
-                <p className={`${compact ? 'text-xl' : 'text-2xl'} font-bold text-primary`}>Drop the file here...</p>
+                <p className={`${compact ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'} font-bold text-primary`}>Drop the file here...</p>
               ) : (
                 <div>
-                  <p className={`${compact ? 'text-xl' : 'text-2xl'} font-bold text-primary mb-2`}>
+                  <p className={`${compact ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'} font-bold text-primary mb-2`}>
                     Drag and drop your file here
                   </p>
-                  <p className="text-base text-muted-foreground">
+                  <p className="text-sm sm:text-base text-muted-foreground">
                     or click to browse
                   </p>
-                  <p className="text-sm text-muted-foreground mt-3 font-medium">
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-2 sm:mt-3 font-medium">
                     Supports CSV, Excel, and TXT • Max {limits.maxFileSize / (1024 * 1024)}MB
                   </p>
                   {compact && !user && (
@@ -494,12 +494,12 @@ export default function UniversalFileUpload({
                         id="column-name"
                         value={columnName}
                         onChange={(e) => setColumnName(e.target.value)}
-                        placeholder="e.g., names, addressee, full_name..."
+                        placeholder="e.g., name, parse_string..."
                         className="mt-1"
                         disabled={uploading}
                       />
                       <p className="text-caption text-muted-foreground mt-1">
-                        Default detection looks for: 'names', 'addressee', 'process addressee', or 'area'
+                        Default detection looks for: 'name' or 'parse_string'
                       </p>
                     </CardContent>
                   </Card>

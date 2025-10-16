@@ -55,7 +55,7 @@ export default function LandingPage() {
       <section className="py-12 px-4">
         <div className="container mx-auto">
           <div className="text-center mb-12">
-            <h1 className="text-[5.1rem] md:text-[6.8rem] leading-none font-black tracking-tight mb-6">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl 2xl:text-[6.8rem] 3xl:text-[7.5rem] leading-none font-black tracking-tight mb-6">
               Name Parsing, Entity Detection.
               <span className="text-primary"> Instantly.</span>
             </h1>
@@ -86,13 +86,9 @@ export default function LandingPage() {
                         Your file must contain one of these column names:
                       </p>
                       <div className="flex flex-wrap gap-2">
-                        <code className="bg-primary/10 border border-primary/20 px-3 py-1.5 rounded font-mono text-sm font-semibold text-foreground">names</code>
+                        <code className="bg-primary/10 border border-primary/20 px-3 py-1.5 rounded font-mono text-sm font-semibold text-foreground">name</code>
                         <span className="text-muted-foreground">or</span>
-                        <code className="bg-primary/10 border border-primary/20 px-3 py-1.5 rounded font-mono text-sm font-semibold text-foreground">addressee</code>
-                        <span className="text-muted-foreground">or</span>
-                        <code className="bg-primary/10 border border-primary/20 px-3 py-1.5 rounded font-mono text-sm font-semibold text-foreground">process addressee</code>
-                        <span className="text-muted-foreground">or</span>
-                        <code className="bg-primary/10 border border-primary/20 px-3 py-1.5 rounded font-mono text-sm font-semibold text-foreground">area</code>
+                        <code className="bg-primary/10 border border-primary/20 px-3 py-1.5 rounded font-mono text-sm font-semibold text-foreground">parse_string</code>
                       </div>
                     </div>
                   </div>
@@ -128,19 +124,19 @@ export default function LandingPage() {
           </div>
 
           {/* Stats */}
-          <div className="bg-muted/50 p-12 rounded-2xl border-2 border-primary/10 shadow-lg">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-4xl mx-auto">
-              <div>
-                <div className="text-6xl md:text-7xl font-black text-primary mb-2">95%+</div>
-                <div className="text-base font-semibold text-foreground">Accuracy Rate</div>
+          <div className="bg-muted/50 p-6 sm:p-8 md:p-10 lg:p-12 rounded-2xl border-2 border-primary/10 shadow-lg">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-10 md:gap-12 max-w-4xl mx-auto">
+              <div className="text-center md:text-left">
+                <div className="text-5xl sm:text-6xl md:text-7xl font-black text-primary mb-2">95%+</div>
+                <div className="text-sm sm:text-base font-semibold text-foreground">Accuracy Rate</div>
               </div>
-              <div>
-                <div className="text-6xl md:text-7xl font-black text-primary mb-2">1M+</div>
-                <div className="text-base font-semibold text-foreground">Names Processed</div>
+              <div className="text-center md:text-left">
+                <div className="text-5xl sm:text-6xl md:text-7xl font-black text-primary mb-2">1M+</div>
+                <div className="text-sm sm:text-base font-semibold text-foreground">Names Processed</div>
               </div>
-              <div>
-                <div className="text-6xl md:text-7xl font-black text-primary mb-2">&lt;1min</div>
-                <div className="text-base font-semibold text-foreground">Per 1000 Names</div>
+              <div className="text-center md:text-left">
+                <div className="text-5xl sm:text-6xl md:text-7xl font-black text-primary mb-2">&lt;1min</div>
+                <div className="text-sm sm:text-base font-semibold text-foreground">Per 1000 Names</div>
               </div>
             </div>
           </div>
@@ -190,7 +186,7 @@ export default function LandingPage() {
             Start Processing Names Today
           </h2>
           <p className="text-lg mb-8 opacity-95 max-w-2xl mx-auto">
-            Join 1000+ businesses processing over 1M names monthly with TidyFrame
+            Join multiple businesses processing over 1M names monthly with TidyFrame
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">

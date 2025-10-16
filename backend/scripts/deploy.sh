@@ -765,6 +765,22 @@ main() {
 
     local start_time=$(date +%s)
 
+    # =============================================================================
+    # PRE-DEPLOYMENT VALIDATION (CRITICAL - Prevent deployment errors)
+    # =============================================================================
+    log_info "Running pre-deployment validation..."
+    if [ -f "$PROJECT_ROOT/$BACKEND_DIR/scripts/validate-deployment.sh" ]; then
+        if bash "$PROJECT_ROOT/$BACKEND_DIR/scripts/validate-deployment.sh"; then
+            log_success "Pre-deployment validation passed"
+        else
+            log_error "Pre-deployment validation failed - aborting deployment"
+            log_error "Please fix the errors above before deploying"
+            exit 1
+        fi
+    else
+        log_warning "Validation script not found - skipping pre-deployment checks"
+    fi
+
     # Execute deployment steps
     check_prerequisites
     setup_environment
@@ -796,6 +812,20 @@ main() {
     fi
 
     generate_deployment_report
+
+    # =============================================================================
+    # POST-DEPLOYMENT SMOKE TESTS
+    # =============================================================================
+    log_info "Running post-deployment smoke tests..."
+    if [ -f "$PROJECT_ROOT/$BACKEND_DIR/scripts/smoke-test.sh" ]; then
+        if bash "$PROJECT_ROOT/$BACKEND_DIR/scripts/smoke-test.sh" "$DOMAIN" "$COMPOSE_FILE"; then
+            log_success "Post-deployment smoke tests passed"
+        else
+            log_warning "Some smoke tests failed - review output above"
+        fi
+    else
+        log_warning "Smoke test script not found - skipping post-deployment tests"
+    fi
 
     local end_time=$(date +%s)
     local duration=$((end_time - start_time))

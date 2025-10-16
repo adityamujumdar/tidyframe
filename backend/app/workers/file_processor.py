@@ -43,17 +43,21 @@ from app.models.job import JobStatus
 
 class OptimizedFileProcessorService:
     """High-performance file processing service with intelligent optimizations"""
-    
+
+    # Constants for data filtering
+    SKIP_COLUMN_WORDS = ['category', 'type', 'status', 'class', 'code']
+    NON_NAME_VALUES = ['other', 'n/a', 'unknown', 'none', 'null', '']
+
     def __init__(self):
         # CRITICAL: Validate correct service is loaded with entity classification
         if ConsolidatedGeminiService is None:
-            logger.error("critical_service_missing", 
+            logger.error("critical_service_missing",
                         error="ConsolidatedGeminiService not available",
                         impact="Entity classification will fail")
             self.batch_processor = None
         else:
             self.batch_processor = ConsolidatedGeminiService()
-            
+
             # RUNTIME VALIDATION: Verify hierarchical prompt is available
             if hasattr(self.batch_processor, 'prompts') and hasattr(self.batch_processor.prompts, 'PROPERTY_OWNERSHIP_PROMPT'):
                 logger.info("service_validation_passed",
@@ -62,14 +66,14 @@ class OptimizedFileProcessorService:
                            entity_classification="enabled")
             else:
                 logger.error("service_validation_failed",
-                            service="ConsolidatedGeminiService", 
+                            service="ConsolidatedGeminiService",
                             prompt_available=False,
                             entity_classification="disabled",
                             impact="0% entity classification accuracy")
-        
+
         self.file_service = FileService()
         self.fallback_tracker = FallbackTracker()
-        
+
         # Performance settings
         self.chunk_size = 500  # Process in chunks for progress tracking
         self.enable_detailed_logging = True
@@ -97,14 +101,14 @@ class OptimizedFileProcessorService:
                     
                 # Skip metadata columns like "Addressee Category", "Addressee Type", etc.
                 col_lower = col.lower()
-                if any(skip_word in col_lower for skip_word in ['category', 'type', 'status', 'class', 'code']):
+                if any(skip_word in col_lower for skip_word in self.SKIP_COLUMN_WORDS):
                     continue
-                
+
                 # Check if this column has actual name data
                 if pd.notna(row[col]) and str(row[col]).strip():
                     value = str(row[col]).strip()
                     # Skip non-name values
-                    if value.lower() in ['other', 'n/a', 'unknown', 'none', 'null', '']:
+                    if value.lower() in self.NON_NAME_VALUES:
                         continue
                     # If it looks like a name, add it
                     name_parts.append(value)

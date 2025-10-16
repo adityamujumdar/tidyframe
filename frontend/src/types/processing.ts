@@ -132,9 +132,9 @@ export interface JobResultsResponse {
 }
 
 export interface FileUploadResponse {
-  job_id: string;
+  jobId: string;
   message: string;
-  estimated_processing_time?: number;
+  estimatedProcessingTime?: number;
 }
 
 // JobStatusResponse is just an alias for ProcessingJob since backend returns job status directly

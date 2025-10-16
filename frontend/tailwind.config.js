@@ -9,6 +9,15 @@ export default {
   ],
   theme: {
     extend: {
+      /* Responsive Breakpoints - Extends defaults with ultrawide support */
+      screens: {
+        '3xl': '2560px',   // 27"+ displays, ultrawide monitors
+      },
+      /* Maximum Content Width - Prevents over-stretching on large displays */
+      maxWidth: {
+        'ultrawide': '1920px',  // Maximum content width for ultrawide displays
+        'comfortable': '1440px', // Optimal reading width for text-heavy content
+      },
       /* Apple HIG - Spacing additions (extends default, doesn't replace) */
       spacing: {
         '4.5': '1.125rem',  // 18px - between default values

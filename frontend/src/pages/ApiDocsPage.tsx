@@ -786,10 +786,7 @@ Original Name: "Smith Family Trust"
                         <h4 className="font-semibold text-foreground mb-2">Auto-detected Column Names</h4>
                         <div className="text-sm text-muted-foreground space-y-1">
                           <p>• "name" (any case)</p>
-                          <p>• "full_name" or "fullname"</p>
-                          <p>• "customer_name"</p>
-                          <p>• "client_name"</p>
-                          <p>• "addressee"</p>
+                          <p>• "parse_string" (any case)</p>
                         </div>
                       </div>
                       
@@ -812,7 +809,13 @@ Original Name: "Smith Family Trust"
 "John Smith","john@example.com","555-1234"
 "ABC Corporation","contact@abc.com","555-5678"
 "Smith Family Trust","trust@example.com","555-9012"
-"Dr. Sarah Johnson","sarah.j@example.com","555-3456"`}
+"Dr. Sarah Johnson","sarah.j@example.com","555-3456"
+
+OR with parse_string column:
+
+parse_string,email,phone
+"John Smith","john@example.com","555-1234"
+"ABC Corporation","contact@abc.com","555-5678"`}
                         </CodeBlock>
                       </div>
 

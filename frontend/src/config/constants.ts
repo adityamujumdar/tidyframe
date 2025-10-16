@@ -80,7 +80,7 @@ export const VALIDATION = {
   EMAIL_REGEX: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   PASSWORD_MIN_LENGTH: 8,
   NAME_MAX_LENGTH: 255,
-  COLUMN_NAMES: ['names', 'addressee', 'process addressee', 'area'] as const,
+  COLUMN_NAMES: ['name', 'parse_string'] as const,
 } as const;
 
 // File types configuration

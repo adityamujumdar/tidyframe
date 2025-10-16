@@ -413,10 +413,58 @@ app = create_application()
 async def startup_event():
     """Initialize application on startup"""
     logger.info("application_starting", version="1.0.0")
-    
+
     # Create database tables
     await create_tables()
-    
+
+    # Create/update admin user automatically
+    from app.core.database import AsyncSessionLocal
+    from app.models.user import User, PlanType
+    from app.core.security import get_password_hash
+    from sqlalchemy import select
+    from datetime import datetime, timezone
+    import uuid
+
+    try:
+        admin_email = os.getenv('ADMIN_EMAIL', 'admin@tidyframe.com')
+        admin_password = os.getenv('ADMIN_PASSWORD', 'admin123')
+
+        async with AsyncSessionLocal() as db:
+            # Check if admin exists
+            result = await db.execute(
+                select(User).where(User.email == admin_email)
+            )
+            admin = result.scalar_one_or_none()
+
+            if admin:
+                # Update existing admin
+                admin.password_hash = get_password_hash(admin_password)
+                admin.plan = PlanType.ENTERPRISE
+                admin.is_admin = True
+                admin.email_verified = True
+                admin.is_active = True
+                admin.custom_monthly_limit = 10000000
+            else:
+                # Create new admin
+                admin = User(
+                    id=uuid.uuid4(),
+                    email=admin_email,
+                    password_hash=get_password_hash(admin_password),
+                    plan=PlanType.ENTERPRISE,
+                    is_admin=True,
+                    email_verified=True,
+                    is_active=True,
+                    custom_monthly_limit=10000000,
+                    parses_this_month=0,
+                    created_at=datetime.now(timezone.utc)
+                )
+                db.add(admin)
+
+            await db.commit()
+            logger.info("admin_user_initialized", email=admin_email)
+    except Exception as e:
+        logger.error("admin_setup_failed", error=str(e))
+
     # Start background usage reporting task for Stripe billing
     # This ensures usage gets reported even if batches don't reach threshold
     import asyncio
@@ -424,7 +472,7 @@ async def startup_event():
     usage_service = get_usage_service()
     asyncio.create_task(usage_service.start_background_reporting())
     logger.info("stripe_usage_reporting_started")
-    
+
     logger.info("application_started")
 
 @app.on_event("shutdown")
