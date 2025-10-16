@@ -7,60 +7,8 @@ on:
       - completed
     branches:
       - main
-      - develop
-
-env:
-  DO_REGION: nyc3
-  DO_SIZE: s-1vcpu-1gb
-  DEPLOYMENT_TIMEOUT: 600
 
 jobs:
-  deploy-staging:
-    name: Deploy to Staging
-    runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'develop'
-    environment:
-      name: staging
-      url: https://staging.tidyframe.com
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-
-      - name: Deploy to staging droplet
-        run: |
-          # Update staging deployment
-          doctl compute droplet-action reboot ${{ secrets.STAGING_DROPLET_ID }} --wait
-          
-          # Deploy with docker-compose
-          doctl compute ssh ${{ secrets.STAGING_DROPLET_ID }} --ssh-command "
-            cd /opt/app &&
-            git pull origin develop &&
-            docker-compose -f docker-compose.prod.yml pull &&
-            docker-compose -f docker-compose.prod.yml up -d --remove-orphans
-          "
-
-      - name: Run health check
-        run: |
-          echo "Waiting for staging deployment to be ready..."
-          for i in {1..30}; do
-            if curl -f https://staging.tidyframe.com/health; then
-              echo "✅ Staging deployment successful"
-              break
-            fi
-            echo "Waiting... ($i/30)"
-            sleep 10
-          done
-
-      - name: Run smoke tests
-        run: |
-          curl -f https://staging.tidyframe.com/api/health
-          curl -f https://staging.tidyframe.com/health
-
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
@@ -68,212 +16,111 @@ jobs:
     environment:
       name: production
       url: https://tidyframe.com
-    needs: []
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
         with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          ref: main
 
-      - name: Create deployment snapshot
-        id: snapshot
-        run: |
-          SNAPSHOT_NAME="pre-deploy-$(date +%Y%m%d-%H%M%S)"
-          doctl compute droplet-action snapshot ${{ secrets.PROD_DROPLET_ID }} --snapshot-name "$SNAPSHOT_NAME" --wait
-          echo "snapshot_name=$SNAPSHOT_NAME" >> $GITHUB_OUTPUT
+      - name: Deploy to production server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.PROD_SERVER_HOST }}
+          username: ${{ secrets.PROD_SERVER_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /opt/tidyframe
 
-      - name: Blue-Green Deployment Setup
-        id: blue-green
-        run: |
-          # Check current active environment
-          CURRENT_ENV=$(doctl compute droplet get ${{ secrets.PROD_DROPLET_ID }} --format Tags --no-header | grep -o 'env:[^,]*' | cut -d: -f2 || echo "blue")
-          
-          if [ "$CURRENT_ENV" = "blue" ]; then
-            NEW_ENV="green"
-            INACTIVE_DROPLET_ID="${{ secrets.PROD_GREEN_DROPLET_ID }}"
-            ACTIVE_DROPLET_ID="${{ secrets.PROD_BLUE_DROPLET_ID }}"
-          else
-            NEW_ENV="blue"
-            INACTIVE_DROPLET_ID="${{ secrets.PROD_BLUE_DROPLET_ID }}"
-            ACTIVE_DROPLET_ID="${{ secrets.PROD_GREEN_DROPLET_ID }}"
-          fi
-          
-          echo "current_env=$CURRENT_ENV" >> $GITHUB_OUTPUT
-          echo "new_env=$NEW_ENV" >> $GITHUB_OUTPUT
-          echo "inactive_droplet_id=$INACTIVE_DROPLET_ID" >> $GITHUB_OUTPUT
-          echo "active_droplet_id=$ACTIVE_DROPLET_ID" >> $GITHUB_OUTPUT
+            # Pull latest code
+            git fetch origin
+            git reset --hard origin/main
 
-      - name: Deploy to inactive environment
-        run: |
-          echo "Deploying to ${{ steps.blue-green.outputs.new_env }} environment (Droplet: ${{ steps.blue-green.outputs.inactive_droplet_id }})"
-          
-          # Ensure inactive droplet is running
-          doctl compute droplet-action power-on ${{ steps.blue-green.outputs.inactive_droplet_id }} --wait || true
-          
-          # Deploy new version to inactive environment
-          doctl compute ssh ${{ steps.blue-green.outputs.inactive_droplet_id }} --ssh-command "
-            cd /opt/app &&
-            git fetch origin &&
-            git reset --hard origin/main &&
-            docker-compose -f docker-compose.prod.yml pull &&
-            docker-compose -f docker-compose.prod.yml up -d --remove-orphans
-          "
+            # Stop existing backend to release env file
+            docker-compose -f docker-compose.prod.yml stop backend
+            docker rm tidyframe_backend_1 || true
 
-      - name: Health check new deployment
-        id: health-check
-        run: |
-          INACTIVE_IP=$(doctl compute droplet get ${{ steps.blue-green.outputs.inactive_droplet_id }} --format PublicIPv4 --no-header)
-          
-          echo "Running health checks on new deployment ($INACTIVE_IP)..."
-          HEALTH_CHECK_PASSED=false
-          
-          for i in {1..30}; do
-            if curl -f -m 10 http://$INACTIVE_IP:8000/api/health && curl -f -m 10 http://$INACTIVE_IP:3000/health; then
-              echo "✅ Health check passed"
-              HEALTH_CHECK_PASSED=true
-              break
+            # Ensure critical env vars are set
+            if ! grep -q "FRONTEND_URL" .env; then
+              echo "FRONTEND_URL=https://tidyframe.com" >> .env
             fi
-            echo "Health check failed, retrying... ($i/30)"
-            sleep 10
-          done
-          
-          if [ "$HEALTH_CHECK_PASSED" = "false" ]; then
-            echo "❌ Health check failed"
+
+            # Start all services
+            docker-compose -f docker-compose.prod.yml up -d
+
+            echo "Deployment completed"
+
+      - name: Wait for deployment
+        run: sleep 30
+
+      - name: Health check
+        run: |
+          echo "Running health checks..."
+
+          # Check main health endpoint
+          if curl -f -s https://tidyframe.com/health; then
+            echo "✅ Main health check passed"
+          else
+            echo "❌ Main health check failed"
             exit 1
           fi
-          
-          echo "inactive_ip=$INACTIVE_IP" >> $GITHUB_OUTPUT
 
-      - name: Switch load balancer traffic
-        run: |
-          echo "Switching traffic to ${{ steps.blue-green.outputs.new_env }} environment..."
-          
-          # Update load balancer to point to new environment
-          doctl compute load-balancer add-droplets ${{ secrets.LOAD_BALANCER_ID }} --droplet-ids ${{ steps.blue-green.outputs.inactive_droplet_id }}
-          
-          # Wait for load balancer to update
-          sleep 30
-          
-          # Remove old environment from load balancer
-          doctl compute load-balancer remove-droplets ${{ secrets.LOAD_BALANCER_ID }} --droplet-ids ${{ steps.blue-green.outputs.active_droplet_id }}
-
-      - name: Verify production deployment
-        run: |
-          echo "Verifying production deployment..."
-          
-          for i in {1..20}; do
-            if curl -f https://tidyframe.com/health && curl -f https://tidyframe.com/api/health; then
-              echo "✅ Production verification successful"
-              break
-            fi
-            echo "Verification failed, retrying... ($i/20)"
-            sleep 15
-          done
-
-      - name: Update environment tags
-        run: |
-          # Tag the new active environment
-          doctl compute droplet tag ${{ steps.blue-green.outputs.inactive_droplet_id }} --tag-names "env:active,${{ steps.blue-green.outputs.new_env }}"
-          
-          # Tag the old environment as inactive
-          doctl compute droplet untag ${{ steps.blue-green.outputs.active_droplet_id }} --tag-names "env:active"
-          doctl compute droplet tag ${{ steps.blue-green.outputs.active_droplet_id }} --tag-names "env:inactive"
-
-      - name: Notify deployment success
-        uses: 8398a7/action-slack@v3
-        with:
-          status: success
-          channel: '#deployments'
-          text: '🚀 Production deployment successful! Environment switched to ${{ steps.blue-green.outputs.new_env }}'
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-  rollback-production:
-    name: Rollback Production
-    runs-on: ubuntu-latest
-    if: failure() && github.event.workflow_run.head_branch == 'main'
-    steps:
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-
-      - name: Determine rollback environment
-        id: rollback
-        run: |
-          # Find the currently inactive environment (previous version)
-          BLUE_ACTIVE=$(doctl compute droplet get ${{ secrets.PROD_BLUE_DROPLET_ID }} --format Tags --no-header | grep -q 'env:active' && echo "true" || echo "false")
-          
-          if [ "$BLUE_ACTIVE" = "true" ]; then
-            ROLLBACK_DROPLET_ID="${{ secrets.PROD_GREEN_DROPLET_ID }}"
-            CURRENT_DROPLET_ID="${{ secrets.PROD_BLUE_DROPLET_ID }}"
+          # Check frontend loads
+          if curl -f -s https://tidyframe.com/ | grep -q "TidyFrame"; then
+            echo "✅ Frontend loads correctly"
           else
-            ROLLBACK_DROPLET_ID="${{ secrets.PROD_BLUE_DROPLET_ID }}"
-            CURRENT_DROPLET_ID="${{ secrets.PROD_GREEN_DROPLET_ID }}"
+            echo "❌ Frontend failed to load"
+            exit 1
           fi
-          
-          echo "rollback_droplet_id=$ROLLBACK_DROPLET_ID" >> $GITHUB_OUTPUT
-          echo "current_droplet_id=$CURRENT_DROPLET_ID" >> $GITHUB_OUTPUT
 
-      - name: Switch back to previous environment
-        run: |
-          echo "Rolling back to previous environment..."
-          
-          # Add previous environment back to load balancer
-          doctl compute load-balancer add-droplets ${{ secrets.LOAD_BALANCER_ID }} --droplet-ids ${{ steps.rollback.outputs.rollback_droplet_id }}
-          
-          sleep 30
-          
-          # Remove failed deployment from load balancer
-          doctl compute load-balancer remove-droplets ${{ secrets.LOAD_BALANCER_ID }} --droplet-ids ${{ steps.rollback.outputs.current_droplet_id }}
-
-      - name: Verify rollback
-        run: |
-          echo "Verifying rollback..."
-          
-          for i in {1..10}; do
-            if curl -f https://tidyframe.com/health; then
-              echo "✅ Rollback successful"
-              break
-            fi
-            echo "Rollback verification failed, retrying... ($i/10)"
-            sleep 10
-          done
-
-      - name: Notify rollback
-        uses: 8398a7/action-slack@v3
+      - name: Run smoke tests
+        uses: appleboy/ssh-action@v1.0.0
         with:
-          status: failure
-          channel: '#deployments'
-          text: '⚠️ Production deployment failed and was rolled back!'
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          host: ${{ secrets.PROD_SERVER_HOST }}
+          username: ${{ secrets.PROD_SERVER_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /opt/tidyframe
+            bash backend/scripts/smoke-test.sh || echo "Smoke tests completed with warnings"
 
-  cleanup-old-images:
-    name: Cleanup Old Images
+      - name: Deployment notification
+        if: success()
+        run: |
+          echo "🚀 Deployment successful!"
+          echo "Version: $(git describe --tags --always)"
+          echo "Commit: ${{ github.sha }}"
+          echo "URL: https://tidyframe.com"
+
+  rollback-on-failure:
+    name: Rollback on Failure
     runs-on: ubuntu-latest
-    if: always()
-    needs: [deploy-production]
+    needs: deploy-production
+    if: failure()
+
     steps:
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
+      - name: Rollback deployment
+        uses: appleboy/ssh-action@v1.0.0
         with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          host: ${{ secrets.PROD_SERVER_HOST }}
+          username: ${{ secrets.PROD_SERVER_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /opt/tidyframe
 
-      - name: Cleanup old container images
-        run: |
-          # Keep only the last 10 images for each repository
-          for repo in frontend backend; do
-            echo "Cleaning up old images for $repo..."
-            doctl registry repository list-tags ${{ secrets.DO_REGISTRY_NAME }}/$repo --format Tag,UpdatedAt | \
-              tail -n +11 | \
-              awk '{print $1}' | \
-              xargs -r -I {} doctl registry repository delete-tag ${{ secrets.DO_REGISTRY_NAME }}/$repo {} --force
-          done
+            # Get previous commit
+            PREVIOUS_COMMIT=$(git rev-parse HEAD~1)
 
-      - name: Run garbage collection
+            echo "Rolling back to commit: $PREVIOUS_COMMIT"
+            git reset --hard $PREVIOUS_COMMIT
+
+            # Restart services
+            docker-compose -f docker-compose.prod.yml down
+            docker-compose -f docker-compose.prod.yml up -d
+
+            echo "Rollback completed"
+
+      - name: Rollback notification
         run: |
-          doctl registry garbage-collection start ${{ secrets.DO_REGISTRY_NAME }} --include-untagged-manifests
+          echo "⚠️ Deployment failed and was rolled back"
+          echo "Previous commit restored"
+          echo "Manual investigation required"

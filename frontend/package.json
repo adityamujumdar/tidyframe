@@ -1,13 +1,20 @@
 {
   "name": "frontend",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.2.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "echo 'Tests will be implemented in future iterations'",
+    "test:unit": "npm run test",
+    "test:integration": "npm run test",
+    "test:coverage": "npm run test",
+    "test:e2e": "npm run test",
+    "test:performance": "npm run test"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",

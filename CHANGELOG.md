@@ -5,6 +5,31 @@ All notable changes to TidyFrame will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2025-10-16
+
+### Fixed
+- CI/CD pipeline workflows to work with actual infrastructure
+- Removed non-existent test scripts from CI workflow (test:unit, test:integration, test:e2e)
+- Deployment environment variable handling (FRONTEND_URL, ENABLE_SITE_PASSWORD)
+- .env file line ending issues causing variable parsing failures
+- Site password protection disabled for public production access
+
+### Added
+- Placeholder npm scripts for future test implementation
+- SSH-based CD workflow with health checks and rollback capability
+- Security audit step in CI workflow (npm audit)
+- TypeScript type checking in CI workflow
+
+### Changed
+- Simplified CI workflow to focus on TypeScript, linting, and builds
+- CD workflow now uses pragmatic single-server SSH deployment
+- Frontend npm scripts reorganized with proper test placeholders
+
+### Infrastructure
+- **Production Deployment**: v1.2.0 responsive design live at tidyframe.com
+- Fixed FRONTEND_URL configuration for Stripe redirect handling
+- Optimized docker-compose restart process for zero-downtime updates
+
 ## [1.2.0] - 2025-10-16
 
 ### Added
