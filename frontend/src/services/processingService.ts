@@ -1,5 +1,5 @@
 import { apiService } from './api';
-import { ProcessingJob, FileUploadResponse, JobStatusResponse, JobListResponse, UsageStats } from '@/types/processing';
+import { ProcessingJob, FileUploadResponse, JobStatusResponse, JobListResponse, UsageStats, ParseResultResponse } from '@/types/processing';
 
 class ProcessingService {
   async uploadFile(
@@ -54,7 +54,7 @@ class ProcessingService {
     filename: string;
     total_rows: number;
     returned_rows: number;
-    results: Record<string, unknown>[];
+    results: ParseResultResponse[];
   }> {
     return await apiService.get(`/api/jobs/${jobId}/results?limit=${limit}`);
   }

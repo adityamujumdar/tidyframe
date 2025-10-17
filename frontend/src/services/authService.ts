@@ -1,5 +1,5 @@
 import { apiService } from './api';
-import { User, LoginResponse, LoginRequest } from '@/types/auth';
+import { User, LoginResponse, LoginRequest, ConsentData } from '@/types/auth';
 
 class AuthService {
   async login(email: string, password: string): Promise<LoginResponse> {
@@ -7,7 +7,7 @@ class AuthService {
     return await apiService.post<LoginResponse>('/api/auth/login', data);
   }
 
-  async register(email: string, password: string, fullName?: string, consent?: Record<string, boolean>): Promise<LoginResponse> {
+  async register(email: string, password: string, fullName?: string, consent?: ConsentData): Promise<LoginResponse> {
     // Split fullName into first_name and last_name for backend compatibility
     const nameParts = fullName?.trim().split(' ') || [];
     const firstName = nameParts[0] || undefined;

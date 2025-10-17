@@ -35,6 +35,29 @@ export interface UsageResetRequest {
   reset_count?: number;
 }
 
+// Backend API response types (snake_case from backend)
+interface BackendUserResponse {
+  id: string;
+  email: string;
+  plan: string;
+  parses_this_month: number;
+  monthly_limit: number;
+  custom_monthly_limit?: number;
+  is_active: boolean;
+  email_verified: boolean;
+  created_at: string;
+  last_login_at?: string;
+}
+
+interface BackendUserDetailsResponse {
+  user: BackendUserResponse;
+  statistics: {
+    total_jobs: number;
+    total_parses: number;
+    current_month_parses: number;
+  };
+}
+
 class AdminService {
   private baseUrl = '/api/admin';
 
@@ -61,8 +84,8 @@ class AdminService {
     const queryString = searchParams.toString();
     const url = queryString ? `${this.baseUrl}/users?${queryString}` : `${this.baseUrl}/users`;
 
-    const users = await apiService.get<Record<string, unknown>[]>(url);
-    
+    const users = await apiService.get<BackendUserResponse[]>(url);
+
     // Transform backend snake_case to frontend camelCase
     return users.map(user => ({
       id: user.id,
@@ -87,8 +110,8 @@ class AdminService {
       current_month_parses: number;
     };
   }> {
-    const data = await apiService.get<Record<string, unknown>>(`${this.baseUrl}/users/${userId}`);
-    
+    const data = await apiService.get<BackendUserDetailsResponse>(`${this.baseUrl}/users/${userId}`);
+
     return {
       user: {
         id: data.user.id,

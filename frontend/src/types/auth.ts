@@ -38,6 +38,7 @@ export interface ConsentData {
   location_confirmed: boolean;
   consent_timestamp: string;
   user_agent: string;
+  billing_period?: string;  // Optional billing period for Stripe checkout
 }
 
 export interface RegisterRequest {

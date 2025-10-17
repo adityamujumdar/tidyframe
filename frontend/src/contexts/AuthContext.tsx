@@ -2,13 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import { logger } from '@/utils/logger';
 import { authService } from '@/services/authService';
 import { billingService } from '@/services/billingService';
-import { User, LoginResponse } from '@/types/auth';
-
-interface ConsentData {
-  marketing?: boolean;
-  terms?: boolean;
-  privacy?: boolean;
-}
+import { User, LoginResponse, ConsentData } from '@/types/auth';
 
 interface AuthContextType {
   user: User | null;

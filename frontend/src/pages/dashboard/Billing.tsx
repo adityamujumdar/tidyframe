@@ -392,8 +392,7 @@ export default function Billing() {
       {/* Payment Modal */}
       <PaymentModal
         isOpen={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        onSuccess={() => {
+        onClose={() => {
           setShowPaymentModal(false);
           loadBillingData();
         }}
