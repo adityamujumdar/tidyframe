@@ -130,8 +130,7 @@ async def upload_file(
             if len(file_content) > max_size:
                 raise HTTPException(
                     status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                    detail=f"File too large (max: {max_size_mb}MB for {
-                        'authenticated users' if current_user else 'anonymous users'})",
+                    detail=f"File too large (max: {max_size_mb}MB for {'authenticated users' if current_user else 'anonymous users'})",
                 )
 
         file_content = bytes(file_content)
