@@ -2,7 +2,6 @@
 Authentication service
 """
 
-import secrets
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -13,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.models.user import PlanType, User
-from app.schemas.auth import ConsentData, UserCreate
+from app.schemas.auth import UserCreate
 from app.services.email import EmailService
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

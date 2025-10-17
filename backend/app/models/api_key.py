@@ -10,6 +10,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.core.database import Base
+from app.models.user import User
 
 
 class APIKey(Base):
@@ -59,6 +60,5 @@ class APIKey(Base):
 
 
 # Add relationship to User model
-from app.models.user import User
 
 User.api_keys = relationship("APIKey", back_populates="user", lazy="dynamic")

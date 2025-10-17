@@ -5,7 +5,6 @@ This module provides sync database operations for Celery workers since
 Celery runs in a different context and needs sync database access.
 """
 
-import asyncio
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
@@ -145,7 +144,8 @@ def update_job_status(
 
                         if user:
                             # Increment the user's monthly parse count
-                            # Use successful_parses if it was explicitly set in the results, otherwise use processed_rows
+                            # Use successful_parses if it was explicitly set in the results, otherwise
+                            # use processed_rows
                             if (
                                 processing_results
                                 and "successful_parses" in processing_results
@@ -178,7 +178,8 @@ def update_job_status(
                                         )
 
                                         logger.info(
-                                            f"Immediately reported {rows_parsed} usage to Stripe for customer {user.stripe_customer_id}"
+                                            f"Immediately reported {rows_parsed} usage to Stripe for customer {
+                                                user.stripe_customer_id}"
                                         )
 
                                     except Exception as e:
@@ -200,7 +201,8 @@ def update_job_status(
                                             }
                                         )
                                         logger.info(
-                                            f"Fallback: Queued {rows_parsed} usage for customer {user.stripe_customer_id}"
+                                            f"Fallback: Queued {rows_parsed} usage for customer {
+                                                user.stripe_customer_id}"
                                         )
 
                                 # Create ParseLog entry for tracking
@@ -260,7 +262,8 @@ def update_job_status(
                         anon_usage = anon_result.scalar_one_or_none()
 
                         if anon_usage:
-                            # Use successful_parses if it was explicitly set in the results, otherwise use processed_rows
+                            # Use successful_parses if it was explicitly set in the results, otherwise
+                            # use processed_rows
                             if (
                                 processing_results
                                 and "successful_parses" in processing_results

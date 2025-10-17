@@ -59,7 +59,7 @@ async def get_current_user(
         user_id = payload.get("sub")
         if user_id:
             result = await db.execute(
-                select(User).where(User.id == user_id, User.is_active == True)
+                select(User).where(User.id == user_id, User.is_active)
             )
             user = result.scalar_one_or_none()
 
@@ -76,9 +76,7 @@ async def get_current_user(
     # Then try API key
     if token.startswith("tf_"):
         result = await db.execute(
-            select(APIKey)
-            .join(User)
-            .where(APIKey.is_active == True, User.is_active == True)
+            select(APIKey).join(User).where(APIKey.is_active, User.is_active)
         )
 
         for api_key in result.scalars():
@@ -297,7 +295,8 @@ async def check_parsing_quota(
             if rows_to_parse > settings.ANONYMOUS_LIFETIME_LIMIT:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"File too large for anonymous usage. Maximum: {settings.ANONYMOUS_LIFETIME_LIMIT} parses. Please sign up for more capacity.",
+                    detail=f"File too large for anonymous usage. Maximum: {
+                        settings.ANONYMOUS_LIFETIME_LIMIT} parses. Please sign up for more capacity.",
                 )
 
             # Create AnonymousUsage record for tracking

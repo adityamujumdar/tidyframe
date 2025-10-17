@@ -3,17 +3,17 @@ Admin API routes
 """
 
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.dependencies import require_admin_user
-from app.models.job import JobStatus, ProcessingJob
+from app.models.job import ProcessingJob
 from app.models.parse_log import ParseLog
 from app.models.user import PlanType, User
 from app.models.webhook_event import WebhookEvent
@@ -77,7 +77,7 @@ async def get_system_stats(
     total_users = total_users_result.scalar()
 
     active_users_result = await db.execute(
-        select(func.count(User.id)).where(User.is_active == True)
+        select(func.count(User.id)).where(User.is_active)
     )
     active_users = active_users_result.scalar()
 

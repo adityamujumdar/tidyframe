@@ -6,8 +6,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from ipaddress import IPv4Address, IPv6Address
-from typing import Optional, Union
+from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field, field_validator, validator
 

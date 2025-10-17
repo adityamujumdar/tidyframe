@@ -2,7 +2,6 @@
 """Analyze name ordering patterns in CSV to develop better heuristics"""
 
 import csv
-from collections import Counter
 
 # Common first names and surnames for analysis
 COMMON_FIRST_NAMES = {

@@ -5,15 +5,13 @@ Gilfoyle-approved implementation.
 """
 
 import asyncio
-import hashlib
 import json
-import logging
 import os
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional
 
 import structlog
 
@@ -324,7 +322,7 @@ Start your response with '[' and end with ']'."""
     def format_batch_prompt(names: List[str]) -> str:
         """Format names with clear numbering and count"""
         # Number names for clear correlation
-        formatted = "\n".join(f"{i+1}. {name}" for i, name in enumerate(names[:50]))
+        formatted = "\n".join(f"{i + 1}. {name}" for i, name in enumerate(names[:50]))
         return OptimizedPromptTemplates.PROPERTY_OWNERSHIP_PROMPT.format(
             names=formatted, count=len(names)
         )
@@ -1199,7 +1197,6 @@ def validate_service_deployment():
         service = get_gemini_service()
 
         # Test entity classification capability
-        test_names = ["ABC Trust", "XYZ Corporation LLC", "John Smith"]
 
         # This should be able to distinguish entities
         has_hierarchical = hasattr(service, "prompts") and hasattr(

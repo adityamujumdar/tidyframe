@@ -6,10 +6,9 @@ Gilfoyle-approved implementation with proper architecture
 import asyncio
 import logging
 import os
-from datetime import datetime, timedelta, timezone
-from decimal import Decimal
+from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import stripe
 
@@ -414,7 +413,7 @@ class StripeService:
             webhook_type = "meter" if is_meter_event else "main"
             self.construct_webhook_event(payload, signature, webhook_type)
             return True
-        except:
+        except BaseException:
             return False
 
     async def handle_webhook_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
@@ -513,7 +512,7 @@ class StripeService:
         """Handle invoice creation"""
         invoice = event["data"]["object"]
         logger.info(
-            f"Invoice created: {invoice['id']} for ${invoice['amount_due']/100:.2f}"
+            f"Invoice created: {invoice['id']} for ${invoice['amount_due'] / 100:.2f}"
         )
         return {"status": "processed", "invoice_id": invoice["id"]}
 

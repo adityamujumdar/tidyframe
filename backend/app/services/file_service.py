@@ -5,7 +5,7 @@ File processing service for handling uploads and identifying name columns
 import hashlib
 import os
 import uuid
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 import magic
 import pandas as pd

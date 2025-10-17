@@ -5,12 +5,13 @@ Handles API key creation, listing, and revocation for authenticated users
 
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
+from uuid import UUID
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import delete, select
+from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.dependencies import require_auth
@@ -23,10 +24,7 @@ logger = structlog.get_logger()
 router = APIRouter()
 
 
-from uuid import UUID
-
 # Pydantic models for API responses
-from pydantic import BaseModel, Field
 
 
 class APIKeyRequest(BaseModel):
@@ -114,9 +112,7 @@ async def create_api_key(
     try:
         # Check if user already has too many API keys
         result = await db.execute(
-            select(APIKey).where(
-                APIKey.user_id == current_user.id, APIKey.is_active == True
-            )
+            select(APIKey).where(APIKey.user_id == current_user.id, APIKey.is_active)
         )
 
         active_keys = result.scalars().all()
@@ -133,7 +129,7 @@ async def create_api_key(
             select(APIKey).where(
                 APIKey.user_id == current_user.id,
                 APIKey.name == request.name,
-                APIKey.is_active == True,
+                APIKey.is_active,
             )
         )
 

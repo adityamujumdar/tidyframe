@@ -6,7 +6,7 @@ Gilfoyle-approved: No free rides
 import logging
 from typing import Optional
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException
 
 from app.core.dependencies import get_current_user
 from app.models.user import User

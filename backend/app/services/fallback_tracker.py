@@ -3,7 +3,6 @@ Centralized fallback tracking service for comprehensive parsing warnings
 Tracks WHY fallback was used and provides detailed statistics
 """
 
-import json
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
@@ -307,7 +306,7 @@ class FallbackTracker:
         fallback_rate = summary["fallback_used"] / total
         if fallback_rate > 0.1:  # More than 10% fallback usage
             recommendations.append(
-                f"{fallback_rate*100:.1f}% of rows used fallback parsing - "
+                f"{fallback_rate * 100:.1f}% of rows used fallback parsing - "
                 f"consider checking Gemini API status or quota limits"
             )
 
@@ -315,7 +314,7 @@ class FallbackTracker:
         low_confidence_rate = summary["low_confidence_results"] / total
         if low_confidence_rate > 0.2:  # More than 20% low confidence
             recommendations.append(
-                f"{low_confidence_rate*100:.1f}% of results have low confidence - "
+                f"{low_confidence_rate * 100:.1f}% of results have low confidence - "
                 f"manual review recommended for critical data"
             )
 
@@ -323,7 +322,7 @@ class FallbackTracker:
         warning_rate = summary["results_with_warnings"] / total
         if warning_rate > 0.3:  # More than 30% have warnings
             recommendations.append(
-                f"{warning_rate*100:.1f}% of results have warnings - "
+                f"{warning_rate * 100:.1f}% of results have warnings - "
                 f"review data quality and input formatting"
             )
 
@@ -333,7 +332,7 @@ class FallbackTracker:
             if rate > 0.05:  # More than 5% for any single reason
                 friendly_reason = self._get_friendly_fallback_reason(reason)
                 recommendations.append(
-                    f"Frequent fallback due to {friendly_reason} ({rate*100:.1f}%) - "
+                    f"Frequent fallback due to {friendly_reason} ({rate * 100:.1f}%) - "
                     f"investigate API connectivity or configuration"
                 )
 

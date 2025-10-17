@@ -64,14 +64,7 @@ async def create_tables():
     try:
         async with engine.begin() as conn:
             # Import all models to ensure they're registered
-            from app.models import (
-                anonymous_usage,
-                api_key,
-                job,
-                parse_log,
-                user,
-                webhook_event,
-            )
+            pass
 
             await conn.run_sync(Base.metadata.create_all)
             logger.info("database_tables_created")

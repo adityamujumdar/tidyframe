@@ -34,10 +34,10 @@ class EmailService:
 
             text_content = f"""
             Verify your email address
-            
+
             Please visit the following URL to verify your email address:
             {verification_url}
-            
+
             If you didn't create an account, you can safely ignore this email.
             """
 
@@ -74,12 +74,12 @@ class EmailService:
 
             text_content = f"""
             Reset your password
-            
+
             You requested a password reset. Please visit the following URL to reset your password:
             {reset_url}
-            
+
             This link will expire in 1 hour.
-            
+
             If you didn't request this reset, you can safely ignore this email.
             """
 
@@ -112,13 +112,13 @@ class EmailService:
 
             text_content = f"""
             Welcome to TidyFrame!
-            
+
             Hello {user_name},
-            
+
             Welcome to TidyFrame! We're excited to have you on board.
-            
+
             You can now start uploading and processing your data files.
-            
+
             Get Started: {settings.FRONTEND_URL}/dashboard
             """
 

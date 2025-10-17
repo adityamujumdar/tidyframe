@@ -2,7 +2,6 @@
 Data export service for CCPA compliance and legal data requests
 """
 
-import json
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 

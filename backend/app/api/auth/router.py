@@ -3,12 +3,10 @@ Authentication API routes
 """
 
 import ipaddress
-import secrets
 from datetime import datetime, timedelta, timezone
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,7 +25,7 @@ from app.api.auth.schemas import (
 )
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.dependencies import check_user_rate_limit, get_current_user, require_auth
+from app.core.dependencies import check_user_rate_limit, require_auth
 from app.core.security import (
     create_user_tokens,
     generate_reset_token,
@@ -354,9 +352,7 @@ async def refresh_access_token(
         )
 
     # Find user
-    result = await db.execute(
-        select(User).where(User.id == user_id, User.is_active == True)
-    )
+    result = await db.execute(select(User).where(User.id == user_id, User.is_active))
     user = result.scalar_one_or_none()
 
     if not user:

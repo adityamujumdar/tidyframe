@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, field_validator, validator
 
-from app.core.schemas import CamelCaseModel, ResponseModel
+from app.core.schemas import ResponseModel
 
 
 class FileUploadResponse(ResponseModel):

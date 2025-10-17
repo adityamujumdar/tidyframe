@@ -4,7 +4,7 @@ Handles authentication and status checking for site password protection
 """
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings

@@ -4,7 +4,7 @@ File processing API routes
 
 import os
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 from typing import Optional
 
 import structlog
@@ -19,20 +19,16 @@ from fastapi import (
     status,
 )
 from fastapi.responses import FileResponse
-from sqlalchemy import and_, desc, func, select
+from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.files.schemas import (
-    DownloadInfo,
-    FilePreview,
     FileUploadResponse,
     JobList,
     JobStatus,
     ProcessingConfig,
-    ProcessingSummary,
     UsageStats,
 )
-from app.core.billing_deps import check_usage_limits, require_subscription
 from app.core.database import get_db
 from app.core.dependencies import (
     check_parsing_quota,
@@ -41,16 +37,13 @@ from app.core.dependencies import (
     get_current_user,
     require_auth,
 )
-from app.models.anonymous_usage import AnonymousUsage
 from app.models.job import JobStatus as JobStatusEnum
 from app.models.job import ProcessingJob
-from app.models.parse_log import ParseLog
 from app.models.user import User
 from app.services.file_service import FileService
 from app.utils.client_ip import get_client_ip
-from app.utils.file_utils import format_file_size, safe_filename, validate_file
-from app.workers.email_sender import send_processing_complete_email
-from app.workers.file_processor import process_file, validate_uploaded_file
+from app.utils.file_utils import safe_filename, validate_file
+from app.workers.file_processor import process_file
 
 logger = structlog.get_logger()
 
@@ -137,7 +130,8 @@ async def upload_file(
             if len(file_content) > max_size:
                 raise HTTPException(
                     status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                    detail=f"File too large (max: {max_size_mb}MB for {'authenticated users' if current_user else 'anonymous users'})",
+                    detail=f"File too large (max: {max_size_mb}MB for {
+                        'authenticated users' if current_user else 'anonymous users'})",
                 )
 
         file_content = bytes(file_content)
@@ -181,7 +175,7 @@ async def upload_file(
 
         # For full file estimation, we could read more rows or use file size estimation
         if estimated_rows < 1000:  # If preview is small, try to get better estimate
-            import pandas as pd
+            pass
 
             try:
                 if file_extension == ".csv":
@@ -191,7 +185,7 @@ async def upload_file(
                 elif file_extension in [".xlsx", ".xls"]:
                     # For Excel, we'll use the preview count as estimation
                     pass
-            except:
+            except BaseException:
                 # Fallback to preview count
                 pass
 
@@ -506,7 +500,7 @@ async def get_job_results(
         )
 
     try:
-        import json
+        pass
 
         import pandas as pd
 

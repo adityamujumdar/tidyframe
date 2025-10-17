@@ -2,16 +2,17 @@
 """Quick verification of key improvements"""
 
 import asyncio
+import logging
 import sys
 from pathlib import Path
 
+from app.services.gemini_service import ConsolidatedGeminiService
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import logging
 
 logging.getLogger().setLevel(logging.WARNING)
 
-from app.services.gemini_service import ConsolidatedGeminiService
 
 # Key test cases that were failing
 CRITICAL_TESTS = [
@@ -65,7 +66,7 @@ async def verify():
                         )
 
             accuracy = success_count / len(CRITICAL_TESTS) * 100
-            print(f"\n{'='*60}")
+            print(f"\n{'=' * 60}")
             print(
                 f"Result: {success_count}/{len(CRITICAL_TESTS)} correct ({accuracy:.0f}%)"
             )

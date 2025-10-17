@@ -5,13 +5,8 @@ Celery application setup for background task processing
 from celery import Celery
 
 from app.core.config import settings
-from app.models.anonymous_usage import AnonymousUsage
-from app.models.api_key import APIKey
-from app.models.job import ProcessingJob
-from app.models.parse_log import ParseLog
 
 # Import all models to ensure they're registered with SQLAlchemy
-from app.models.user import User
 
 # Create Celery app
 celery_app = Celery(

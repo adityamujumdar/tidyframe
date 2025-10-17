@@ -22,8 +22,6 @@ class CamelCaseModel(BaseModel):
 class ResponseModel(CamelCaseModel):
     """Base model for API responses with camelCase fields"""
 
-    pass
-
 
 class DatabaseModel(BaseModel):
     """Base model for database operations (keeps snake_case)"""

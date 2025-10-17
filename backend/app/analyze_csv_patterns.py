@@ -3,8 +3,7 @@
 
 import csv
 import re
-from collections import Counter, defaultdict
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 
 def analyze_csv_patterns(file_path: str, sample_size: int = 1000):
@@ -26,7 +25,7 @@ def analyze_csv_patterns(file_path: str, sample_size: int = 1000):
     try:
         with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
             # Try to detect the column with owner names
-            first_line = f.readline().strip()
+            f.readline().strip()
             f.seek(0)
 
             reader = csv.reader(f)

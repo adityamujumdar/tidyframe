@@ -7,15 +7,13 @@ and production-ready performance optimization.
 
 import hashlib
 import json
-import os
 import sqlite3
 import threading
 import time
 from collections import OrderedDict, defaultdict
 from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 import structlog
 
@@ -99,14 +97,14 @@ class NameCacheManager:
 
             conn.execute(
                 """
-                CREATE INDEX IF NOT EXISTS idx_normalized_text 
+                CREATE INDEX IF NOT EXISTS idx_normalized_text
                 ON name_cache(normalized_text)
             """
             )
 
             conn.execute(
                 """
-                CREATE INDEX IF NOT EXISTS idx_created_at 
+                CREATE INDEX IF NOT EXISTS idx_created_at
                 ON name_cache(created_at)
             """
             )
@@ -259,8 +257,8 @@ class NameCacheManager:
         try:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.execute(
-                    """SELECT result_json, created_at, access_count 
-                       FROM name_cache 
+                    """SELECT result_json, created_at, access_count
+                       FROM name_cache
                        WHERE cache_key = ? AND created_at > ?""",
                     (cache_key, time.time() - self.ttl_seconds),
                 )
@@ -309,9 +307,9 @@ class NameCacheManager:
                     normalized_name = self._normalize_name(name_text)
 
                     conn.execute(
-                        """INSERT OR REPLACE INTO name_cache 
-                           (cache_key, original_text, normalized_text, result_json, 
-                            created_at, last_accessed, access_count) 
+                        """INSERT OR REPLACE INTO name_cache
+                           (cache_key, original_text, normalized_text, result_json,
+                            created_at, last_accessed, access_count)
                            VALUES (?, ?, ?, ?, ?, ?, ?)""",
                         (
                             cache_key,

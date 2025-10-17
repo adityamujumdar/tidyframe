@@ -2,7 +2,7 @@
 User management API routes
 """
 
-from typing import List, Optional
+from typing import Optional
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.dependencies import require_auth
-from app.core.security import generate_api_key, hash_api_key
+from app.core.security import generate_api_key
 from app.models.api_key import APIKey
 from app.models.user import User
 from app.schemas.auth import UserResponse

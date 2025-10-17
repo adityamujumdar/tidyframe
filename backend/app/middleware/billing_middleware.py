@@ -7,11 +7,10 @@ import json
 import logging
 from typing import Optional
 
-from fastapi import HTTPException, Request
+from fastapi import Request
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.core.database import get_db
 from app.models.user import User
 from app.services.stripe_service import get_billing_service, get_usage_service
 
@@ -207,7 +206,6 @@ class BillingMiddleware(BaseHTTPMiddleware):
 
         # Extract from JWT token in Authorization header
         from sqlalchemy import select
-        from sqlalchemy.ext.asyncio import AsyncSession
 
         from app.core.database import get_db
         from app.core.security import verify_token
@@ -260,7 +258,7 @@ class BillingMiddleware(BaseHTTPMiddleware):
                 result = await db.execute(
                     select(User).where(
                         User.id == user_id,
-                        User.is_active == True,
+                        User.is_active,
                         # User.email_verified == True  # SECURITY: Disabled for now (email verification disabled)
                     )
                 )

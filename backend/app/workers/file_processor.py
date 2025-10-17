@@ -12,16 +12,19 @@ Features:
 import asyncio
 import os
 import time
-import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Tuple
 
 import pandas as pd
 import redis
 import structlog
-from celery import current_task
 
 from app.core.celery_app import celery_app
+from app.models.job import JobStatus
+from app.services.fallback_tracker import FallbackTracker
+from app.services.file_service import FileService
+from app.utils.file_utils import detect_encoding, validate_file
+from app.utils.job_db import update_job_status
 
 # Set up logger first
 logger = structlog.get_logger()
@@ -39,12 +42,6 @@ try:
 except ImportError as e:
     logger.error("failed_to_load_correct_gemini_service", error=str(e))
     ConsolidatedGeminiService = None
-from app.models.job import JobStatus
-from app.services.cache_manager import NameCacheManager
-from app.services.fallback_tracker import FallbackTracker
-from app.services.file_service import FileService
-from app.utils.file_utils import detect_encoding, validate_file
-from app.utils.job_db import update_job_progress_db, update_job_status
 
 
 class OptimizedFileProcessorService:
@@ -828,7 +825,7 @@ class OptimizedFileProcessorService:
         analysis.append(
             {
                 "Category": f"  Results with Warnings",
-                "Value": f"{results_with_warnings} ({(results_with_warnings/total)*100:.1f}%)",
+                "Value": f"{results_with_warnings} ({(results_with_warnings / total) * 100:.1f}%)",
             }
         )
         analysis.append(
@@ -837,7 +834,7 @@ class OptimizedFileProcessorService:
         analysis.append(
             {
                 "Category": f"  Low Confidence Results",
-                "Value": f"{low_confidence} ({(low_confidence/total)*100:.1f}%)",
+                "Value": f"{low_confidence} ({(low_confidence / total) * 100:.1f}%)",
             }
         )
         analysis.append({"Category": "", "Value": ""})

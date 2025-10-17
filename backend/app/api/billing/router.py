@@ -6,7 +6,6 @@ from typing import List, Optional
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -374,7 +373,7 @@ async def stripe_meter_webhook(request: Request, db: AsyncSession = Depends(get_
 async def process_stripe_event(event, db: AsyncSession) -> dict:
     """Process individual Stripe webhook events"""
 
-    stripe_service = StripeService()
+    StripeService()
     event_type = event.type
     data = event.data.object
 
@@ -448,7 +447,7 @@ async def handle_checkout_expired(session_data: dict, db: AsyncSession) -> dict:
     """Handle checkout session expiration - reset user plan to FREE if payment was cancelled"""
 
     customer_id = session_data.get("customer")
-    metadata = session_data.get("metadata", {})
+    session_data.get("metadata", {})
 
     if not customer_id:
         logger.warning(

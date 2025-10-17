@@ -3,8 +3,6 @@ Geolocation middleware for enforcing geographic restrictions per Terms of Servic
 CRITICAL FOR LEGAL COMPLIANCE - US-only service requirement
 """
 
-import asyncio
-import json
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -12,7 +10,6 @@ import httpx
 import structlog
 from fastapi import HTTPException, Request, status
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
 
 from app.utils.client_ip import get_client_ip
 

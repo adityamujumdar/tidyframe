@@ -3,15 +3,13 @@ Enhanced Security Middleware for tidyframe.com
 Provides comprehensive security headers, rate limiting, and protection mechanisms
 """
 
-import json
 import re
 import time
 from collections import defaultdict, deque
-from datetime import datetime, timedelta
 from typing import Dict, Optional, Set
 
 import structlog
-from fastapi import HTTPException, Request, Response, status
+from fastapi import Request, Response, status
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
