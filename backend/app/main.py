@@ -22,6 +22,7 @@ from app.middleware.site_password import SitePasswordMiddleware
 from app.middleware.security import SecurityMiddleware, RateLimitMiddleware
 from app.middleware.billing_middleware import BillingMiddleware
 from app.middleware.geolocation import GeolocationMiddleware
+from app.utils.client_ip import get_client_ip
 from app.api.auth import router as auth_router
 from app.api.files import router as files_router
 from app.api.users import router as users_router
@@ -186,7 +187,7 @@ def create_application() -> FastAPI:
             url=str(request.url),
             correlation_id=correlation_id,
             user_agent=request.headers.get("user-agent"),
-            client_ip=request.client.host
+            client_ip=get_client_ip(request)
         )
         
         # Process request

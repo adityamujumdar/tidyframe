@@ -224,7 +224,7 @@ export default function ProcessingStatus() {
           </p>
         </div>
         <Button
-          onClick={() => fetchJobs()}
+          onClick={() => isAnonymous && jobId ? fetchSingleJob() : fetchJobs()}
           disabled={refreshing}
           variant="outline"
           size="sm"
@@ -441,6 +441,22 @@ export default function ProcessingStatus() {
 
                 {/* Actions */}
                 <div className="space-y-4">
+                  {/* Download Tier Notice for Anonymous Users */}
+                  {isAnonymous && job.status === 'completed' && (
+                    <Alert className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+                      <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      <AlertDescription>
+                        <span className="font-semibold">Anonymous Download:</span> You'll receive parsed results only (8 essential fields: entity type, first name, middle name, last name, suffix, company, trust, confidence).{' '}
+                        <Link
+                          to="/auth/register"
+                          className="text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100 font-semibold underline underline-offset-2"
+                        >
+                          Sign up for full data access
+                        </Link>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
                   <div className="flex flex-col sm:flex-row gap-3">
                     {job.status === 'completed' && (
                       <Button
@@ -450,7 +466,7 @@ export default function ProcessingStatus() {
                         className="w-full sm:w-auto shadow-lg"
                       >
                         <Download className="h-4 w-4 mr-2" />
-                        Download Results
+                        {isAnonymous ? 'Download Parsed Results' : 'Download Results'}
                       </Button>
                     )}
 

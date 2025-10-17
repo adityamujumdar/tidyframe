@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 import structlog
 
 from app.core.config import settings
+from app.utils.client_ip import get_client_ip
 from .schemas import SitePasswordRequest, SitePasswordResponse, SitePasswordStatusResponse
 
 logger = structlog.get_logger()
@@ -65,7 +66,7 @@ async def get_site_password_status(request: Request):
         "site_password_status_check",
         enabled=enabled,
         authenticated=authenticated,
-        client_ip=request.client.host
+        client_ip=get_client_ip(request)
     )
     
     return SitePasswordStatusResponse(
@@ -119,7 +120,7 @@ async def authenticate_site_password(
     if password_request.password != site_password:
         logger.warning(
             "site_password_authentication_failed",
-            client_ip=request.client.host,
+            client_ip=get_client_ip(request),
             user_agent=request.headers.get("user-agent", "unknown")
         )
         
@@ -131,7 +132,7 @@ async def authenticate_site_password(
     # Password is correct, create success response with cookie
     logger.info(
         "site_password_authentication_success",
-        client_ip=request.client.host,
+        client_ip=get_client_ip(request),
         user_agent=request.headers.get("user-agent", "unknown")
     )
     
@@ -194,7 +195,7 @@ async def check_site_password(
     logger.info(
         "site_password_check",
         valid=is_valid,
-        client_ip=request.client.host
+        client_ip=get_client_ip(request)
     )
     
     if is_valid:

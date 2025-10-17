@@ -467,44 +467,46 @@ export default function UniversalFileUpload({
                 </div>
               )}
 
-              {/* Column Settings */}
-              <div className="space-y-4">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="w-full flex items-center gap-2"
-                  onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-                  type="button"
-                >
-                  <Settings className="h-4 w-4" />
-                  Column Settings (Optional)
-                </Button>
-                
-                {showAdvancedOptions && (
-                  <Card className="border-dashed">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm">Custom Column Name</CardTitle>
-                      <CardDescription className="text-caption">
-                        Specify the column that contains names to process. Leave blank to use default detection.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Label htmlFor="column-name" className="text-sm">Column Name</Label>
-                      <Input
-                        id="column-name"
-                        value={columnName}
-                        onChange={(e) => setColumnName(e.target.value)}
-                        placeholder="e.g., name, parse_string..."
-                        className="mt-1"
-                        disabled={uploading}
-                      />
-                      <p className="text-caption text-muted-foreground mt-1">
-                        Default detection looks for: 'name' or 'parse_string'
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
+              {/* Column Settings - Only show to authenticated users */}
+              {user && (
+                <div className="space-y-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full flex items-center gap-2"
+                    onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                    type="button"
+                  >
+                    <Settings className="h-4 w-4" />
+                    Column Settings (Optional)
+                  </Button>
+
+                  {showAdvancedOptions && (
+                    <Card className="border-dashed">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-sm">Custom Column Name</CardTitle>
+                        <CardDescription className="text-caption">
+                          Specify the column that contains names to process. Leave blank to use default detection.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <Label htmlFor="column-name" className="text-sm">Column Name</Label>
+                        <Input
+                          id="column-name"
+                          value={columnName}
+                          onChange={(e) => setColumnName(e.target.value)}
+                          placeholder="e.g., name, parse_string..."
+                          className="mt-1"
+                          disabled={uploading}
+                        />
+                        <p className="text-caption text-muted-foreground mt-1">
+                          Default detection looks for: 'name' or 'parse_string'
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
 
               {/* Upload Button */}
               <div className="flex gap-2">

@@ -10,6 +10,8 @@ import structlog
 import hashlib
 from typing import Optional
 
+from app.utils.client_ip import get_client_ip
+
 logger = structlog.get_logger()
 
 
@@ -187,7 +189,7 @@ class SitePasswordMiddleware(BaseHTTPMiddleware):
         logger.info(
             "site_password_access_denied",
             path=path,
-            client_ip=request.client.host,
+            client_ip=get_client_ip(request),
             user_agent=request.headers.get("user-agent", "unknown")
         )
 

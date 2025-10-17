@@ -13,6 +13,8 @@ from typing import Optional
 import json
 from datetime import datetime, timezone
 
+from app.utils.client_ip import get_client_ip
+
 logger = structlog.get_logger()
 
 class GeolocationMiddleware(BaseHTTPMiddleware):
@@ -43,8 +45,8 @@ class GeolocationMiddleware(BaseHTTPMiddleware):
         if request.url.path in ["/api/auth/register", "/api/v1/auth/register"]:
             return await call_next(request)
             
-        # Get client IP
-        client_ip = self._get_client_ip(request)
+        # Get client IP (reads X-Forwarded-For from nginx)
+        client_ip = get_client_ip(request)
         
         if not client_ip:
             logger.warning("geolocation_no_ip", path=request.url.path)
@@ -75,26 +77,7 @@ class GeolocationMiddleware(BaseHTTPMiddleware):
         request.state.is_verified_us = True
         
         return await call_next(request)
-    
-    def _get_client_ip(self, request: Request) -> Optional[str]:
-        """Extract client IP from request headers"""
-        # Check X-Forwarded-For header (for load balancers/proxies)
-        forwarded_for = request.headers.get("x-forwarded-for")
-        if forwarded_for:
-            # Get the first IP (original client)
-            return forwarded_for.split(",")[0].strip()
-        
-        # Check X-Real-IP header
-        real_ip = request.headers.get("x-real-ip")
-        if real_ip:
-            return real_ip.strip()
-        
-        # Fallback to request client
-        if hasattr(request, 'client') and request.client:
-            return request.client.host
-            
-        return None
-    
+
     def _is_localhost_or_docker_network(self, ip: str) -> bool:
         """Check if IP is localhost or from Docker network ranges"""
         # Standard localhost IPs

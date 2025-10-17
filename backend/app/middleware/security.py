@@ -14,6 +14,8 @@ import re
 import json
 from datetime import datetime, timedelta
 
+from app.utils.client_ip import get_client_ip
+
 logger = structlog.get_logger()
 
 
@@ -82,19 +84,6 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             max_request_size_mb=max_request_size_mb
         )
     
-    def _get_client_ip(self, request: Request) -> str:
-        """Get client IP address with proxy header support"""
-        # Check for forwarded headers (common in production with reverse proxies)
-        forwarded_for = request.headers.get("x-forwarded-for")
-        if forwarded_for:
-            # Take the first IP in the chain
-            return forwarded_for.split(",")[0].strip()
-        
-        forwarded_proto = request.headers.get("x-forwarded-proto")
-        if forwarded_proto:
-            return request.headers.get("x-real-ip", request.client.host)
-        
-        return request.client.host
     
     def _is_rate_limited(self, ip: str, path: str) -> bool:
         """Check if the IP is rate limited"""
@@ -208,8 +197,8 @@ class SecurityMiddleware(BaseHTTPMiddleware):
     
     async def dispatch(self, request: Request, call_next):
         """Main middleware dispatch method"""
-        
-        client_ip = self._get_client_ip(request)
+
+        client_ip = get_client_ip(request)
         path = request.url.path
         
         # Request size limiting

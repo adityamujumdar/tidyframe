@@ -26,6 +26,7 @@ from app.services.file_service import FileService
 from app.workers.file_processor import process_file, validate_uploaded_file
 from app.workers.email_sender import send_processing_complete_email
 from app.utils.file_utils import validate_file, safe_filename, format_file_size
+from app.utils.client_ip import get_client_ip
 from app.api.files.schemas import (
     FileUploadResponse, JobStatus, JobList, FilePreview, ProcessingConfig,
     DownloadInfo, ProcessingSummary, UsageStats
@@ -51,7 +52,16 @@ async def upload_file(
     """Upload file for name parsing - Admin users bypass billing requirements"""
 
     # Get client IP - critical for anonymous user tracking
-    client_ip = request.client.host if request.client else None
+    # In production, this reads X-Forwarded-For header from nginx
+    client_ip = get_client_ip(request)
+
+    # Log IP detection for debugging (especially important for anonymous users)
+    logger.info("upload_ip_detection",
+                detected_ip=client_ip,
+                is_anonymous=not bool(current_user),
+                x_forwarded_for=request.headers.get("x-forwarded-for"),
+                x_real_ip=request.headers.get("x-real-ip"),
+                direct_connection=request.client.host if request.client else None)
 
     # Validate that we can identify anonymous users by IP
     if not current_user and not client_ip:

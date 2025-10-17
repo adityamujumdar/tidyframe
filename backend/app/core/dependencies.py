@@ -16,6 +16,7 @@ from app.core.security import verify_token, verify_api_key
 from app.core.redis import check_rate_limit
 from app.models.user import User
 from app.models.api_key import APIKey
+from app.utils.client_ip import get_client_ip
 
 logger = structlog.get_logger()
 
@@ -190,7 +191,7 @@ async def check_user_rate_limit(
         limit = settings.API_RATE_LIMIT_PER_MINUTE
     else:
         # Use IP for anonymous users
-        client_ip = request.client.host
+        client_ip = get_client_ip(request)
         identifier = f"ip:{client_ip}"
         limit = settings.RATE_LIMIT_PER_MINUTE
     
@@ -231,8 +232,8 @@ async def get_anonymous_or_user(
     if current_user:
         return current_user, None
     else:
-        # Anonymous user - track by IP
-        client_ip = request.client.host
+        # Anonymous user - track by IP (reads X-Forwarded-For from nginx)
+        client_ip = get_client_ip(request)
         return None, client_ip
 
 

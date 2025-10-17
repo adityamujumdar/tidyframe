@@ -5,6 +5,42 @@ All notable changes to TidyFrame will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2025-10-16
+
+### Fixed - CRITICAL
+- **Client IP Detection**: Fixed critical bug where backend used nginx container IP (172.x.x.x) instead of real client IP
+  - All anonymous users were sharing the same IP quota (first user exhausted 5 parses, blocking everyone else)
+  - Security breach: users could potentially access each other's jobs via IP matching
+  - Created centralized `get_client_ip()` utility that reads X-Forwarded-For headers from nginx reverse proxy
+  - Updated 9 backend files to use the new utility (files/router.py, dependencies.py, all middleware, auth routers)
+  - Added extensive IP detection logging for production debugging
+
+### Fixed - Anonymous Processing
+- **ProcessingStatus Race Condition**: Fixed Refresh button calling wrong fetch function for anonymous users
+  - Now correctly calls `fetchSingleJob()` for anonymous users vs `fetchJobs()` for authenticated
+  - Prevents 403 errors and improves stability for anonymous processing flow
+
+### Added - Anonymous User UX
+- **Column Selector Hidden**: Anonymous users no longer see custom column name selector
+  - Enforces default column detection ('name' or 'parse_string') for simplicity
+  - Reduces confusion for trial users
+- **Download Tier Notice**: Added clear notice for anonymous users explaining parsed-only downloads
+  - Shows 8 essential fields included (entity type, name components, company, trust, confidence)
+  - Links to registration for full data access
+- **Download Button Clarity**: Button text now reads "Download Parsed Results" for anonymous users vs "Download Results" for authenticated
+
+### Technical Improvements
+- **IP Utility**: New `/backend/app/utils/client_ip.py` provides centralized IP extraction with proper fallbacks
+  - Priority order: X-Forwarded-For → X-Real-IP → direct connection (dev fallback)
+  - Comprehensive logging for debugging production IP detection
+- **Code Deduplication**: Removed duplicate `_get_client_ip()` methods from middleware files
+- **Anonymous Flow Hardening**: Better error handling and navigation guards for anonymous processing
+
+### Impact
+- **Anonymous Processing Restored**: Each anonymous user now gets their own 5-parse quota
+- **Security Hardened**: Users can no longer access each other's jobs via shared IP
+- **Better UX**: Clear communication about free tier limitations and upgrade path
+
 ## [1.2.1] - 2025-10-16
 
 ### Fixed

@@ -18,6 +18,7 @@ from app.core.security import (
     generate_verification_token, generate_reset_token, verify_token
 )
 from app.core.dependencies import require_auth, check_user_rate_limit, get_current_user
+from app.utils.client_ip import get_client_ip
 from app.models.user import User, PlanType
 from app.workers.email_sender import send_welcome_email, send_email_verification, send_password_reset
 from app.services.google_oauth import GoogleOAuthService
@@ -87,13 +88,14 @@ async def register_user(
             detail="You must accept both the Terms of Service and Privacy Policy to create an account"
         )
     
-    # Extract client IP address for legal compliance
+    # Extract client IP address for legal compliance (reads X-Forwarded-For from nginx)
     client_ip = None
-    if hasattr(request, 'client') and request.client:
+    client_ip_str = get_client_ip(request)
+    if client_ip_str:
         try:
-            client_ip = ipaddress.ip_address(request.client.host)
+            client_ip = ipaddress.ip_address(client_ip_str)
         except ValueError:
-            logger.warning("Invalid client IP", ip=request.client.host)
+            logger.warning("Invalid client IP", ip=client_ip_str)
     
     # Create user
     hashed_password = get_password_hash(user_data.password)
