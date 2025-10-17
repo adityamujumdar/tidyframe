@@ -1,4 +1,4 @@
-import { ParseResult, ProcessingJob } from '@/types/processing';
+import { ParseResult } from '@/types/processing';
 
 export type WarningLevel = 'info' | 'warning' | 'error';
 export type ParsingMethod = 'gemini' | 'fallback';

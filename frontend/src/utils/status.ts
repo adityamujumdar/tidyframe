@@ -40,10 +40,9 @@ export function getStatusColor(status: JobStatus): string {
 /**
  * Gets the appropriate icon for a job status
  * @param status Job status
- * @param className Optional className for the icon
  * @returns Lucide icon component
  */
-export function getStatusIcon(status: JobStatus, className?: string): LucideIcon {
+export function getStatusIcon(status: JobStatus): LucideIcon {
   switch (status) {
     case 'completed':
       return CheckCircle;

@@ -76,8 +76,8 @@ export interface ProcessingJob {
       peak_memory_usage?: number;
     };
   };
-  
-  result?: any;
+
+  result?: Record<string, unknown>;
   user_id?: string;
   file_id?: string;
   

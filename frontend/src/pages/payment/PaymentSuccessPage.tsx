@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 import { logger } from '@/utils/logger';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, Loader2 } from 'lucide-react';
 
 export default function PaymentSuccessPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { user, refreshUser } = useAuth();
   const [activating, setActivating] = useState(true);
   const [activated, setActivated] = useState(false);
@@ -77,7 +76,7 @@ export default function PaymentSuccessPage() {
     };
 
     activateUser();
-  }, [user, navigate]);
+  }, [user, navigate, refreshUser]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">

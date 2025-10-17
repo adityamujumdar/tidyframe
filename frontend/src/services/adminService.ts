@@ -60,8 +60,8 @@ class AdminService {
 
     const queryString = searchParams.toString();
     const url = queryString ? `${this.baseUrl}/users?${queryString}` : `${this.baseUrl}/users`;
-    
-    const users = await apiService.get<any[]>(url);
+
+    const users = await apiService.get<Record<string, unknown>[]>(url);
     
     // Transform backend snake_case to frontend camelCase
     return users.map(user => ({
@@ -87,7 +87,7 @@ class AdminService {
       current_month_parses: number;
     };
   }> {
-    const data = await apiService.get<any>(`${this.baseUrl}/users/${userId}`);
+    const data = await apiService.get<Record<string, unknown>>(`${this.baseUrl}/users/${userId}`);
     
     return {
       user: {

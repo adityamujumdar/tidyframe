@@ -24,11 +24,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { ProcessingJob, UsageStats, UsageStatsResponse } from '@/types/processing';
+import { ProcessingJob } from '@/types/processing';
 import { StatusIndicator } from '@/components/shared/StatusIndicator';
 import { ProgressBar } from '@/components/shared/ProgressBar';
 import { formatDate } from '@/utils/format';
-import { BILLING, PARSE_LIMITS, UI } from '@/config/constants';
+import { UI } from '@/config/constants';
 
 type JobStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
@@ -37,7 +37,6 @@ export default function DashboardHome() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [recentJobs, setRecentJobs] = useState<ProcessingJob[]>([]);
-  const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -56,67 +55,37 @@ export default function DashboardHome() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [jobs, usage] = await Promise.all([
+        const [jobs] = await Promise.all([
           processingService.getJobs().catch(() => {
             logger.debug('Jobs endpoint not available yet, using empty array');
             return [];
-          }),
-          processingService.getUserUsage().catch(() => {
-            logger.debug('Usage endpoint not available yet, using defaults');
-            return {
-              parses_this_month: user?.parsesThisMonth || 0,
-              monthly_limit: user?.monthlyLimit || PARSE_LIMITS.STANDARD,
-              remaining_parses: user?.monthlyLimit ? (user.monthlyLimit - (user.parsesThisMonth || 0)) : PARSE_LIMITS.STANDARD,
-              usage_percentage: user?.monthlyLimit ? ((user.parsesThisMonth || 0) / user.monthlyLimit) * 100 : 0,
-              days_until_reset: BILLING.DEFAULT_CYCLE_DAYS
-            };
           })
         ]);
-        
+
         setRecentJobs(Array.isArray(jobs) ? jobs.slice(0, UI.MAX_RECENT_JOBS) : []); // Show only recent jobs
-        // Convert backend snake_case to frontend camelCase for UsageStats
-        const usageResponse = usage as UsageStatsResponse;
-        setUsageStats({
-            parsesThisMonth: usageResponse?.parses_this_month || user?.parsesThisMonth || 0,
-            monthlyLimit: usageResponse?.monthly_limit || user?.monthlyLimit || PARSE_LIMITS.STANDARD,
-            remainingParses: usageResponse?.remaining_parses || (user?.monthlyLimit ? (user.monthlyLimit - (user.parsesThisMonth || 0)) : PARSE_LIMITS.STANDARD),
-            usagePercentage: usageResponse?.usage_percentage || (user?.monthlyLimit ? ((user.parsesThisMonth || 0) / user.monthlyLimit) * 100 : 0),
-            daysUntilReset: usageResponse?.days_until_reset || BILLING.DEFAULT_CYCLE_DAYS
-        });
       } catch (error) {
         logger.error('Error fetching dashboard data:', error);
         // Set fallback data instead of showing errors
         setRecentJobs([]);
-        setUsageStats({
-          parsesThisMonth: user?.parsesThisMonth || 0,
-          monthlyLimit: user?.monthlyLimit || PARSE_LIMITS.STANDARD,
-          remainingParses: user?.monthlyLimit ? (user.monthlyLimit - (user.parsesThisMonth || 0)) : PARSE_LIMITS.STANDARD,
-          usagePercentage: user?.monthlyLimit ? ((user.parsesThisMonth || 0) / user.monthlyLimit) * 100 : 0,
-          daysUntilReset: BILLING.DEFAULT_CYCLE_DAYS
-        });
       } finally {
         setLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, [user, fetchJobs]);
-
-  const usagePercentage = user && user.monthlyLimit > 0
-    ? (user.parsesThisMonth / user.monthlyLimit) * 100
-    : 0;
+  }, [user]);
 
   const handleRefreshSubscription = async () => {
     setRefreshing(true);
     try {
       await refreshUser();
       toast.success('Subscription status updated successfully');
-    } catch (error) {
+    } catch {
       toast.error('Failed to refresh subscription status. Please try again.');
     } finally {
       setRefreshing(false);
     }
-  }, [refreshUser]);
+  };
 
   if (loading) {
     return (

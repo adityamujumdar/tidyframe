@@ -94,7 +94,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } else {
       setHasActiveSubscription(false);
     }
-  }, [user, checkSubscriptionStatus]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const login = async (email: string, password: string) => {
     const response = await authService.login(email, password);

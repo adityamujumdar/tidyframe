@@ -1,13 +1,11 @@
 import { useEffect } from 'react';
 import { logger } from '@/utils/logger';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { XCircle, ArrowRight, Home } from 'lucide-react';
 
 export default function PaymentCancelledPage() {
-  const navigate = useNavigate();
-
   useEffect(() => {
     // Clean up any pending registration state
     localStorage.removeItem('pending_user');
