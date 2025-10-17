@@ -295,8 +295,7 @@ async def check_parsing_quota(
             if rows_to_parse > settings.ANONYMOUS_LIFETIME_LIMIT:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"File too large for anonymous usage. Maximum: {
-                        settings.ANONYMOUS_LIFETIME_LIMIT} parses. Please sign up for more capacity.",
+                    detail=f"File too large for anonymous usage. Maximum: {settings.ANONYMOUS_LIFETIME_LIMIT} parses. Please sign up for more capacity.",
                 )
 
             # Create AnonymousUsage record for tracking
