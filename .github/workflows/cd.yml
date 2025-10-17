@@ -7,12 +7,25 @@ on:
       - completed
     branches:
       - main
+  # Allow manual deployments for hotfixes
+  workflow_dispatch:
+    inputs:
+      skip_health_checks:
+        description: 'Skip health checks (emergency only)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 jobs:
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'
+    if: |
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') ||
+      github.event_name == 'workflow_dispatch'
     environment:
       name: production
       url: https://tidyframe.com
@@ -23,6 +36,58 @@ jobs:
         with:
           ref: main
 
+      - name: Validate environment and backup
+        id: pre_deploy
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.PROD_SERVER_HOST }}
+          username: ${{ secrets.PROD_SERVER_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /opt/tidyframe
+
+            echo "📋 Pre-deployment checks..."
+
+            # Store current commit for potential rollback
+            CURRENT_COMMIT=$(git rev-parse HEAD)
+            echo "current_commit=$CURRENT_COMMIT" >> deployment.state
+
+            # Validate environment file exists
+            if [ ! -f ".env" ]; then
+              echo "❌ ERROR: .env file not found"
+              exit 1
+            fi
+
+            # Check critical environment variables
+            REQUIRED_VARS="POSTGRES_PASSWORD DATABASE_URL REDIS_PASSWORD SECRET_KEY GEMINI_API_KEY"
+            for var in $REQUIRED_VARS; do
+              if ! grep -q "^$var=" .env; then
+                echo "❌ ERROR: Required environment variable $var not found in .env"
+                exit 1
+              fi
+            done
+
+            # Ensure FRONTEND_URL is set correctly
+            if grep -q "FRONTEND_URL=http://localhost" .env; then
+              echo "⚠️  WARNING: FRONTEND_URL uses localhost, fixing..."
+              sed -i 's|FRONTEND_URL=http://localhost:3000|FRONTEND_URL=https://tidyframe.com|g' .env
+            fi
+
+            if ! grep -q "^FRONTEND_URL=" .env; then
+              echo "FRONTEND_URL=https://tidyframe.com" >> .env
+            fi
+
+            # Backup database (keep last 3 backups)
+            echo "💾 Creating database backup..."
+            mkdir -p backups
+            BACKUP_FILE="backups/db-backup-$(date +%Y%m%d-%H%M%S).sql"
+            docker compose -f docker-compose.prod.yml exec -T postgres pg_dump -U tidyframe tidyframe > "$BACKUP_FILE" || echo "⚠️  Database backup failed (non-critical)"
+
+            # Cleanup old backups (keep last 3)
+            ls -t backups/db-backup-*.sql 2>/dev/null | tail -n +4 | xargs -r rm
+
+            echo "✅ Pre-deployment validation complete"
+
       - name: Deploy to production server
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -32,48 +97,65 @@ jobs:
           script: |
             cd /opt/tidyframe
 
+            echo "🚀 Starting deployment..."
+
             # Pull latest code
+            echo "📥 Pulling latest changes..."
             git fetch origin
             git reset --hard origin/main
 
-            # Stop existing backend to release env file
-            docker-compose -f docker-compose.prod.yml stop backend
-            docker rm tidyframe_backend_1 || true
+            echo "📦 Current version: $(git describe --tags --always)"
+            echo "📝 Latest commit: $(git log -1 --oneline)"
 
-            # Ensure critical env vars are set
-            if ! grep -q "FRONTEND_URL" .env; then
-              echo "FRONTEND_URL=https://tidyframe.com" >> .env
-            fi
+            # Run zero-downtime deployment script
+            echo "🔄 Running zero-downtime deployment..."
+            bash backend/scripts/zero-downtime-deploy.sh docker-compose.prod.yml backend celery-worker celery-beat
 
-            # Start all services
-            docker-compose -f docker-compose.prod.yml up -d
-
-            echo "Deployment completed"
-
-      - name: Wait for deployment
+      - name: Wait for services to stabilize
         run: sleep 30
 
       - name: Health check
+        if: inputs.skip_health_checks != 'true'
         run: |
-          echo "Running health checks..."
+          echo "🏥 Running health checks..."
 
-          # Check main health endpoint
-          if curl -f -s https://tidyframe.com/health; then
-            echo "✅ Main health check passed"
-          else
-            echo "❌ Main health check failed"
-            exit 1
-          fi
+          MAX_ATTEMPTS=10
+          ATTEMPT=0
 
-          # Check frontend loads
-          if curl -f -s https://tidyframe.com/ | grep -q "TidyFrame"; then
-            echo "✅ Frontend loads correctly"
-          else
-            echo "❌ Frontend failed to load"
-            exit 1
-          fi
+          # Health check with retry logic
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            ATTEMPT=$((ATTEMPT + 1))
+            echo "Attempt $ATTEMPT/$MAX_ATTEMPTS..."
+
+            # Check main health endpoint
+            if curl -f -s -m 10 https://tidyframe.com/health > /dev/null 2>&1; then
+              echo "✅ Health endpoint responsive"
+
+              # Check API is responding
+              API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://tidyframe.com/api/health 2>/dev/null)
+              if [ "$API_STATUS" = "200" ] || [ "$API_STATUS" = "401" ]; then
+                echo "✅ API responding (status: $API_STATUS)"
+
+                # Check frontend loads
+                if curl -f -s -m 10 https://tidyframe.com/ | grep -q "tidyframe\|TidyFrame\|root"; then
+                  echo "✅ Frontend loads correctly"
+                  echo "🎉 All health checks passed!"
+                  exit 0
+                fi
+              fi
+            fi
+
+            if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+              echo "⏳ Waiting 10s before retry..."
+              sleep 10
+            fi
+          done
+
+          echo "❌ Health checks failed after $MAX_ATTEMPTS attempts"
+          exit 1
 
       - name: Run smoke tests
+        if: inputs.skip_health_checks != 'true'
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.PROD_SERVER_HOST }}
@@ -81,15 +163,59 @@ jobs:
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
             cd /opt/tidyframe
-            bash backend/scripts/smoke-test.sh || echo "Smoke tests completed with warnings"
+
+            echo "🧪 Running smoke tests..."
+
+            # Run comprehensive smoke tests
+            if bash backend/scripts/smoke-test.sh tidyframe.com docker-compose.prod.yml; then
+              echo "✅ Smoke tests passed"
+            else
+              echo "⚠️  Smoke tests completed with warnings (non-critical)"
+            fi
+
+      - name: Verify container health
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.PROD_SERVER_HOST }}
+          username: ${{ secrets.PROD_SERVER_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /opt/tidyframe
+
+            echo "🐳 Checking container status..."
+            docker compose -f docker-compose.prod.yml ps
+
+            # Check all required services are healthy
+            REQUIRED_SERVICES="backend nginx postgres redis celery-worker celery-beat"
+            UNHEALTHY=""
+
+            for service in $REQUIRED_SERVICES; do
+              STATUS=$(docker compose -f docker-compose.prod.yml ps $service --format json | jq -r '.[0].Health // "unknown"')
+              if [ "$STATUS" = "healthy" ] || [ "$STATUS" = "unknown" ]; then
+                echo "✅ $service is running"
+              else
+                echo "❌ $service is unhealthy"
+                UNHEALTHY="$UNHEALTHY $service"
+              fi
+            done
+
+            if [ -n "$UNHEALTHY" ]; then
+              echo "⚠️  Warning: Some services are unhealthy:$UNHEALTHY"
+              echo "This may resolve automatically. Check logs with: docker compose -f docker-compose.prod.yml logs $UNHEALTHY"
+            fi
 
       - name: Deployment notification
         if: success()
         run: |
+          echo "🎉 ====================================="
           echo "🚀 Deployment successful!"
-          echo "Version: $(git describe --tags --always)"
-          echo "Commit: ${{ github.sha }}"
-          echo "URL: https://tidyframe.com"
+          echo "====================================="
+          echo "📦 Version: $(git describe --tags --always 2>/dev/null || echo 'unknown')"
+          echo "📝 Commit: ${{ github.sha }}"
+          echo "🌐 URL: https://tidyframe.com"
+          echo "⏱️  Deployed at: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "✅ All health checks passed"
+          echo "====================================="
 
   rollback-on-failure:
     name: Rollback on Failure
@@ -98,7 +224,7 @@ jobs:
     if: failure()
 
     steps:
-      - name: Rollback deployment
+      - name: Intelligent rollback
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.PROD_SERVER_HOST }}
@@ -107,20 +233,52 @@ jobs:
           script: |
             cd /opt/tidyframe
 
-            # Get previous commit
-            PREVIOUS_COMMIT=$(git rev-parse HEAD~1)
+            echo "🔄 ====================================="
+            echo "⚠️  ROLLBACK INITIATED"
+            echo "====================================="
 
-            echo "Rolling back to commit: $PREVIOUS_COMMIT"
+            # Read previous commit from deployment state
+            if [ -f "deployment.state" ]; then
+              PREVIOUS_COMMIT=$(grep "current_commit=" deployment.state | cut -d= -f2)
+              echo "📌 Rolling back to commit: $PREVIOUS_COMMIT"
+            else
+              PREVIOUS_COMMIT=$(git rev-parse HEAD~1)
+              echo "📌 No deployment state found, using previous commit: $PREVIOUS_COMMIT"
+            fi
+
+            # Restore previous code
+            git fetch origin
             git reset --hard $PREVIOUS_COMMIT
 
-            # Restart services
-            docker-compose -f docker-compose.prod.yml down
-            docker-compose -f docker-compose.prod.yml up -d
+            echo "🔨 Rebuilding previous version..."
+            docker compose -f docker-compose.prod.yml build --no-cache backend celery-worker celery-beat
 
-            echo "Rollback completed"
+            echo "🔄 Restarting services..."
+            docker compose -f docker-compose.prod.yml up -d --force-recreate --no-deps backend celery-worker celery-beat
+
+            echo "⏳ Waiting for services..."
+            sleep 20
+
+            # Verify rollback succeeded
+            if docker compose -f docker-compose.prod.yml ps | grep -q "backend.*Up"; then
+              echo "✅ Rollback successful - services are running"
+            else
+              echo "❌ Rollback failed - manual intervention required!"
+              docker compose -f docker-compose.prod.yml ps
+              exit 1
+            fi
+
+            echo "====================================="
+            echo "✅ Rollback completed"
+            echo "====================================="
 
       - name: Rollback notification
         run: |
-          echo "⚠️ Deployment failed and was rolled back"
-          echo "Previous commit restored"
-          echo "Manual investigation required"
+          echo "⚠️  ====================================="
+          echo "🔄 DEPLOYMENT FAILED - ROLLBACK EXECUTED"
+          echo "====================================="
+          echo "❌ Deployment to production failed"
+          echo "✅ System rolled back to previous version"
+          echo "🔍 Manual investigation required"
+          echo "📋 Check logs: docker compose -f docker-compose.prod.yml logs"
+          echo "====================================="

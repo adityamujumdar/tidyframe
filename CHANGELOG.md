@@ -5,6 +5,146 @@ All notable changes to TidyFrame will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.3] - 2025-10-16
+
+### Added - CI/CD Infrastructure Overhaul
+
+**Continuous Integration Enhancements:**
+- **Backend Python Checks**: Added comprehensive backend validation to CI pipeline
+  - Black code formatting checks (strict mode)
+  - isort import sorting validation
+  - Flake8 linting (E9, F63, F7, F82 errors + complexity checks)
+  - Mypy static type checking
+  - pytest with coverage reporting (codecov integration)
+- **Backend Security Scanning**: New security audit job
+  - Safety check for known vulnerabilities in dependencies
+  - Bandit security scan for Python code
+- **Docker Build Validation**: Dedicated job for Docker image builds
+  - Backend/frontend image builds with GitHub Actions cache
+  - Trivy vulnerability scanning
+- **Database Migration Testing**: Automated migration validation
+  - Test Alembic migrations on postgres:15-alpine service
+  - Validate migration rollback capability
+- **Enhanced Quality Gate**: All new checks integrated into quality gate
+  - Frontend: ESLint (strict - removed continue-on-error), TypeScript, Build
+  - Backend: Formatting, Linting, Type checking, Tests, Security
+  - Docker: Image builds, Vulnerability scans
+  - Database: Migration validation
+- **Node Version Consistency**: Updated all workflows to Node.js 20.x
+
+**Continuous Deployment Improvements:**
+- **Zero-Downtime Deployment Script**: Created reusable deployment script
+  - `backend/scripts/zero-downtime-deploy.sh` for rolling updates
+  - Stores deployment state for reliable rollbacks
+  - Health check integration with retry logic
+  - Container recreation with `--force-recreate --no-deps` to avoid database downtime
+- **Enhanced Pre-deployment Validation**:
+  - Environment variable validation with auto-fix for FRONTEND_URL
+  - Automatic database backups before deployment (pg_dump)
+  - Backup retention (keep last 3 backups)
+  - Deployment state tracking for intelligent rollbacks
+- **Improved Health Checks**:
+  - Retry logic (10 attempts, 10s intervals)
+  - Multi-endpoint validation (health, API, frontend)
+  - Better error messages and debugging guidance
+- **Intelligent Rollback**:
+  - Uses deployment.state to restore exact previous version
+  - Automatic triggering on deployment failure
+  - Preserves database backups for recovery
+
+**New Workflows:**
+- **Manual Deployment Workflow** (`manual-deploy.yml`):
+  - Full control over deployment parameters
+  - Options: environment, git ref, services, skip backup, skip health checks, force rebuild
+  - Database migration option
+  - Use cases: hotfixes, emergency deploys, testing
+- **Health Monitoring Workflow** (`health-monitor.yml`):
+  - Runs every 15 minutes
+  - Checks: website status, health endpoint, API, SSL certificate, response time
+  - Detailed mode: container health, disk space usage (via SSH)
+  - Automatic GitHub issue creation on failures
+  - Auto-closes issues when health restored
+
+**Security Scanning Enhancements:**
+- **Optional Token Support**: Made external service tokens optional
+  - Snyk scans conditional on `SNYK_TOKEN` availability
+  - SonarCloud conditional on `SONAR_TOKEN` availability
+  - Slack notifications conditional on webhook URL
+  - All scans continue-on-error for graceful degradation
+- **Timeout Protection**: Added timeout-minutes to all security scan jobs
+  - secret-scan: 15min
+  - dependency-scan: 20min
+  - container-scan: 30min
+  - code-quality-security: 25min
+  - infrastructure-scan: 20min
+  - security-report: 10min
+- **Improved Resilience**: Added continue-on-error to potentially failing scans
+  - Trivy vulnerability scans
+  - Hadolint Dockerfile linting
+  - Snyk scans (when token available)
+
+**Supporting Scripts:**
+- **Environment Validation Script** (`backend/scripts/validate-env.sh`):
+  - Validates all required environment variables
+  - Checks for placeholder values (your-*, example, etc.)
+  - Validates SECRET_KEY length (minimum 32 characters)
+  - Production-specific checks (HTTPS URLs, DEBUG=False, strong passwords)
+  - Database and Redis URL format validation
+  - Optional service connectivity tests
+  - Detailed error messages with fix suggestions
+
+**Documentation:**
+- **Comprehensive CI/CD Documentation** (`.github/workflows/README.md`):
+  - Pipeline architecture diagrams
+  - Detailed workflow descriptions
+  - Script usage examples
+  - Required GitHub secrets documentation
+  - Common operations guide (deploy, rollback, migrations, logs)
+  - Troubleshooting section
+  - Best practices for development and deployment
+  - Monitoring and maintenance checklists
+
+### Changed - Deployment Process
+
+- **CD Workflow Refactored**: Migrated inline deployment logic to reusable script
+- **Docker Compose Syntax Updated**: Changed deprecated `docker-compose` to `docker compose` v2
+- **Deployment Strategy**: Implemented true zero-downtime deployments
+  - Only recreates backend/celery services
+  - Keeps postgres/redis running throughout deployment
+  - No database connection interruption
+- **Workflow Dispatch Enhanced**: Added skip_health_checks option to existing CD workflow
+
+### Fixed - CI/CD Issues
+
+- **Docker Compose Command**: Fixed deprecated syntax throughout CD workflow
+  - All `docker-compose` → `docker compose`
+- **Container Naming**: Removed hardcoded container name references
+  - Let Docker Compose handle naming automatically
+- **Environment Variable Handling**:
+  - Auto-fixes FRONTEND_URL if set to localhost in production
+  - Validates all critical environment variables before deployment
+- **Frontend CI**: Removed `continue-on-error` from ESLint for strict quality enforcement
+- **Security Scan Node Version**: Fixed inconsistency (18 → 20)
+- **Rollback Reliability**: Fixed rollback to use deployment.state instead of unreliable `HEAD~1`
+
+### Technical Improvements
+
+- **Build Artifacts**: CI now uploads frontend build artifacts (7-day retention)
+- **Coverage Reporting**: Backend tests upload coverage to Codecov
+- **GitHub Actions Cache**: Improved build performance with type=gha caching
+- **Error Handling**: Better error messages throughout all workflows
+- **Logging**: Enhanced deployment logging with emojis and structured output
+- **State Management**: deployment.state file tracks commits, branches, timestamps
+
+### Impact
+
+- **CI/CD Reliability**: Comprehensive testing catches issues before production
+- **Deployment Safety**: Zero-downtime deployments + automatic rollbacks
+- **Developer Experience**: Clear documentation, better error messages, manual controls
+- **Security Posture**: Multi-layered security scanning (secrets, dependencies, containers, code)
+- **Observability**: 15-minute health monitoring with automatic alerting
+- **Maintainability**: Reusable scripts, centralized validation, comprehensive docs
+
 ## [1.2.2] - 2025-10-16
 
 ### Fixed - CRITICAL

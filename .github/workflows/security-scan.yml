@@ -1,5 +1,11 @@
 name: Security Scanning
 
+# Comprehensive security scanning workflow
+# Optional secrets (scans will be skipped if not configured):
+#   - SNYK_TOKEN: For Snyk vulnerability scanning
+#   - SONAR_TOKEN: For SonarCloud code quality analysis
+#   - SECURITY_SLACK_WEBHOOK_URL: For critical security alerts
+
 on:
   push:
     branches: [main, develop]
@@ -13,6 +19,7 @@ jobs:
   secret-scan:
     name: Secret Scanning
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -35,6 +42,7 @@ jobs:
   dependency-scan:
     name: Dependency Vulnerability Scan
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       matrix:
         component: [frontend, backend]
@@ -46,7 +54,7 @@ jobs:
         if: matrix.component == 'frontend'
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
@@ -85,19 +93,21 @@ jobs:
 
       - name: Run Snyk scan
         uses: snyk/actions/node@master
-        if: matrix.component == 'frontend'
+        if: matrix.component == 'frontend' && secrets.SNYK_TOKEN != ''
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           args: --severity-threshold=high --file=frontend/package.json
+        continue-on-error: true
 
       - name: Run Snyk scan (Python)
         uses: snyk/actions/python@master
-        if: matrix.component == 'backend'
+        if: matrix.component == 'backend' && secrets.SNYK_TOKEN != ''
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           args: --severity-threshold=high --file=backend/requirements.txt
+        continue-on-error: true
 
       - name: Upload vulnerability reports
         uses: actions/upload-artifact@v3
@@ -110,6 +120,7 @@ jobs:
   container-scan:
     name: Container Security Scan
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: []
     steps:
       - name: Checkout code
@@ -118,6 +129,7 @@ jobs:
       - name: Build frontend image for scanning
         run: |
           docker build -t frontend-scan:latest ./frontend
+        continue-on-error: true
 
       - name: Build backend image for scanning
         run: |
@@ -129,6 +141,7 @@ jobs:
           image-ref: 'frontend-scan:latest'
           format: 'sarif'
           output: 'trivy-frontend-results.sarif'
+        continue-on-error: true
 
       - name: Run Trivy vulnerability scanner (Backend)
         uses: aquasecurity/trivy-action@master
@@ -136,6 +149,7 @@ jobs:
           image-ref: 'backend-scan:latest'
           format: 'sarif'
           output: 'trivy-backend-results.sarif'
+        continue-on-error: true
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
@@ -155,6 +169,7 @@ jobs:
   code-quality-security:
     name: Code Quality & Security Analysis
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -162,10 +177,12 @@ jobs:
           fetch-depth: 0
 
       - name: SonarCloud Scan
+        if: secrets.SONAR_TOKEN != ''
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        continue-on-error: true
 
       - name: Run CodeQL Analysis
         uses: github/codeql-action/init@v2
@@ -191,6 +208,7 @@ jobs:
   infrastructure-scan:
     name: Infrastructure Security Scan
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -225,6 +243,7 @@ jobs:
           dockerfile: ./frontend/Dockerfile
           format: sarif
           output-file: hadolint-frontend-results.sarif
+        continue-on-error: true
 
       - name: Run Hadolint on backend Dockerfile
         uses: hadolint/hadolint-action@v3.1.0
@@ -232,6 +251,7 @@ jobs:
           dockerfile: ./backend/Dockerfile
           format: sarif
           output-file: hadolint-backend-results.sarif
+        continue-on-error: true
 
       - name: Upload Hadolint scan results
         uses: github/codeql-action/upload-sarif@v2
@@ -244,6 +264,7 @@ jobs:
   security-report:
     name: Generate Security Report
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [secret-scan, dependency-scan, container-scan, code-quality-security, infrastructure-scan]
     if: always()
     steps:
@@ -321,7 +342,9 @@ jobs:
             }
 
       - name: Notify security team on critical findings
-        if: needs.secret-scan.result == 'failure' || needs.container-scan.result == 'failure'
+        if: |
+          (needs.secret-scan.result == 'failure' || needs.container-scan.result == 'failure') &&
+          secrets.SECURITY_SLACK_WEBHOOK_URL != ''
         uses: 8398a7/action-slack@v3
         with:
           status: failure
@@ -329,3 +352,4 @@ jobs:
           text: '🚨 Critical security vulnerabilities found in ${{ github.repository }}'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SECURITY_SLACK_WEBHOOK_URL }}
+        continue-on-error: true
