@@ -3,11 +3,11 @@ Database configuration and session management
 SQLAlchemy async setup for PostgreSQL
 """
 
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+import structlog
+from sqlalchemy import MetaData
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.pool import NullPool
-from sqlalchemy import MetaData
-import structlog
 
 from app.core.config import settings
 
@@ -21,7 +21,7 @@ metadata = MetaData(
         "uq": "uq_%(table_name)s_%(column_0_name)s",
         "ck": "ck_%(table_name)s_%(constraint_name)s",
         "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
-        "pk": "pk_%(table_name)s"
+        "pk": "pk_%(table_name)s",
     }
 )
 
@@ -39,10 +39,9 @@ engine = create_async_engine(
 
 # Create async session factory
 AsyncSessionLocal = async_sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False
+    engine, class_=AsyncSession, expire_on_commit=False
 )
+
 
 async def get_db() -> AsyncSession:
     """
@@ -59,18 +58,27 @@ async def get_db() -> AsyncSession:
         finally:
             await session.close()
 
+
 async def create_tables():
     """Create all database tables"""
     try:
         async with engine.begin() as conn:
             # Import all models to ensure they're registered
-            from app.models import user, job, parse_log, api_key, webhook_event, anonymous_usage
-            
+            from app.models import (
+                anonymous_usage,
+                api_key,
+                job,
+                parse_log,
+                user,
+                webhook_event,
+            )
+
             await conn.run_sync(Base.metadata.create_all)
             logger.info("database_tables_created")
     except Exception as e:
         logger.error("database_tables_creation_failed", error=str(e))
         raise
+
 
 async def drop_tables():
     """Drop all database tables (for testing)"""

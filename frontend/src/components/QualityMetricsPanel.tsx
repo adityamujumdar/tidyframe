@@ -11,7 +11,6 @@ import {
   ChevronDown,
   ChevronUp,
   Info,
-  Activity,
   CheckCircle,
   TrendingUp
 } from 'lucide-react';
@@ -25,7 +24,20 @@ import {
 import { MetricCard } from '@/components/shared/MetricCard';
 import { ProgressBar } from '@/components/shared/ProgressBar';
 import { getQualityScoreColor, getQualityScoreIcon, getQualityScoreLabel, getQualityScoreBadgeVariant } from '@/utils/status';
-import { formatCompact } from '@/utils/format';
+
+interface AnalyticsData {
+  avg_confidence?: number;
+  success_rate?: number;
+  entity_stats?: {
+    person_count?: number;
+    company_count?: number;
+    trust_count?: number;
+    unknown_count?: number;
+    error_count?: number;
+  };
+  high_confidence_count?: number;
+  low_confidence_count?: number;
+}
 
 // Helper function to extract quality metrics from job analytics data
 function getMetricsFromJob(job: ProcessingJob): QualityMetrics {
@@ -35,10 +47,10 @@ function getMetricsFromJob(job: ProcessingJob): QualityMetrics {
   const lowConfidenceCount = job.lowConfidenceCount || 0;
   const qualityScore = typeof job.qualityScore === 'number' ? job.qualityScore * 100 : 0;
   
-  // Get analytics from analytics field 
-  const analytics = job.analytics || job.stats || {};
+  // Get analytics from analytics field
+  const analytics: AnalyticsData = job.analytics || job.stats || {};
   const avgConfidence = analytics.avg_confidence || 0;
-  const successRate = (analytics as any).success_rate ? (analytics as any).success_rate / 100 : 1;
+  const successRate = analytics.success_rate ? analytics.success_rate / 100 : 1;
   
   return {
     totalRows,

@@ -30,6 +30,8 @@ import { ProgressBar } from '@/components/shared/ProgressBar';
 import { formatDate } from '@/utils/format';
 import { BILLING, PARSE_LIMITS, UI } from '@/config/constants';
 
+type JobStatus = 'pending' | 'processing' | 'completed' | 'failed';
+
 export default function DashboardHome() {
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
@@ -55,11 +57,11 @@ export default function DashboardHome() {
     const fetchDashboardData = async () => {
       try {
         const [jobs, usage] = await Promise.all([
-          processingService.getJobs().catch(err => {
+          processingService.getJobs().catch(() => {
             logger.debug('Jobs endpoint not available yet, using empty array');
             return [];
           }),
-          processingService.getUserUsage().catch(err => {
+          processingService.getUserUsage().catch(() => {
             logger.debug('Usage endpoint not available yet, using defaults');
             return {
               parses_this_month: user?.parsesThisMonth || 0,
@@ -98,7 +100,7 @@ export default function DashboardHome() {
     };
 
     fetchDashboardData();
-  }, [user]);
+  }, [user, fetchJobs]);
 
   const usagePercentage = user && user.monthlyLimit > 0
     ? (user.parsesThisMonth / user.monthlyLimit) * 100
@@ -114,7 +116,7 @@ export default function DashboardHome() {
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [refreshUser]);
 
   if (loading) {
     return (
@@ -365,7 +367,7 @@ export default function DashboardHome() {
                   >
                     <div className="flex items-center gap-4">
                       <StatusIndicator
-                        status={job.status as any}
+                        status={job.status as JobStatus}
                         mode="icon"
                         iconSize="sm"
                         animate
@@ -380,7 +382,7 @@ export default function DashboardHome() {
                       </div>
                     </div>
                     <StatusIndicator
-                      status={job.status as any}
+                      status={job.status as JobStatus}
                       mode="badge"
                     />
                   </div>

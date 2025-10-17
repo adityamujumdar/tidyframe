@@ -2,24 +2,26 @@
 Admin API routes
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, desc
-from pydantic import BaseModel, EmailStr
-from typing import Optional, List, Dict, Any
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional
+
 import structlog
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, EmailStr
+from sqlalchemy import desc, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.dependencies import require_admin_user
-from app.models.user import User, PlanType
-from app.models.job import ProcessingJob, JobStatus
+from app.models.job import JobStatus, ProcessingJob
 from app.models.parse_log import ParseLog
+from app.models.user import PlanType, User
 from app.models.webhook_event import WebhookEvent
 
 logger = structlog.get_logger()
 
 router = APIRouter()
+
 
 class UserSummary(BaseModel):
     id: str
@@ -32,10 +34,9 @@ class UserSummary(BaseModel):
     email_verified: bool
     created_at: datetime
     last_login_at: Optional[datetime] = None
-    
-    model_config = {
-        "from_attributes": True
-    }
+
+    model_config = {"from_attributes": True}
+
 
 class SystemStats(BaseModel):
     total_users: int
@@ -46,60 +47,63 @@ class SystemStats(BaseModel):
     parses_today: int
     storage_used_gb: float
 
+
 class UsageResetRequest(BaseModel):
     user_id: str
     reset_count: Optional[int] = 0
 
+
 class UserLimitUpdate(BaseModel):
     custom_monthly_limit: Optional[int] = None
+
 
 class UserPlanUpdate(BaseModel):
     plan: str
 
+
 @router.get("/stats", response_model=SystemStats)
 async def get_system_stats(
-    current_user: User = Depends(require_admin_user),
-    db: AsyncSession = Depends(get_db)
+    current_user: User = Depends(require_admin_user), db: AsyncSession = Depends(get_db)
 ):
     """Get system statistics"""
-    
+
     today = datetime.now(timezone.utc).date()
-    today_start = datetime.combine(today, datetime.min.time()).replace(tzinfo=timezone.utc)
-    
+    today_start = datetime.combine(today, datetime.min.time()).replace(
+        tzinfo=timezone.utc
+    )
+
     # Count users
     total_users_result = await db.execute(select(func.count(User.id)))
     total_users = total_users_result.scalar()
-    
+
     active_users_result = await db.execute(
         select(func.count(User.id)).where(User.is_active == True)
     )
     active_users = active_users_result.scalar()
-    
+
     # Count jobs
     total_jobs_result = await db.execute(select(func.count(ProcessingJob.id)))
     total_jobs = total_jobs_result.scalar()
-    
+
     jobs_today_result = await db.execute(
         select(func.count(ProcessingJob.id)).where(
             ProcessingJob.created_at >= today_start
         )
     )
     jobs_today = jobs_today_result.scalar()
-    
+
     # Count parses
     total_parses_result = await db.execute(select(func.sum(ParseLog.row_count)))
     total_parses = total_parses_result.scalar() or 0
-    
+
     parses_today_result = await db.execute(
-        select(func.sum(ParseLog.row_count)).where(
-            ParseLog.timestamp >= today_start
-        )
+        select(func.sum(ParseLog.row_count)).where(ParseLog.timestamp >= today_start)
     )
     parses_today = parses_today_result.scalar() or 0
-    
+
     # Estimate storage usage (rough calculation)
     storage_used_gb = 0.0  # Would need to implement actual disk usage calculation
-    
+
     return SystemStats(
         total_users=total_users,
         active_users=active_users,
@@ -107,8 +111,9 @@ async def get_system_stats(
         jobs_today=jobs_today,
         total_parses=total_parses,
         parses_today=parses_today,
-        storage_used_gb=storage_used_gb
+        storage_used_gb=storage_used_gb,
     )
+
 
 @router.get("/users", response_model=List[UserSummary])
 async def list_users(
@@ -117,79 +122,79 @@ async def list_users(
     search: Optional[str] = Query(None),
     plan_filter: Optional[str] = Query(None),
     current_user: User = Depends(require_admin_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """List users with pagination and filtering"""
-    
+
     # Build query
     query = select(User)
-    
+
     if search:
         query = query.where(User.email.ilike(f"%{search}%"))
-    
+
     if plan_filter:
         query = query.where(User.plan == plan_filter)
-    
+
     # Add pagination
     offset = (page - 1) * page_size
     query = query.order_by(desc(User.created_at)).offset(offset).limit(page_size)
-    
+
     result = await db.execute(query)
     users = result.scalars().all()
-    
-    return [UserSummary(
-        id=str(user.id),
-        email=user.email,
-        plan=user.plan.value,
-        parses_this_month=user.parses_this_month,
-        monthly_limit=user.monthly_limit,
-        custom_monthly_limit=user.custom_monthly_limit,
-        is_active=user.is_active,
-        email_verified=user.email_verified,
-        created_at=user.created_at,
-        last_login_at=user.last_login_at
-    ) for user in users]
+
+    return [
+        UserSummary(
+            id=str(user.id),
+            email=user.email,
+            plan=user.plan.value,
+            parses_this_month=user.parses_this_month,
+            monthly_limit=user.monthly_limit,
+            custom_monthly_limit=user.custom_monthly_limit,
+            is_active=user.is_active,
+            email_verified=user.email_verified,
+            created_at=user.created_at,
+            last_login_at=user.last_login_at,
+        )
+        for user in users
+    ]
+
 
 @router.get("/users/{user_id}")
 async def get_user_details(
     user_id: str,
     current_user: User = Depends(require_admin_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Get detailed user information"""
-    
+
     import uuid
-    
+
     try:
         user_uuid = uuid.UUID(user_id)
     except ValueError:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid user ID format"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user ID format"
         )
-    
-    result = await db.execute(
-        select(User).where(User.id == user_uuid)
-    )
+
+    result = await db.execute(select(User).where(User.id == user_uuid))
     user = result.scalar_one_or_none()
-    
+
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    
+
     # Get user's job statistics
     jobs_count_result = await db.execute(
         select(func.count(ProcessingJob.id)).where(ProcessingJob.user_id == user.id)
     )
     jobs_count = jobs_count_result.scalar()
-    
+
     parses_count_result = await db.execute(
         select(func.sum(ParseLog.row_count)).where(ParseLog.user_id == user.id)
     )
     parses_count = parses_count_result.scalar() or 0
-    
+
     return {
         "user": UserSummary(
             id=str(user.id),
@@ -201,48 +206,45 @@ async def get_user_details(
             is_active=user.is_active,
             email_verified=user.email_verified,
             created_at=user.created_at,
-            last_login_at=user.last_login_at
+            last_login_at=user.last_login_at,
         ),
         "statistics": {
             "total_jobs": jobs_count,
             "total_parses": parses_count,
-            "current_month_parses": user.parses_this_month
-        }
+            "current_month_parses": user.parses_this_month,
+        },
     }
+
 
 @router.put("/users/{user_id}")
 async def update_user(
     user_id: str,
     update_data: dict,
     current_user: User = Depends(require_admin_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Update user information"""
-    
+
     import uuid
-    
+
     try:
         user_uuid = uuid.UUID(user_id)
     except ValueError:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid user ID format"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user ID format"
         )
-    
-    result = await db.execute(
-        select(User).where(User.id == user_uuid)
-    )
+
+    result = await db.execute(select(User).where(User.id == user_uuid))
     user = result.scalar_one_or_none()
-    
+
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    
+
     # Update allowed fields
     allowed_fields = ["is_active", "plan", "email_verified", "custom_monthly_limit"]
-    
+
     for field, value in update_data.items():
         if field in allowed_fields:
             if field == "plan":
@@ -253,172 +255,172 @@ async def update_user(
                 except ValueError:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=f"Invalid plan: {value}"
+                        detail=f"Invalid plan: {value}",
                     )
             else:
                 setattr(user, field, value)
-    
+
     await db.commit()
-    
-    logger.info("user_updated_by_admin", 
-               admin_id=current_user.id,
-               target_user_id=user.id,
-               updates=update_data)
-    
+
+    logger.info(
+        "user_updated_by_admin",
+        admin_id=current_user.id,
+        target_user_id=user.id,
+        updates=update_data,
+    )
+
     return {"message": "User updated successfully"}
+
 
 @router.post("/users/{user_id}/reset-usage")
 async def reset_user_usage(
     user_id: str,
     reset_data: UsageResetRequest,
     current_user: User = Depends(require_admin_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Reset user's monthly usage"""
-    
+
     import uuid
-    
+
     try:
         user_uuid = uuid.UUID(user_id)
     except ValueError:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid user ID format"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user ID format"
         )
-    
-    result = await db.execute(
-        select(User).where(User.id == user_uuid)
-    )
+
+    result = await db.execute(select(User).where(User.id == user_uuid))
     user = result.scalar_one_or_none()
-    
+
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    
+
     old_count = user.parses_this_month
     user.parses_this_month = reset_data.reset_count
     user.month_reset_date = datetime.now(timezone.utc) + timedelta(days=30)
-    
+
     await db.commit()
-    
-    logger.info("user_usage_reset_by_admin",
-               admin_id=current_user.id,
-               target_user_id=user.id,
-               old_count=old_count,
-               new_count=reset_data.reset_count)
-    
+
+    logger.info(
+        "user_usage_reset_by_admin",
+        admin_id=current_user.id,
+        target_user_id=user.id,
+        old_count=old_count,
+        new_count=reset_data.reset_count,
+    )
+
     return {
         "message": "Usage reset successfully",
         "old_count": old_count,
-        "new_count": reset_data.reset_count
+        "new_count": reset_data.reset_count,
     }
+
 
 @router.patch("/users/{user_id}/limits")
 async def update_user_limits(
     user_id: str,
     limit_update: UserLimitUpdate,
     current_user: User = Depends(require_admin_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Update user's monthly limits"""
-    
+
     import uuid
-    
+
     try:
         user_uuid = uuid.UUID(user_id)
     except ValueError:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid user ID format"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user ID format"
         )
-    
-    result = await db.execute(
-        select(User).where(User.id == user_uuid)
-    )
+
+    result = await db.execute(select(User).where(User.id == user_uuid))
     user = result.scalar_one_or_none()
-    
+
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    
+
     old_limit = user.custom_monthly_limit
     user.custom_monthly_limit = limit_update.custom_monthly_limit
-    
+
     await db.commit()
-    
-    logger.info("user_limits_updated_by_admin",
-               admin_id=current_user.id,
-               target_user_id=user.id,
-               old_limit=old_limit,
-               new_limit=limit_update.custom_monthly_limit)
-    
+
+    logger.info(
+        "user_limits_updated_by_admin",
+        admin_id=current_user.id,
+        target_user_id=user.id,
+        old_limit=old_limit,
+        new_limit=limit_update.custom_monthly_limit,
+    )
+
     return {
         "message": "User limits updated successfully",
         "old_limit": old_limit,
         "new_limit": limit_update.custom_monthly_limit,
-        "monthly_limit": user.monthly_limit  # This will use the new custom limit
+        "monthly_limit": user.monthly_limit,  # This will use the new custom limit
     }
+
 
 @router.patch("/users/{user_id}/plan")
 async def update_user_plan(
     user_id: str,
     plan_update: UserPlanUpdate,
     current_user: User = Depends(require_admin_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Update user's plan"""
-    
+
     import uuid
-    
+
     try:
         user_uuid = uuid.UUID(user_id)
     except ValueError:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid user ID format"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user ID format"
         )
-    
-    result = await db.execute(
-        select(User).where(User.id == user_uuid)
-    )
+
+    result = await db.execute(select(User).where(User.id == user_uuid))
     user = result.scalar_one_or_none()
-    
+
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    
+
     # Validate plan
     try:
         plan_enum = PlanType(plan_update.plan)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid plan: {plan_update.plan}"
+            detail=f"Invalid plan: {plan_update.plan}",
         )
-    
+
     old_plan = user.plan.value
     user.plan = plan_enum
-    
+
     await db.commit()
-    
-    logger.info("user_plan_updated_by_admin",
-               admin_id=current_user.id,
-               target_user_id=user.id,
-               old_plan=old_plan,
-               new_plan=plan_update.plan)
-    
+
+    logger.info(
+        "user_plan_updated_by_admin",
+        admin_id=current_user.id,
+        target_user_id=user.id,
+        old_plan=old_plan,
+        new_plan=plan_update.plan,
+    )
+
     return {
         "message": "User plan updated successfully",
         "old_plan": old_plan,
         "new_plan": plan_update.plan,
-        "monthly_limit": user.monthly_limit
+        "monthly_limit": user.monthly_limit,
     }
+
 
 @router.get("/jobs")
 async def list_all_jobs(
@@ -427,26 +429,30 @@ async def list_all_jobs(
     status_filter: Optional[str] = Query(None),
     user_email: Optional[str] = Query(None),
     current_user: User = Depends(require_admin_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """List all processing jobs with filtering"""
-    
+
     # Build query
-    query = select(ProcessingJob).join(User, ProcessingJob.user_id == User.id, isouter=True)
-    
+    query = select(ProcessingJob).join(
+        User, ProcessingJob.user_id == User.id, isouter=True
+    )
+
     if status_filter:
         query = query.where(ProcessingJob.status == status_filter)
-    
+
     if user_email:
         query = query.where(User.email.ilike(f"%{user_email}%"))
-    
+
     # Add pagination
     offset = (page - 1) * page_size
-    query = query.order_by(desc(ProcessingJob.created_at)).offset(offset).limit(page_size)
-    
+    query = (
+        query.order_by(desc(ProcessingJob.created_at)).offset(offset).limit(page_size)
+    )
+
     result = await db.execute(query)
     jobs = result.scalars().all()
-    
+
     return {
         "jobs": [
             {
@@ -456,28 +462,27 @@ async def list_all_jobs(
                 "user_email": job.user.email if job.user else "anonymous",
                 "created_at": job.created_at,
                 "row_count": job.row_count,
-                "progress": job.progress
+                "progress": job.progress,
             }
             for job in jobs
         ]
     }
+
 
 @router.get("/logs")
 async def get_system_logs(
     page: int = Query(1, ge=1),
     page_size: int = Query(100, ge=1, le=500),
     level: Optional[str] = Query(None),
-    current_user: User = Depends(require_admin_user)
+    current_user: User = Depends(require_admin_user),
 ):
     """Get system logs (placeholder - would integrate with logging system)"""
-    
+
     # This would integrate with your logging system
     # For now, return placeholder data
-    
-    return {
-        "logs": [],
-        "message": "Log integration not implemented yet"
-    }
+
+    return {"logs": [], "message": "Log integration not implemented yet"}
+
 
 @router.get("/webhooks")
 async def list_webhook_events(
@@ -485,22 +490,24 @@ async def list_webhook_events(
     page_size: int = Query(50, ge=1, le=100),
     processed: Optional[bool] = Query(None),
     current_user: User = Depends(require_admin_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """List webhook events"""
-    
+
     query = select(WebhookEvent)
-    
+
     if processed is not None:
         query = query.where(WebhookEvent.processed == processed)
-    
+
     # Add pagination
     offset = (page - 1) * page_size
-    query = query.order_by(desc(WebhookEvent.created_at)).offset(offset).limit(page_size)
-    
+    query = (
+        query.order_by(desc(WebhookEvent.created_at)).offset(offset).limit(page_size)
+    )
+
     result = await db.execute(query)
     events = result.scalars().all()
-    
+
     return {
         "events": [
             {
@@ -510,7 +517,7 @@ async def list_webhook_events(
                 "source": event.source,
                 "processed": event.processed,
                 "created_at": event.created_at,
-                "error_message": event.error_message
+                "error_message": event.error_message,
             }
             for event in events
         ]

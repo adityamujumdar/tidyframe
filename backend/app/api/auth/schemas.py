@@ -3,16 +3,18 @@ Pydantic schemas for authentication endpoints
 """
 
 from __future__ import annotations
-from pydantic import BaseModel, EmailStr, validator, field_validator, Field
-from typing import Optional
+
 import uuid
 from datetime import datetime
 from ipaddress import IPv4Address, IPv6Address
-from typing import Union
+from typing import Optional, Union
+
+from pydantic import BaseModel, EmailStr, Field, field_validator, validator
 
 
 class ConsentData(BaseModel):
     """Legal consent data for GDPR/CCPA compliance"""
+
     age_verified: bool
     terms_accepted: bool
     privacy_accepted: bool
@@ -20,7 +22,7 @@ class ConsentData(BaseModel):
     location_confirmed: bool
     consent_timestamp: str
     user_agent: str
-    
+
 
 class UserRegister(BaseModel):
     email: EmailStr
@@ -29,15 +31,15 @@ class UserRegister(BaseModel):
     last_name: Optional[str] = None
     company_name: Optional[str] = None
     consent: Optional[ConsentData] = None
-    
-    @validator('password')
+
+    @validator("password")
     def validate_password(cls, v):
         from app.core.security import validate_password_strength
-        
+
         is_valid, errors = validate_password_strength(v)
         if not is_valid:
-            raise ValueError('; '.join(errors))
-        
+            raise ValueError("; ".join(errors))
+
         return v
 
 
@@ -53,24 +55,26 @@ class UserResponse(BaseModel):
     last_name: Optional[str]
     company_name: Optional[str]
     plan: str
-    parsesThisMonth: int = Field(alias="parses_this_month", serialization_alias="parsesThisMonth")
+    parsesThisMonth: int = Field(
+        alias="parses_this_month", serialization_alias="parsesThisMonth"
+    )
     monthlyLimit: int = Field(alias="monthly_limit", serialization_alias="monthlyLimit")
     is_premium: bool
     email_verified: bool
     is_admin: bool  # Critical for admin access
     created_at: datetime
-    
-    @field_validator('id', mode='before')
+
+    @field_validator("id", mode="before")
     @classmethod
     def convert_uuid_to_string(cls, v):
         if isinstance(v, uuid.UUID):
             return str(v)
         return v
-    
+
     model_config = {
         "from_attributes": True,
         "populate_by_name": True,
-        "alias_generator": None
+        "alias_generator": None,
     }
 
 
@@ -93,15 +97,15 @@ class PasswordReset(BaseModel):
 class PasswordResetConfirm(BaseModel):
     token: str
     password: str
-    
-    @validator('password')
+
+    @validator("password")
     def validate_password(cls, v):
         from app.core.security import validate_password_strength
-        
+
         is_valid, errors = validate_password_strength(v)
         if not is_valid:
-            raise ValueError('; '.join(errors))
-        
+            raise ValueError("; ".join(errors))
+
         return v
 
 
@@ -112,15 +116,15 @@ class EmailVerify(BaseModel):
 class ChangePassword(BaseModel):
     current_password: str
     new_password: str
-    
-    @validator('new_password')
+
+    @validator("new_password")
     def validate_new_password(cls, v):
         from app.core.security import validate_password_strength
-        
+
         is_valid, errors = validate_password_strength(v)
         if not is_valid:
-            raise ValueError('; '.join(errors))
-        
+            raise ValueError("; ".join(errors))
+
         return v
 
 

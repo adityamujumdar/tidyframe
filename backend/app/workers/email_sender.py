@@ -2,9 +2,10 @@
 Celery worker for sending emails
 """
 
+from typing import Dict, List, Optional
+
 import resend
 import structlog
-from typing import Dict, List, Optional
 
 from app.core.celery_app import celery_app
 from app.core.config import settings
@@ -22,74 +23,65 @@ def send_email(
     subject: str,
     html_content: str,
     text_content: Optional[str] = None,
-    from_email: Optional[str] = None
+    from_email: Optional[str] = None,
 ) -> Dict[str, any]:
     """
     Send email using Resend service
-    
+
     Args:
         to_email: Recipient email address
         subject: Email subject
         html_content: HTML content of email
         text_content: Plain text content (optional)
         from_email: Sender email (optional, defaults to settings.FROM_EMAIL)
-    
+
     Returns:
         Dict with sending results
     """
-    
+
     if not settings.RESEND_API_KEY:
         logger.warning("resend_api_key_not_configured")
-        return {'success': False, 'error': 'Email service not configured'}
-    
+        return {"success": False, "error": "Email service not configured"}
+
     try:
         email_data = {
-            'from': from_email or settings.FROM_EMAIL,
-            'to': to_email,
-            'subject': subject,
-            'html': html_content
+            "from": from_email or settings.FROM_EMAIL,
+            "to": to_email,
+            "subject": subject,
+            "html": html_content,
         }
-        
+
         if text_content:
-            email_data['text'] = text_content
-        
+            email_data["text"] = text_content
+
         response = resend.Emails.send(email_data)
-        
-        logger.info("email_sent_successfully", 
-                   to=to_email, 
-                   subject=subject,
-                   email_id=response.get('id'))
-        
-        return {
-            'success': True,
-            'email_id': response.get('id'),
-            'to': to_email
-        }
-        
+
+        logger.info(
+            "email_sent_successfully",
+            to=to_email,
+            subject=subject,
+            email_id=response.get("id"),
+        )
+
+        return {"success": True, "email_id": response.get("id"), "to": to_email}
+
     except Exception as e:
-        logger.error("email_send_failed", 
-                    to=to_email, 
-                    subject=subject,
-                    error=str(e))
-        
+        logger.error("email_send_failed", to=to_email, subject=subject, error=str(e))
+
         # Retry for transient errors
         if self.request.retries < self.max_retries:
             logger.info("retrying_email_send", retry_count=self.request.retries + 1)
             raise self.retry(exc=e)
-        
-        return {
-            'success': False,
-            'error': str(e),
-            'to': to_email
-        }
+
+        return {"success": False, "error": str(e), "to": to_email}
 
 
 @celery_app.task
 def send_welcome_email(user_email: str, user_name: str) -> Dict[str, any]:
     """Send welcome email to new user"""
-    
+
     subject = f"Welcome to {settings.PROJECT_NAME}!"
-    
+
     html_content = f"""
     <html>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
@@ -129,7 +121,7 @@ def send_welcome_email(user_email: str, user_name: str) -> Dict[str, any]:
     </body>
     </html>
     """
-    
+
     text_content = f"""
     Welcome to {settings.PROJECT_NAME}!
     
@@ -152,19 +144,23 @@ def send_welcome_email(user_email: str, user_name: str) -> Dict[str, any]:
     Best regards,
     The {settings.PROJECT_NAME} Team
     """
-    
+
     return send_email(user_email, subject, html_content, text_content)
 
 
 @celery_app.task
-def send_email_verification(user_email: str, user_name: str, verification_token: str) -> Dict[str, any]:
+def send_email_verification(
+    user_email: str, user_name: str, verification_token: str
+) -> Dict[str, any]:
     """Send email verification email"""
-    
+
     subject = f"Verify your {settings.PROJECT_NAME} email address"
-    
+
     # This would typically include your frontend URL
-    verification_url = f"https://app.tidyframe.com/verify-email?token={verification_token}"
-    
+    verification_url = (
+        f"https://app.tidyframe.com/verify-email?token={verification_token}"
+    )
+
     html_content = f"""
     <html>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
@@ -192,18 +188,20 @@ def send_email_verification(user_email: str, user_name: str, verification_token:
     </body>
     </html>
     """
-    
+
     return send_email(user_email, subject, html_content)
 
 
 @celery_app.task
-def send_password_reset(user_email: str, user_name: str, reset_token: str) -> Dict[str, any]:
+def send_password_reset(
+    user_email: str, user_name: str, reset_token: str
+) -> Dict[str, any]:
     """Send password reset email"""
-    
+
     subject = f"Reset your {settings.PROJECT_NAME} password"
-    
+
     reset_url = f"https://app.tidyframe.com/reset-password?token={reset_token}"
-    
+
     html_content = f"""
     <html>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
@@ -233,18 +231,20 @@ def send_password_reset(user_email: str, user_name: str, reset_token: str) -> Di
     </body>
     </html>
     """
-    
+
     return send_email(user_email, subject, html_content)
 
 
 @celery_app.task
-def send_processing_complete_email(user_email: str, user_name: str, job_id: str, filename: str, results_summary: Dict) -> Dict[str, any]:
+def send_processing_complete_email(
+    user_email: str, user_name: str, job_id: str, filename: str, results_summary: Dict
+) -> Dict[str, any]:
     """Send email when file processing is complete"""
-    
+
     subject = f"Your {settings.PROJECT_NAME} file processing is complete"
-    
+
     download_url = f"https://app.tidyframe.com/download/{job_id}"
-    
+
     html_content = f"""
     <html>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
@@ -278,5 +278,5 @@ def send_processing_complete_email(user_email: str, user_name: str, job_id: str,
     </body>
     </html>
     """
-    
+
     return send_email(user_email, subject, html_content)

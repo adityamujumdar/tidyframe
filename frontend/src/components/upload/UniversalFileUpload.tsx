@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDropzone } from 'react-dropzone';
+import { useDropzone, FileRejection } from 'react-dropzone';
 import { useAuth } from '@/contexts/AuthContext';
 import { processingService } from '@/services/processingService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -89,14 +89,14 @@ export default function UniversalFileUpload({
 
   const acceptedTypes = FILE_TYPES.ACCEPTED;
 
-  const onDrop = useCallback(async (acceptedFiles: File[], rejectedFiles: any[]) => {
+  const onDrop = useCallback(async (acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
     setError('');
-    
+
     if (rejectedFiles.length > 0) {
       const rejection = rejectedFiles[0];
-      if (rejection.errors.some((e: any) => e.code === 'file-too-large')) {
+      if (rejection.errors.some((e) => e.code === 'file-too-large')) {
         setError(`File is too large. Maximum size is ${limits.maxFileSize / (1024 * 1024)}MB for ${limits.planName} plan.`);
-      } else if (rejection.errors.some((e: any) => e.code === 'file-invalid-type')) {
+      } else if (rejection.errors.some((e) => e.code === 'file-invalid-type')) {
         setError('Invalid file type. Please upload CSV, Excel, or TXT files.');
       }
       return;

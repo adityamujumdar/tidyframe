@@ -49,12 +49,12 @@ class ProcessingService {
     await apiService.delete(`/api/jobs/${jobId}`);
   }
 
-  async getJobResults(jobId: string, limit: number = 100): Promise<{ 
+  async getJobResults(jobId: string, limit: number = 100): Promise<{
     job_id: string;
     filename: string;
     total_rows: number;
     returned_rows: number;
-    results: any[];
+    results: Record<string, unknown>[];
   }> {
     return await apiService.get(`/api/jobs/${jobId}/results?limit=${limit}`);
   }

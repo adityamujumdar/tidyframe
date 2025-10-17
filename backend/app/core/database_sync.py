@@ -3,9 +3,9 @@ Synchronous database configuration for Celery workers
 Uses the same models but with synchronous engine
 """
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
 import structlog
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import settings
 
@@ -26,12 +26,13 @@ sync_engine = create_engine(
 
 # Synchronous session for Celery workers
 SessionLocal = sessionmaker(
-    autocommit=False, 
-    autoflush=False, 
+    autocommit=False,
+    autoflush=False,
     bind=sync_engine,
     class_=Session,
-    expire_on_commit=False
+    expire_on_commit=False,
 )
+
 
 def get_sync_db():
     """

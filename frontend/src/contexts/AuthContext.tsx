@@ -1,15 +1,21 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { logger } from '@/utils/logger';
 import { authService } from '@/services/authService';
 import { billingService } from '@/services/billingService';
 import { User, LoginResponse } from '@/types/auth';
+
+interface ConsentData {
+  marketing?: boolean;
+  terms?: boolean;
+  privacy?: boolean;
+}
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   hasActiveSubscription: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, fullName?: string, consent?: any) => Promise<LoginResponse>;
+  register: (email: string, password: string, fullName?: string, consent?: ConsentData) => Promise<LoginResponse>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   verifyEmail: (token: string) => Promise<void>;
@@ -29,7 +35,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true);
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
 
-  const checkSubscriptionStatus = async (): Promise<boolean> => {
+  const checkSubscriptionStatus = useCallback(async (): Promise<boolean> => {
     if (!user) return false;
     
     try {
@@ -48,7 +54,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setHasActiveSubscription(false);
       return false;
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     // Check if user is already authenticated on app load
@@ -88,7 +94,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } else {
       setHasActiveSubscription(false);
     }
-  }, [user]);
+  }, [user, checkSubscriptionStatus]);
 
   const login = async (email: string, password: string) => {
     const response = await authService.login(email, password);
@@ -101,7 +107,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     tokenManager.init();
   };
 
-  const register = async (email: string, password: string, fullName?: string, consent?: any) => {
+  const register = async (email: string, password: string, fullName?: string, consent?: ConsentData) => {
     const response = await authService.register(email, password, fullName, consent);
 
     // CRITICAL: Check for checkout URL BEFORE setting user state

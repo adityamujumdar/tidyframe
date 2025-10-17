@@ -6,14 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Check, 
-  CreditCard, 
-  Loader2, 
-  Star, 
+import {
+  Check,
+  CreditCard,
+  Loader2,
+  Star,
   Zap,
   Shield,
-  Clock,
   Users
 } from 'lucide-react';
 import { PricingPlan } from '@/types/billing';
@@ -24,10 +23,9 @@ import { useAuth } from '@/contexts/AuthContext';
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
 }
 
-export function PaymentModal({ isOpen, onClose, onSuccess }: PaymentModalProps) {
+export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
   const { user } = useAuth();
   const [plans, setPlans] = useState<PricingPlan[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);

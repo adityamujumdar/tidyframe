@@ -5,8 +5,9 @@ In production, FastAPI receives requests through nginx reverse proxy.
 The direct connection IP (request.client.host) is the nginx container IP (172.x.x.x),
 not the real client IP. We must read X-Forwarded-For or X-Real-IP headers.
 """
-from fastapi import Request
+
 import structlog
+from fastapi import Request
 
 logger = structlog.get_logger()
 
@@ -40,9 +41,7 @@ def get_client_ip(request: Request) -> str:
         # Take first IP in chain (real client IP before any proxies)
         # Example: "client_ip, proxy1_ip, proxy2_ip" -> "client_ip"
         client_ip = forwarded_for.split(",")[0].strip()
-        logger.debug("ip_from_x_forwarded_for",
-                    ip=client_ip,
-                    full_chain=forwarded_for)
+        logger.debug("ip_from_x_forwarded_for", ip=client_ip, full_chain=forwarded_for)
         return client_ip
 
     # Check X-Real-IP as fallback (alternative nginx header)
@@ -54,7 +53,9 @@ def get_client_ip(request: Request) -> str:
     # Fallback to direct connection IP (dev environment only)
     # In production, this will be nginx container IP (172.x.x.x)
     direct_ip = request.client.host if request.client else "unknown"
-    logger.debug("ip_from_direct_connection",
-                ip=direct_ip,
-                warning="Using direct IP - proxy headers not found")
+    logger.debug(
+        "ip_from_direct_connection",
+        ip=direct_ip,
+        warning="Using direct IP - proxy headers not found",
+    )
     return direct_ip

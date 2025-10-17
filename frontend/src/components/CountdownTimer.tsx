@@ -144,6 +144,7 @@ export default function CountdownTimer({
 }
 
 // Hook for using countdown timer in other components
+// eslint-disable-next-line react-refresh/only-export-components
 export function useCountdownTimer(expiresAt: string | null) {
   const [timeRemaining, setTimeRemaining] = useState({
     minutes: 0,

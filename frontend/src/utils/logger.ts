@@ -3,8 +3,6 @@
  * Replaces direct console.log calls throughout the application
  */
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
-
 interface LogContext {
   [key: string]: unknown;
 }

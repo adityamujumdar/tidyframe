@@ -22,6 +22,8 @@ import {
 import { ProcessingJob } from '@/types/processing';
 import { toast } from 'sonner';
 import CountdownTimer from '@/components/CountdownTimer';
+
+type JobStatus = 'pending' | 'processing' | 'completed' | 'failed';
 import { StatusIndicator } from '@/components/shared/StatusIndicator';
 import { MetricCard } from '@/components/shared/MetricCard';
 import { ProgressBar } from '@/components/shared/ProgressBar';
@@ -83,7 +85,7 @@ export default function ProcessingStatus() {
     try {
       const job = await processingService.getJobStatus(jobId);
       setJobs([job]);
-    } catch (error) {
+    } catch {
       toast.error('Failed to fetch job status');
       // Redirect anonymous user to home if job not found
       if (isAnonymous) {
@@ -268,7 +270,7 @@ export default function ProcessingStatus() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                   <div className="flex items-center gap-4">
                     <StatusIndicator
-                      status={job.status as any}
+                      status={job.status as JobStatus}
                       mode="icon"
                       iconSize="lg"
                       animate
@@ -284,7 +286,7 @@ export default function ProcessingStatus() {
                     </div>
                   </div>
                   <StatusIndicator
-                    status={job.status as any}
+                    status={job.status as JobStatus}
                     mode="badge"
                   />
                 </div>

@@ -25,7 +25,6 @@ export default function Results() {
   const [jobs, setJobs] = useState<ProcessingJob[]>([]);
   const [selectedJob, setSelectedJob] = useState<ProcessingJob | null>(null);
   const [results, setResults] = useState<ParseResult[]>([]);
-  const [filteredResults, setFilteredResults] = useState<ParseResult[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   
@@ -91,20 +90,6 @@ export default function Results() {
     }
   };
 
-  const filterResults = useCallback(() => {
-    if (!searchTerm) {
-      setFilteredResults(results);
-      return;
-    }
-
-    const filtered = results.filter(result =>
-      result.originalText.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      result.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      result.lastName?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredResults(filtered);
-  }, [results, searchTerm]);
-
   useEffect(() => {
     fetchJobs();
   }, [fetchJobs]);
@@ -114,10 +99,6 @@ export default function Results() {
       fetchJobResults(selectedJob.id);
     }
   }, [selectedJob]);
-
-  useEffect(() => {
-    filterResults();
-  }, [filterResults]);
 
   const handleDownload = async (job: ProcessingJob) => {
     try {
