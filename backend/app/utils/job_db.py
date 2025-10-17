@@ -178,8 +178,7 @@ def update_job_status(
                                         )
 
                                         logger.info(
-                                            f"Immediately reported {rows_parsed} usage to Stripe for customer {
-                                                user.stripe_customer_id}"
+                                            f"Immediately reported {rows_parsed} usage to Stripe for customer {user.stripe_customer_id}"
                                         )
 
                                     except Exception as e:
@@ -201,8 +200,7 @@ def update_job_status(
                                             }
                                         )
                                         logger.info(
-                                            f"Fallback: Queued {rows_parsed} usage for customer {
-                                                user.stripe_customer_id}"
+                                            f"Fallback: Queued {rows_parsed} usage for customer {user.stripe_customer_id}"
                                         )
 
                                 # Create ParseLog entry for tracking
