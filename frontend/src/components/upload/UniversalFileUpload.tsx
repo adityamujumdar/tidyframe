@@ -166,8 +166,8 @@ export default function UniversalFileUpload({
         navigate(`/status?jobId=${response.jobId}`);
       }
     } catch (err: unknown) {
-      const error = err as Error & { response?: { data?: { message?: string }; status?: number } };
-      const errorMsg = error.response?.data?.message || 'Upload failed. Please try again.';
+      const error = err as Error & { response?: { data?: { message?: string; detail?: string }; status?: number } };
+      const errorMsg = error.response?.data?.message || error.response?.data?.detail || 'Upload failed. Please try again.';
       setError(errorMsg);
       
       // Handle quota exceeded specifically
