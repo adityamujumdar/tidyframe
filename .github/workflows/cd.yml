@@ -54,22 +54,21 @@ jobs:
           ls -lah backend/app/static/
           echo "✅ Frontend build copied successfully"
 
-      - name: Create static files tarball
+      - name: Setup SSH key for rsync
         run: |
-          echo "📦 Creating static files tarball..."
-          tar -czf static-files.tar.gz -C backend/app/static .
-          ls -lh static-files.tar.gz
-          echo "✅ Tarball created"
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PROD_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Transfer frontend build to production server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.PROD_SERVER_HOST }}
-          username: ${{ secrets.PROD_SERVER_USER }}
-          key: ${{ secrets.PROD_SSH_KEY }}
-          source: "static-files.tar.gz"
-          target: "/tmp/"
-          overwrite: true
+      - name: Transfer frontend build to production via rsync
+        run: |
+          echo "🚀 Transferring frontend build to production..."
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            backend/app/static/ \
+            ${{ secrets.PROD_SERVER_USER }}@${{ secrets.PROD_SERVER_HOST }}:/tmp/static-deploy/
+          echo "✅ Transfer complete"
 
       - name: Validate environment and backup
         id: pre_deploy
@@ -142,14 +141,13 @@ jobs:
             echo "📦 Current version: $(git describe --tags --always)"
             echo "📝 Latest commit: $(git log -1 --oneline)"
 
-            # Extract frontend build artifacts
-            echo "📦 Extracting frontend build artifacts..."
-            if [ -f "/tmp/static-files.tar.gz" ]; then
+            # Copy frontend build artifacts from rsync transfer
+            echo "📦 Copying frontend build artifacts..."
+            if [ -d "/tmp/static-deploy" ]; then
               mkdir -p backend/app/static
               rm -rf backend/app/static/*
-              tar -xzf /tmp/static-files.tar.gz -C backend/app/static/
-              rm /tmp/static-files.tar.gz
-              echo "✅ Frontend build extracted to backend/app/static/"
+              cp -r /tmp/static-deploy/* backend/app/static/
+              echo "✅ Frontend build copied to backend/app/static/"
               ls -lah backend/app/static/ | head -10
             else
               echo "⚠️  Warning: No frontend build artifacts found (using git-committed static files)"
