@@ -54,21 +54,23 @@ jobs:
           ls -lah backend/app/static/
           echo "✅ Frontend build copied successfully"
 
-      - name: Setup SSH key for rsync
+      - name: Setup SSH for rsync
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.PROD_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
+          # Add host to known_hosts to avoid prompts
+          ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Transfer frontend build to production via rsync
-        run: |
-          echo "🚀 Transferring frontend build to production..."
-          rsync -avz --delete \
-            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-            backend/app/static/ \
-            ${{ secrets.PROD_SERVER_USER }}@${{ secrets.PROD_SERVER_HOST }}:/tmp/static-deploy/
-          echo "✅ Transfer complete"
+        uses: burnett01/rsync-deployments@6.0.0
+        with:
+          switches: -avzr --delete
+          path: backend/app/static/
+          remote_path: /tmp/static-deploy/
+          remote_host: ${{ secrets.PROD_SERVER_HOST }}
+          remote_user: ${{ secrets.PROD_SERVER_USER }}
+          remote_key: ${{ secrets.PROD_SSH_KEY }}
 
       - name: Validate environment and backup
         id: pre_deploy
