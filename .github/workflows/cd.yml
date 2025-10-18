@@ -36,6 +36,39 @@ jobs:
         with:
           ref: main
 
+      - name: Download frontend build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Copy frontend build to backend static directory
+        run: |
+          echo "📦 Copying frontend build to backend static directory..."
+          mkdir -p backend/app/static
+          rm -rf backend/app/static/*
+          cp -r frontend/dist/* backend/app/static/
+          ls -lah backend/app/static/
+          echo "✅ Frontend build copied successfully"
+
+      - name: Transfer frontend build to production server
+        run: |
+          echo "🚀 Transferring frontend build to production..."
+          # Create tarball of static files
+          tar -czf static-files.tar.gz -C backend/app/static .
+
+          # Transfer to production server
+          echo "${{ secrets.PROD_SSH_KEY }}" > /tmp/ssh_key
+          chmod 600 /tmp/ssh_key
+
+          scp -i /tmp/ssh_key -o StrictHostKeyChecking=no \
+            static-files.tar.gz \
+            ${{ secrets.PROD_SERVER_USER }}@${{ secrets.PROD_SERVER_HOST }}:/tmp/
+
+          rm /tmp/ssh_key
+          echo "✅ Static files transferred to production"
+
       - name: Validate environment and backup
         id: pre_deploy
         uses: appleboy/ssh-action@v1.0.0
@@ -106,6 +139,19 @@ jobs:
 
             echo "📦 Current version: $(git describe --tags --always)"
             echo "📝 Latest commit: $(git log -1 --oneline)"
+
+            # Extract frontend build artifacts
+            echo "📦 Extracting frontend build artifacts..."
+            if [ -f "/tmp/static-files.tar.gz" ]; then
+              mkdir -p backend/app/static
+              rm -rf backend/app/static/*
+              tar -xzf /tmp/static-files.tar.gz -C backend/app/static/
+              rm /tmp/static-files.tar.gz
+              echo "✅ Frontend build extracted to backend/app/static/"
+              ls -lah backend/app/static/ | head -10
+            else
+              echo "⚠️  Warning: No frontend build artifacts found (using git-committed static files)"
+            fi
 
             # Run zero-downtime deployment script
             echo "🔄 Running zero-downtime deployment..."

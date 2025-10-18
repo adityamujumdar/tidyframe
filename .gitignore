@@ -38,6 +38,10 @@ build/
 .eggs/
 *.egg
 
+# Frontend static files (built by CI, transferred during deployment)
+backend/app/static/*
+!backend/app/static/.gitkeep
+
 # Logs
 *.log
 logs/
