@@ -62,13 +62,13 @@ jobs:
             fi
 
             # Check critical environment variables
-            REQUIRED_VARS="POSTGRES_PASSWORD DATABASE_URL REDIS_PASSWORD SECRET_KEY GEMINI_API_KEY"
-            for var in $REQUIRED_VARS; do
-              if ! grep -q "^$var=" .env; then
-                echo "❌ ERROR: Required environment variable $var not found in .env"
-                exit 1
-              fi
-            done
+            echo "Checking environment variables..."
+            grep -q "^POSTGRES_PASSWORD=" .env || { echo "❌ POSTGRES_PASSWORD missing"; exit 1; }
+            grep -q "^DATABASE_URL=" .env || { echo "❌ DATABASE_URL missing"; exit 1; }
+            grep -q "^REDIS_PASSWORD=" .env || { echo "❌ REDIS_PASSWORD missing"; exit 1; }
+            grep -q "^SECRET_KEY=" .env || { echo "❌ SECRET_KEY missing"; exit 1; }
+            grep -q "^GEMINI_API_KEY=" .env || { echo "❌ GEMINI_API_KEY missing"; exit 1; }
+            echo "✅ All required variables present"
 
             # Ensure FRONTEND_URL is set correctly
             if grep -q "FRONTEND_URL=http://localhost" .env; then
