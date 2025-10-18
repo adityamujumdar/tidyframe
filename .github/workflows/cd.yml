@@ -36,41 +36,8 @@ jobs:
         with:
           ref: main
 
-      - name: Download frontend build artifacts
-        uses: dawidd6/action-download-artifact@v3
-        with:
-          workflow: ci.yml
-          workflow_conclusion: success
-          name: frontend-build
-          path: frontend/dist
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Copy frontend build to backend static directory
-        run: |
-          echo "📦 Copying frontend build to backend static directory..."
-          mkdir -p backend/app/static
-          rm -rf backend/app/static/*
-          cp -r frontend/dist/* backend/app/static/
-          ls -lah backend/app/static/
-          echo "✅ Frontend build copied successfully"
-
-      - name: Setup SSH for rsync
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.PROD_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          # Add host to known_hosts to avoid prompts
-          ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
-
-      - name: Transfer frontend build to production via rsync
-        uses: burnett01/rsync-deployments@6.0.0
-        with:
-          switches: -avzr --delete
-          path: backend/app/static/
-          remote_path: /tmp/static-deploy/
-          remote_host: ${{ secrets.PROD_SERVER_HOST }}
-          remote_user: ${{ secrets.PROD_SERVER_USER }}
-          remote_key: ${{ secrets.PROD_SSH_KEY }}
+      # Note: Frontend build artifacts are validated by CI but not used in CD
+      # Instead, we build frontend directly on production server to avoid transfer complexity
 
       - name: Validate environment and backup
         id: pre_deploy
@@ -143,17 +110,20 @@ jobs:
             echo "📦 Current version: $(git describe --tags --always)"
             echo "📝 Latest commit: $(git log -1 --oneline)"
 
-            # Copy frontend build artifacts from rsync transfer
-            echo "📦 Copying frontend build artifacts..."
-            if [ -d "/tmp/static-deploy" ]; then
-              mkdir -p backend/app/static
-              rm -rf backend/app/static/*
-              cp -r /tmp/static-deploy/* backend/app/static/
-              echo "✅ Frontend build copied to backend/app/static/"
-              ls -lah backend/app/static/ | head -10
-            else
-              echo "⚠️  Warning: No frontend build artifacts found (using git-committed static files)"
-            fi
+            # Build frontend on production server (simpler than transferring artifacts)
+            echo "🏗️  Building frontend on production server..."
+            cd frontend
+            npm ci --production=false
+            npm run build
+
+            # Copy built files to backend static directory
+            echo "📦 Copying frontend build to backend static..."
+            rm -rf ../backend/app/static/*
+            cp -r dist/* ../backend/app/static/
+            cd ..
+
+            echo "✅ Frontend built and copied to backend/app/static/"
+            ls -lah backend/app/static/ | head -10
 
             # Run zero-downtime deployment script
             echo "🔄 Running zero-downtime deployment..."
