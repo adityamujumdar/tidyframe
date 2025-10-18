@@ -54,22 +54,22 @@ jobs:
           ls -lah backend/app/static/
           echo "✅ Frontend build copied successfully"
 
-      - name: Transfer frontend build to production server
+      - name: Create static files tarball
         run: |
-          echo "🚀 Transferring frontend build to production..."
-          # Create tarball of static files
+          echo "📦 Creating static files tarball..."
           tar -czf static-files.tar.gz -C backend/app/static .
+          ls -lh static-files.tar.gz
+          echo "✅ Tarball created"
 
-          # Transfer to production server
-          echo "${{ secrets.PROD_SSH_KEY }}" > /tmp/ssh_key
-          chmod 600 /tmp/ssh_key
-
-          scp -i /tmp/ssh_key -o StrictHostKeyChecking=no \
-            static-files.tar.gz \
-            ${{ secrets.PROD_SERVER_USER }}@${{ secrets.PROD_SERVER_HOST }}:/tmp/
-
-          rm /tmp/ssh_key
-          echo "✅ Static files transferred to production"
+      - name: Transfer frontend build to production server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PROD_SERVER_HOST }}
+          username: ${{ secrets.PROD_SERVER_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          source: "static-files.tar.gz"
+          target: "/tmp/"
+          overwrite: true
 
       - name: Validate environment and backup
         id: pre_deploy
