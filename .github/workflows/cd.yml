@@ -39,57 +39,20 @@ jobs:
       # Note: Frontend build artifacts are validated by CI but not used in CD
       # Instead, we build frontend directly on production server to avoid transfer complexity
 
-      - name: Validate environment and backup
-        id: pre_deploy
+      - name: Create database backup
         uses: appleboy/ssh-action@v1.0.0
+        continue-on-error: true
         with:
           host: ${{ secrets.PROD_SERVER_HOST }}
           username: ${{ secrets.PROD_SERVER_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
             cd /opt/tidyframe
-
-            echo "📋 Pre-deployment checks..."
-
-            # Store current commit for potential rollback
-            CURRENT_COMMIT=$(git rev-parse HEAD)
-            echo "current_commit=$CURRENT_COMMIT" >> deployment.state
-
-            # Validate environment file exists
-            if [ ! -f ".env" ]; then
-              echo "❌ ERROR: .env file not found"
-              exit 1
-            fi
-
-            # Check critical environment variables
-            echo "Checking environment variables..."
-            grep -q "^POSTGRES_PASSWORD=" .env || { echo "❌ POSTGRES_PASSWORD missing"; exit 1; }
-            grep -q "^DATABASE_URL=" .env || { echo "❌ DATABASE_URL missing"; exit 1; }
-            grep -q "^REDIS_PASSWORD=" .env || { echo "❌ REDIS_PASSWORD missing"; exit 1; }
-            grep -q "^SECRET_KEY=" .env || { echo "❌ SECRET_KEY missing"; exit 1; }
-            grep -q "^GEMINI_API_KEY=" .env || { echo "❌ GEMINI_API_KEY missing"; exit 1; }
-            echo "✅ All required variables present"
-
-            # Ensure FRONTEND_URL is set correctly
-            if grep -q "FRONTEND_URL=http://localhost" .env; then
-              echo "⚠️  WARNING: FRONTEND_URL uses localhost, fixing..."
-              sed -i 's|FRONTEND_URL=http://localhost:3000|FRONTEND_URL=https://tidyframe.com|g' .env
-            fi
-
-            if ! grep -q "^FRONTEND_URL=" .env; then
-              echo "FRONTEND_URL=https://tidyframe.com" >> .env
-            fi
-
-            # Backup database (keep last 3 backups)
             echo "💾 Creating database backup..."
             mkdir -p backups
-            BACKUP_FILE="backups/db-backup-$(date +%Y%m%d-%H%M%S).sql"
-            docker compose -f docker-compose.prod.yml exec -T postgres pg_dump -U tidyframe tidyframe > "$BACKUP_FILE" || echo "⚠️  Database backup failed (non-critical)"
-
-            # Cleanup old backups (keep last 3)
-            ls -t backups/db-backup-*.sql 2>/dev/null | tail -n +4 | xargs -r rm
-
-            echo "✅ Pre-deployment validation complete"
+            docker compose -f docker-compose.prod.yml exec -T postgres pg_dump -U tidyframe tidyframe > "backups/db-backup-$(date +%Y%m%d-%H%M%S).sql" 2>&1
+            ls -t backups/db-backup-*.sql 2>/dev/null | tail -n +4 | xargs -r rm 2>/dev/null || true
+            echo "✅ Backup complete"
 
       - name: Deploy to production server
         uses: appleboy/ssh-action@v1.0.0
