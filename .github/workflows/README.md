@@ -128,6 +128,52 @@ TidyFrame uses GitHub Actions for automated testing, security scanning, and depl
 
 **Environment URL:** https://tidyframe.com
 
+#### 🚨 Troubleshooting: If CD Doesn't Auto-Deploy
+
+The `workflow_run` trigger (used to chain CI → CD) has **known reliability issues** in GitHub Actions. If CI passes but CD doesn't automatically trigger within 2-3 minutes, use one of these manual deployment options:
+
+**Option 1: GitHub CLI (Fastest)**
+```bash
+gh workflow run cd.yml
+```
+
+**Option 2: GitHub Web UI**
+1. Go to [Actions → Continuous Deployment](https://github.com/adityamujumdar/tidyframe/actions/workflows/cd.yml)
+2. Click "Run workflow" dropdown
+3. Select branch: `main`
+4. Click "Run workflow" button
+
+**Option 3: Direct SSH Deployment**
+```bash
+# Full manual deployment via SSH
+ssh root@24.199.122.244
+cd /opt/tidyframe
+git pull origin main
+
+# Build frontend
+cd frontend && npm ci && npm run build
+rm -rf ../backend/app/static/* && cp -r dist/* ../backend/app/static/
+cd ..
+
+# Deploy
+bash backend/scripts/zero-downtime-deploy.sh docker-compose.prod.yml backend celery-worker celery-beat
+
+# Restart nginx (prevents 502 errors)
+docker compose -f docker-compose.prod.yml restart nginx
+```
+
+**Why This Happens:**
+- `workflow_run` events can be delayed or missed entirely (GitHub Actions limitation)
+- Branch filters sometimes don't work correctly
+- Conclusion field can be null/empty causing skips
+- Token permission issues can block trigger propagation
+
+**Prevention:**
+- CD workflow now includes `conclusion == 'success'` check (safer)
+- Debug logging added to diagnose issues
+- Nginx restart step prevents 502 errors
+- Consider upgrading to multi-job workflow (Phase 2) for 99.9% reliability
+
 ### 3. Manual Deployment (manual-deploy.yml)
 
 **Trigger:** Manual (workflow_dispatch only)
