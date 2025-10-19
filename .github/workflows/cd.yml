@@ -72,6 +72,38 @@ jobs:
             ls -t backups/db-backup-*.sql 2>/dev/null | tail -n +4 | xargs -r rm 2>/dev/null || true
             echo "✅ Backup complete"
 
+      - name: Ensure system dependencies installed
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.PROD_SERVER_HOST }}
+          username: ${{ secrets.PROD_SERVER_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            echo "🔧 Checking and installing system dependencies..."
+
+            # Update apt cache if older than 1 hour (avoids excessive updates)
+            if [ ! -f /tmp/apt-update-marker ] || [ "$(find /tmp/apt-update-marker -mmin +60 2>/dev/null)" ]; then
+              apt-get update -qq
+              touch /tmp/apt-update-marker
+            fi
+
+            # Install required packages if missing
+            REQUIRED_PACKAGES="jq curl git"
+            INSTALLED=0
+            for pkg in $REQUIRED_PACKAGES; do
+              if ! command -v $pkg &>/dev/null; then
+                echo "📦 Installing $pkg..."
+                apt-get install -y $pkg >/dev/null 2>&1
+                INSTALLED=1
+              fi
+            done
+
+            if [ $INSTALLED -eq 1 ]; then
+              echo "✅ Dependencies installed"
+            else
+              echo "✅ All dependencies already present"
+            fi
+
       - name: Deploy to production server
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -262,6 +294,11 @@ jobs:
             echo "⚠️  ROLLBACK INITIATED"
             echo "====================================="
 
+            # Ensure dependencies available for rollback
+            echo "🔧 Ensuring dependencies available for rollback..."
+            command -v jq &>/dev/null || (apt-get update -qq && apt-get install -y jq >/dev/null 2>&1)
+            echo "✅ Dependencies ready"
+
             # Read previous commit from deployment state
             if [ -f "deployment.state" ]; then
               PREVIOUS_COMMIT=$(grep "current_commit=" deployment.state | cut -d= -f2)
@@ -283,6 +320,12 @@ jobs:
 
             echo "⏳ Waiting for services..."
             sleep 20
+
+            # Restart nginx to resolve backend IPs after rollback
+            echo "🔄 Restarting nginx to resolve backend container IPs..."
+            docker compose -f docker-compose.prod.yml restart nginx
+            sleep 10
+            echo "✅ Nginx restarted"
 
             # Verify rollback succeeded
             if docker compose -f docker-compose.prod.yml ps | grep -q "backend.*Up"; then

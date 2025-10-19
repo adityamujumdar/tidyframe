@@ -359,6 +359,63 @@ docker compose -f docker-compose.prod.yml restart nginx
 3. Enter name and value
 4. Click "Add secret"
 
+## Server Requirements
+
+### Required System Packages
+
+The production server requires these packages:
+
+| Package | Purpose | Auto-Installed | Manual Install |
+|---------|---------|----------------|----------------|
+| `docker` | Container runtime | ❌ Manual | [Docker Install Guide](https://docs.docker.com/engine/install/) |
+| `docker compose` | Orchestration | ❌ Manual | Included with Docker or install plugin |
+| `git` | Version control | ✅ Auto | `apt-get install -y git` |
+| `curl` | Health checks | ✅ Auto | `apt-get install -y curl` |
+| `jq` | JSON parsing | ✅ Auto | `apt-get install -y jq` |
+| `python3` | Fallback parsing | ⚠️ Usually pre-installed | `apt-get install -y python3` |
+
+**Note**: The CD workflow automatically installs `git`, `curl`, and `jq` if missing. Docker must be installed manually.
+
+### Server Setup Checklist
+
+When provisioning a new production server:
+
+```bash
+# 1. Install Docker
+curl -fsSL https://get.docker.com | sh
+
+# 2. Install system packages (auto-installed by CD, but good to have)
+apt-get update
+apt-get install -y git curl jq python3
+
+# 3. Clone repository
+git clone https://github.com/adityamujumdar/tidyframe.git /opt/tidyframe
+cd /opt/tidyframe
+
+# 4. Configure environment
+cp backend/.env.example backend/.env
+# Edit backend/.env with production values
+
+# 5. Test deployment
+bash backend/scripts/zero-downtime-deploy.sh docker-compose.prod.yml backend celery-worker celery-beat
+```
+
+### Troubleshooting Deployment Failures
+
+**Symptom: "status: unknown" in deployment logs**
+```
+⚠️  backend status: unknown
+❌ backend is not running (status: unknown)
+```
+- **Cause**: Missing `jq` package (older deployments)
+- **Fix**: CD workflow now auto-installs jq, re-run deployment
+- **Manual fix**: `apt-get install -y jq`
+
+**Symptom: "Missing critical dependencies"**
+- **Cause**: Docker, git, or curl not installed
+- **Fix**: Install missing package, re-run deployment
+- **Prevention**: Use server setup checklist above
+
 ## Common Operations
 
 ### Deploy to Production

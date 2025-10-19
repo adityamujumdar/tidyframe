@@ -53,6 +53,108 @@ log_error() {
 }
 
 # ================================================================
+# Dependency Verification
+# ================================================================
+
+check_dependencies() {
+    log_info "Verifying system dependencies..."
+
+    local missing_critical=()
+    local missing_optional=()
+
+    # Critical dependencies
+    for cmd in docker git curl; do
+        if ! command -v $cmd &>/dev/null; then
+            missing_critical+=("$cmd")
+        fi
+    done
+
+    # Optional but recommended
+    if ! command -v jq &>/dev/null; then
+        missing_optional+=("jq")
+    fi
+
+    if [ ${#missing_critical[@]} -gt 0 ]; then
+        log_error "Missing critical dependencies: ${missing_critical[*]}"
+        log_error "Install with: apt-get install -y ${missing_critical[*]}"
+        exit 1
+    fi
+
+    if [ ${#missing_optional[@]} -gt 0 ]; then
+        log_warning "Missing optional dependencies: ${missing_optional[*]}"
+        log_warning "Falling back to alternative verification methods"
+        log_warning "For optimal performance, install: apt-get install -y ${missing_optional[*]}"
+    fi
+
+    echo ""
+}
+
+# ================================================================
+# Multi-Method Container State Verification
+# ================================================================
+
+get_container_state() {
+    local service=$1
+    local compose_file=$2
+
+    # Method 1: jq (fastest, most reliable)
+    if command -v jq &>/dev/null; then
+        local state=$(docker compose -f "$compose_file" ps "$service" --format json 2>/dev/null | jq -r '.[0].State // ""' 2>/dev/null)
+        if [ -n "$state" ]; then
+            echo "$state"
+            return 0
+        fi
+    fi
+
+    # Method 2: python3 fallback
+    if command -v python3 &>/dev/null; then
+        local state=$(docker compose -f "$compose_file" ps "$service" --format json 2>/dev/null | python3 -c "import sys, json; data=json.load(sys.stdin); print(data[0]['State'] if data and len(data) > 0 and 'State' in data[0] else '')" 2>/dev/null)
+        if [ -n "$state" ]; then
+            echo "$state"
+            return 0
+        fi
+    fi
+
+    # Method 3: docker inspect (most reliable, no external tools)
+    local container_id=$(docker compose -f "$compose_file" ps -q "$service" 2>/dev/null)
+    if [ -n "$container_id" ]; then
+        docker inspect --format='{{.State.Status}}' "$container_id" 2>/dev/null || echo "unknown"
+    else
+        echo "not_found"
+    fi
+}
+
+verify_container_running() {
+    local service=$1
+    local compose_file=$2
+
+    # Get container ID first
+    local container_id=$(docker compose -f "$compose_file" ps -q "$service" 2>/dev/null)
+
+    if [ -z "$container_id" ]; then
+        echo "not_found"
+        return 1
+    fi
+
+    # Use docker inspect (doesn't require jq or python)
+    local is_running=$(docker inspect --format='{{.State.Running}}' "$container_id" 2>/dev/null || echo "false")
+    local health=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' "$container_id" 2>/dev/null || echo "unknown")
+
+    if [ "$is_running" = "true" ]; then
+        if [ "$health" = "healthy" ] || [ "$health" = "no-healthcheck" ]; then
+            echo "healthy"
+            return 0
+        else
+            echo "running-$health"
+            return 0
+        fi
+    else
+        echo "stopped"
+        return 1
+    fi
+}
+
+# ================================================================
 # Pre-deployment Checks
 # ================================================================
 
@@ -80,6 +182,9 @@ if ! docker compose version &>/dev/null; then
     log_error "Docker Compose v2 is not available"
     exit 1
 fi
+
+# Check system dependencies
+check_dependencies
 
 # ================================================================
 # Store Current State
@@ -155,14 +260,16 @@ echo ""
 log_info "Waiting for containers to initialize (15 seconds)..."
 sleep 15
 
-# Check container status
+# Check container status using multiple verification methods
 log_info "Checking container status..."
 for service in $SERVICES; do
-    status=$(docker compose -f "$COMPOSE_FILE" ps "$service" --format json 2>/dev/null | jq -r '.[0].State // "unknown"' 2>/dev/null || echo "unknown")
-    if [ "$status" = "running" ]; then
-        log_success "$service is running"
+    state=$(get_container_state "$service" "$COMPOSE_FILE")
+    health=$(verify_container_running "$service" "$COMPOSE_FILE")
+
+    if [ "$state" = "running" ] || [ "$health" = "healthy" ] || [[ "$health" == running-* ]]; then
+        log_success "$service is running (state: $state, health: $health)"
     else
-        log_warning "$service status: $status"
+        log_warning "$service state: $state, health: $health (may still be starting)"
     fi
 done
 
@@ -207,22 +314,24 @@ echo ""
 # Final Verification
 # ================================================================
 
-log_info "Verifying deployment..."
-
-# Check all services are healthy
+# Verify all services are running using docker inspect (most reliable)
+log_info "Verifying deployment health..."
 all_healthy=true
 for service in $SERVICES; do
-    # Check if container is running
-    status=$(docker compose -f "$COMPOSE_FILE" ps "$service" --format json 2>/dev/null | jq -r '.[0].State // "unknown"' 2>/dev/null || echo "unknown")
+    health=$(verify_container_running "$service" "$COMPOSE_FILE")
 
-    if [ "$status" != "running" ]; then
-        log_error "$service is not running (status: $status)"
+    if [ "$health" = "healthy" ] || [[ "$health" == running-* ]]; then
+        log_success "$service is healthy ($health)"
+    else
+        state=$(get_container_state "$service" "$COMPOSE_FILE")
+        log_error "$service verification failed (state: $state, health: $health)"
+        log_error "Check logs: docker compose -f $COMPOSE_FILE logs $service"
         all_healthy=false
     fi
 done
 
 if [ "$all_healthy" = false ]; then
-    log_error "Some services are not healthy"
+    log_error "Some services failed health verification"
     exit 1
 fi
 
