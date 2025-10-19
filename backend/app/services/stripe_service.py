@@ -79,7 +79,7 @@ class StripeService:
             logger.warning(
                 "stripe_price_ids_not_configured",
                 missing_ids=missing_ids,
-                message="Billing features may not work correctly. Please configure missing Stripe price IDs."
+                message="Billing features may not work correctly. Please configure missing Stripe price IDs.",
             )
 
     def get_checkout_urls(self) -> dict:

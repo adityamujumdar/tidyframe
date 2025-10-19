@@ -261,12 +261,15 @@ async def get_subscription(current_user: User = Depends(require_auth)):
                     current_user.stripe_customer_id
                 )
             except Exception as e:
-                logger.warning("usage_fetch_failed", user_id=current_user.id, error=str(e))
+                logger.warning(
+                    "usage_fetch_failed", user_id=current_user.id, error=str(e)
+                )
 
         # Calculate days until renewal
         period_end = subscription["current_period_end"]
         days_until_renewal = (
-            datetime.fromtimestamp(period_end, tz=timezone.utc) - datetime.now(timezone.utc)
+            datetime.fromtimestamp(period_end, tz=timezone.utc)
+            - datetime.now(timezone.utc)
         ).days
 
         # Get subscription base amount
@@ -279,7 +282,9 @@ async def get_subscription(current_user: User = Depends(require_auth)):
         current_usage = usage_data.get("usage", 0)
         limit = usage_data.get("limit", current_user.monthly_limit)
         overage = usage_data.get("overage", 0)
-        overage_cost = int(overage * settings.OVERAGE_PRICE_PER_UNIT * 100)  # Convert to cents
+        overage_cost = int(
+            overage * settings.OVERAGE_PRICE_PER_UNIT * 100
+        )  # Convert to cents
         usage_percentage = (current_usage / limit * 100) if limit > 0 else 0
         estimated_invoice = base_amount + overage_cost
 
@@ -388,7 +393,9 @@ async def get_usage_stats(
                 current_user.stripe_customer_id
             )
         except Exception as e:
-            logger.warning("stripe_usage_fetch_failed", user_id=current_user.id, error=str(e))
+            logger.warning(
+                "stripe_usage_fetch_failed", user_id=current_user.id, error=str(e)
+            )
 
     # Get current month period from subscription or default
     subscription = None
@@ -462,7 +469,9 @@ async def get_usage_stats(
     current_usage = stripe_usage.get("usage", local_current_count)
     limit = current_user.monthly_limit
     overage = max(0, current_usage - limit)
-    overage_cost = int(overage * settings.OVERAGE_PRICE_PER_UNIT * 100)  # Convert to cents
+    overage_cost = int(
+        overage * settings.OVERAGE_PRICE_PER_UNIT * 100
+    )  # Convert to cents
 
     # Calculate previous month overage
     prev_overage = max(0, prev_month_count - limit)
@@ -490,7 +499,11 @@ async def get_usage_stats(
         all_time_parses=all_time_count,
         average_parse_size=avg_size,
         peak_usage_day=PeakDay(
-            date=peak_day.date.isoformat() if peak_day else period_start.date().isoformat(),
+            date=(
+                peak_day.date.isoformat()
+                if peak_day
+                else period_start.date().isoformat()
+            ),
             parses=int(peak_day.count) if peak_day else 0,
         ),
     )
@@ -548,7 +561,9 @@ async def get_billing_history(
                     description=f"Invoice {invoice.number or invoice.id}",
                     invoice_url=invoice.hosted_invoice_url,
                     invoice_pdf=invoice.invoice_pdf,
-                    created_at=datetime.fromtimestamp(invoice.created, tz=timezone.utc).isoformat(),
+                    created_at=datetime.fromtimestamp(
+                        invoice.created, tz=timezone.utc
+                    ).isoformat(),
                     paid_at=(
                         datetime.fromtimestamp(
                             invoice.status_transitions.paid_at, tz=timezone.utc
