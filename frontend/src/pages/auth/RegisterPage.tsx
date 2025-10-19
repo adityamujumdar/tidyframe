@@ -12,7 +12,7 @@ import { Loader2, Mail, Lock, Eye, EyeOff, User } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function RegisterPage() {
-  const { user, register } = useAuth();
+  const { user, register, hasActiveSubscription } = useAuth();
   const [searchParams] = useSearchParams();
   const billingPeriod = (searchParams.get('billing') as 'monthly' | 'yearly') || 'monthly';
   const [formData, setFormData] = useState({
@@ -23,7 +23,7 @@ export default function RegisterPage() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   // Legal compliance state - simplified (age, location, arbitration now in ToS Article 2.4)
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
@@ -32,7 +32,9 @@ export default function RegisterPage() {
 
   // Redirect if already authenticated (but not during registration loading)
   if (user && !loading) {
-    return <Navigate to="/dashboard" replace />;
+    // If user has active subscription, go to dashboard; otherwise go to pricing
+    const redirectTo = (user.plan === 'enterprise' || hasActiveSubscription) ? '/dashboard' : '/pricing';
+    return <Navigate to={redirectTo} replace />;
   }
 
   const validateForm = () => {

@@ -7,7 +7,8 @@ import {
   CheckoutSessionRequest,
   CheckoutSessionResponse,
   CustomerPortalResponse,
-  PricingPlan
+  PricingPlan,
+  BillingConfig
 } from '@/types/billing';
 
 class BillingService {
@@ -25,18 +26,33 @@ class BillingService {
   }
 
   // Get usage statistics
-  async getUsageStats(): Promise<UsageStats> {
-    return await apiService.get<UsageStats>('/api/billing/usage');
+  async getUsageStats(): Promise<UsageStats | null> {
+    try {
+      return await apiService.get<UsageStats>('/api/billing/usage');
+    } catch (error) {
+      console.error('Failed to fetch usage stats:', error);
+      return null;
+    }
   }
 
   // Get billing history
   async getBillingHistory(limit = 10): Promise<BillingHistory[]> {
-    return await apiService.get<BillingHistory[]>(`/api/billing/history?limit=${limit}`);
+    try {
+      return await apiService.get<BillingHistory[]>(`/api/billing/history?limit=${limit}`);
+    } catch (error) {
+      console.error('Failed to fetch billing history:', error);
+      return [];
+    }
   }
 
   // Get payment methods
   async getPaymentMethods(): Promise<PaymentMethod[]> {
-    return await apiService.get<PaymentMethod[]>('/api/billing/payment-methods');
+    try {
+      return await apiService.get<PaymentMethod[]>('/api/billing/payment-methods');
+    } catch (error) {
+      console.error('Failed to fetch payment methods:', error);
+      return [];
+    }
   }
 
   // Create checkout session for subscription
@@ -62,7 +78,22 @@ class BillingService {
 
   // Get available pricing plans
   async getPricingPlans(): Promise<PricingPlan[]> {
-    return await apiService.get<PricingPlan[]>('/api/billing/plans');
+    try {
+      return await apiService.get<PricingPlan[]>('/api/billing/plans');
+    } catch (error) {
+      console.error('Failed to fetch pricing plans:', error);
+      return [];
+    }
+  }
+
+  // Get billing configuration
+  async getBillingConfig(): Promise<BillingConfig | null> {
+    try {
+      return await apiService.get<BillingConfig>('/api/billing/config');
+    } catch (error) {
+      console.error('Failed to fetch billing config:', error);
+      return null;
+    }
   }
 
   // Cancel subscription
@@ -117,17 +148,22 @@ class BillingService {
   // Get subscription limits
   async getSubscriptionLimits(): Promise<{ parses: number; features: string[] }> {
     const subscription = await this.getSubscriptionStatus();
-    
-    if (!subscription) {
+
+    if (!subscription || !subscription.usage_limit) {
       return {
-        parses: 100, // Free tier limit
+        parses: 5, // Anonymous/Free tier limit
         features: ['Basic CSV parsing', 'Email support']
       };
     }
 
+    // Get features based on plan type
+    const planFeatures = subscription.plan === 'ENTERPRISE'
+      ? ['Unlimited parses', 'Priority support', 'API access', 'Custom integrations', 'SLA guarantee']
+      : ['100,000 parses/month', 'Standard support', 'API access', '$0.01 per overage parse', 'Email notifications'];
+
     return {
-      parses: subscription.plan.name === 'Enterprise' ? -1 : 100000, // -1 means unlimited
-      features: subscription.plan.features
+      parses: subscription.usage_limit,
+      features: planFeatures
     };
   }
 }

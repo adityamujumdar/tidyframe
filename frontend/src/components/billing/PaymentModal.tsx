@@ -61,13 +61,13 @@ export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
 
   const handleSubscribe = async () => {
     if (!selectedPlan) return;
-    
+
     setIsLoading(true);
     try {
       const { url } = await billingService.createCheckoutSession({
-        priceId: selectedPlan.priceId,
+        priceId: selectedPlan.price_id || '',
       });
-      
+
       // Redirect to Stripe Checkout
       window.location.href = url;
     } catch (error) {
@@ -150,10 +150,10 @@ export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
                     <CardDescription>{plan.description}</CardDescription>
                     <div className="mt-4">
                       <div className="text-3xl font-bold">
-                        {formatCurrency(plan.amount, plan.currency)}
+                        {plan.amount ? formatCurrency(plan.amount, plan.currency) : 'Custom'}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        per {plan.interval}
+                        {plan.amount ? `per ${plan.interval}` : 'pricing'}
                       </div>
                     </div>
                   </CardHeader>
@@ -186,10 +186,10 @@ export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-xl">
-                        {formatCurrency(selectedPlan.amount, selectedPlan.currency)}
+                        {selectedPlan.amount ? formatCurrency(selectedPlan.amount, selectedPlan.currency) : 'Custom pricing'}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        per {selectedPlan.interval}
+                        {selectedPlan.amount ? `per ${selectedPlan.interval}` : 'Contact us'}
                       </p>
                     </div>
                   </div>

@@ -50,13 +50,13 @@ export default function ProtectedRoute({ children, requireSubscription = true }:
   useEffect(() => {
     const paymentSuccess = searchParams.get('payment_success');
     if (paymentSuccess === 'true') {
-      logger.debug('Payment success detected - activating 30 second grace period');
+      logger.debug('Payment success detected - activating 60 second grace period');
       setGracePeriod(true);
-      // Give 30 second grace period for Stripe webhook to process
+      // Give 60 second grace period for Stripe webhook to process
       const timer = setTimeout(() => {
         logger.debug('Grace period expired');
         setGracePeriod(false);
-      }, 30000);
+      }, 60000);
       return () => clearTimeout(timer);
     }
   }, [searchParams]);

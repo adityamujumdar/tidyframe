@@ -33,13 +33,30 @@ import { UI } from '@/config/constants';
 type JobStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 export default function DashboardHome() {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, hasActiveSubscription } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [recentJobs, setRecentJobs] = useState<ProcessingJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Redirect free users without active subscription to pricing page
+  // This works in conjunction with ProtectedRoute as a backup check
+  useEffect(() => {
+    const paymentSuccess = searchParams.get('payment_success');
+
+    // Don't redirect if user just completed payment (grace period)
+    if (paymentSuccess === 'true') {
+      return;
+    }
+
+    // Redirect free users without subscription to pricing
+    if (user && user.plan !== 'enterprise' && !hasActiveSubscription) {
+      logger.debug('DashboardHome: Free user without subscription, redirecting to pricing');
+      navigate('/pricing', { replace: true });
+    }
+  }, [user, hasActiveSubscription, searchParams, navigate]);
 
   // Check if this is a new user after payment
   useEffect(() => {

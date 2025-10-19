@@ -2,16 +2,20 @@
 Billing and subscription API routes
 """
 
-from typing import List, Optional
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.dependencies import require_auth
+from app.models.job import ProcessingJob
+from app.models.parse_log import ParseLog
 from app.models.user import PlanType, User
 from app.models.webhook_event import WebhookEvent
 from app.services.stripe_service import StripeService
@@ -37,6 +41,14 @@ class SubscriptionResponse(BaseModel):
     current_period_start: Optional[int] = None
     current_period_end: Optional[int] = None
     cancel_at_period_end: Optional[bool] = None
+    # Usage and billing info
+    current_usage: Optional[int] = None
+    usage_limit: Optional[int] = None
+    usage_percentage: Optional[float] = None
+    overage: Optional[int] = None
+    overage_cost: Optional[int] = None  # in cents
+    estimated_next_invoice: Optional[int] = None  # in cents
+    days_until_renewal: Optional[int] = None
 
 
 class InvoiceResponse(BaseModel):
@@ -49,6 +61,68 @@ class InvoiceResponse(BaseModel):
     created: int
     invoice_pdf: Optional[str] = None
     hosted_invoice_url: Optional[str] = None
+
+
+class UsageMonth(BaseModel):
+    parses: int
+    limit: int
+    percentage: float
+    overage: int
+    overage_cost: int  # in cents
+    period_start: str
+    period_end: str
+
+
+class PeakDay(BaseModel):
+    date: str
+    parses: int
+
+
+class UsageStatsResponse(BaseModel):
+    current_month: UsageMonth
+    previous_month: UsageMonth
+    all_time_parses: int
+    average_parse_size: int
+    peak_usage_day: PeakDay
+
+
+class BillingHistoryItem(BaseModel):
+    id: str
+    amount: int
+    currency: str
+    status: str
+    description: str
+    invoice_url: Optional[str] = None
+    invoice_pdf: Optional[str] = None
+    created_at: str
+    paid_at: Optional[str] = None
+    line_items: Dict[str, int]
+
+
+class PricingPlanResponse(BaseModel):
+    id: str
+    name: str
+    description: str
+    amount: Optional[int]
+    currency: str
+    interval: str
+    price_id: Optional[str]
+    popular: bool
+    features: List[str]
+
+
+class BillingConfigResponse(BaseModel):
+    """Billing configuration for frontend display"""
+
+    monthly_price: float  # In dollars
+    yearly_price: float  # In dollars
+    overage_rate: float  # Per unit in dollars
+    standard_limit: int  # Monthly parse limit
+    enterprise_limit: int  # Monthly parse limit
+    currency: str
+    standard_features: List[str]
+    standard_yearly_features: List[str]
+    enterprise_features: List[str]
 
 
 @router.post("/create-checkout")
@@ -166,7 +240,7 @@ async def create_portal_session(
 
 @router.get("/subscription", response_model=SubscriptionResponse)
 async def get_subscription(current_user: User = Depends(require_auth)):
-    """Get user's subscription details"""
+    """Get user's subscription details with usage and overage information"""
 
     if not current_user.stripe_subscription_id:
         return SubscriptionResponse(plan=current_user.plan.value, status="inactive")
@@ -174,9 +248,40 @@ async def get_subscription(current_user: User = Depends(require_auth)):
     stripe_service = StripeService()
 
     try:
+        # Get subscription from Stripe
         subscription = await stripe_service.get_subscription(
             current_user.stripe_subscription_id
         )
+
+        # Get usage data with overage calculations
+        usage_data = {}
+        if current_user.stripe_customer_id:
+            try:
+                usage_data = await stripe_service.get_current_usage(
+                    current_user.stripe_customer_id
+                )
+            except Exception as e:
+                logger.warning("usage_fetch_failed", user_id=current_user.id, error=str(e))
+
+        # Calculate days until renewal
+        period_end = subscription["current_period_end"]
+        days_until_renewal = (
+            datetime.fromtimestamp(period_end, tz=timezone.utc) - datetime.now(timezone.utc)
+        ).days
+
+        # Get subscription base amount
+        base_amount = 0
+        if subscription.get("items") and subscription["items"]["data"]:
+            price = subscription["items"]["data"][0].get("price", {})
+            base_amount = price.get("unit_amount", 0)
+
+        # Calculate usage percentage and estimated invoice
+        current_usage = usage_data.get("usage", 0)
+        limit = usage_data.get("limit", current_user.monthly_limit)
+        overage = usage_data.get("overage", 0)
+        overage_cost = int(overage * settings.OVERAGE_PRICE_PER_UNIT * 100)  # Convert to cents
+        usage_percentage = (current_usage / limit * 100) if limit > 0 else 0
+        estimated_invoice = base_amount + overage_cost
 
         return SubscriptionResponse(
             id=subscription["id"],
@@ -185,6 +290,13 @@ async def get_subscription(current_user: User = Depends(require_auth)):
             current_period_start=subscription["current_period_start"],
             current_period_end=subscription["current_period_end"],
             cancel_at_period_end=subscription["cancel_at_period_end"],
+            current_usage=current_usage,
+            usage_limit=limit,
+            usage_percentage=round(usage_percentage, 2),
+            overage=overage,
+            overage_cost=overage_cost,
+            estimated_next_invoice=estimated_invoice,
+            days_until_renewal=days_until_renewal,
         )
 
     except Exception as e:
@@ -258,6 +370,270 @@ async def get_invoices(current_user: User = Depends(require_auth)):
             error=str(e),
         )
         return []
+
+
+@router.get("/usage", response_model=UsageStatsResponse)
+async def get_usage_stats(
+    current_user: User = Depends(require_auth), db: AsyncSession = Depends(get_db)
+):
+    """Get comprehensive usage statistics with overage calculations"""
+
+    stripe_service = StripeService()
+
+    # Get current period usage from Stripe (source of truth for billing)
+    stripe_usage = {}
+    if current_user.stripe_customer_id:
+        try:
+            stripe_usage = await stripe_service.get_current_usage(
+                current_user.stripe_customer_id
+            )
+        except Exception as e:
+            logger.warning("stripe_usage_fetch_failed", user_id=current_user.id, error=str(e))
+
+    # Get current month period from subscription or default
+    subscription = None
+    if current_user.stripe_subscription_id:
+        try:
+            subscription = await stripe_service.get_subscription(
+                current_user.stripe_subscription_id
+            )
+            period_start = datetime.fromtimestamp(
+                subscription["current_period_start"], tz=timezone.utc
+            )
+            period_end = datetime.fromtimestamp(
+                subscription["current_period_end"], tz=timezone.utc
+            )
+        except Exception:
+            period_start = current_user.month_reset_date
+            period_end = period_start + timedelta(days=30)
+    else:
+        # Fallback to user's month_reset_date
+        period_start = current_user.month_reset_date
+        period_end = period_start + timedelta(days=30)
+
+    # Query local ParseLog for current month (backup/validation)
+    current_month_result = await db.execute(
+        select(func.sum(ParseLog.row_count))
+        .where(ParseLog.user_id == current_user.id)
+        .where(ParseLog.timestamp >= period_start)
+        .where(ParseLog.timestamp < period_end)
+    )
+    local_current_count = current_month_result.scalar() or 0
+
+    # Get previous month usage
+    prev_month_start = period_start - timedelta(days=30)
+    prev_month_result = await db.execute(
+        select(func.sum(ParseLog.row_count))
+        .where(ParseLog.user_id == current_user.id)
+        .where(ParseLog.timestamp >= prev_month_start)
+        .where(ParseLog.timestamp < period_start)
+    )
+    prev_month_count = prev_month_result.scalar() or 0
+
+    # Get all-time usage
+    all_time_result = await db.execute(
+        select(func.sum(ParseLog.row_count)).where(ParseLog.user_id == current_user.id)
+    )
+    all_time_count = all_time_result.scalar() or 0
+
+    # Get peak usage day (last 30 days)
+    peak_day_result = await db.execute(
+        select(
+            func.date(ParseLog.timestamp).label("date"),
+            func.sum(ParseLog.row_count).label("count"),
+        )
+        .where(ParseLog.user_id == current_user.id)
+        .where(ParseLog.timestamp >= period_start)
+        .group_by(func.date(ParseLog.timestamp))
+        .order_by(func.sum(ParseLog.row_count).desc())
+        .limit(1)
+    )
+    peak_day = peak_day_result.first()
+
+    # Get average file size
+    avg_size_result = await db.execute(
+        select(func.avg(ProcessingJob.file_size)).where(
+            ProcessingJob.user_id == current_user.id
+        )
+    )
+    avg_size = int(avg_size_result.scalar() or 0)
+
+    # Calculate overage (prefer Stripe data for billing)
+    current_usage = stripe_usage.get("usage", local_current_count)
+    limit = current_user.monthly_limit
+    overage = max(0, current_usage - limit)
+    overage_cost = int(overage * settings.OVERAGE_PRICE_PER_UNIT * 100)  # Convert to cents
+
+    # Calculate previous month overage
+    prev_overage = max(0, prev_month_count - limit)
+    prev_overage_cost = int(prev_overage * settings.OVERAGE_PRICE_PER_UNIT * 100)
+
+    return UsageStatsResponse(
+        current_month=UsageMonth(
+            parses=current_usage,
+            limit=limit,
+            percentage=(current_usage / limit * 100) if limit > 0 else 0,
+            overage=overage,
+            overage_cost=overage_cost,
+            period_start=period_start.isoformat(),
+            period_end=period_end.isoformat(),
+        ),
+        previous_month=UsageMonth(
+            parses=prev_month_count,
+            limit=limit,
+            percentage=(prev_month_count / limit * 100) if limit > 0 else 0,
+            overage=prev_overage,
+            overage_cost=prev_overage_cost,
+            period_start=prev_month_start.isoformat(),
+            period_end=period_start.isoformat(),
+        ),
+        all_time_parses=all_time_count,
+        average_parse_size=avg_size,
+        peak_usage_day=PeakDay(
+            date=peak_day.date.isoformat() if peak_day else period_start.date().isoformat(),
+            parses=int(peak_day.count) if peak_day else 0,
+        ),
+    )
+
+
+@router.get("/history", response_model=List[BillingHistoryItem])
+async def get_billing_history(
+    limit: int = Query(default=10, le=50), current_user: User = Depends(require_auth)
+):
+    """Get billing history with overage line items separated"""
+
+    if not current_user.stripe_customer_id:
+        return []
+
+    stripe_service = StripeService()
+
+    try:
+        # Get invoices with expanded line items
+        invoices_raw = stripe_service.stripe.Invoice.list(
+            customer=current_user.stripe_customer_id, limit=limit, expand=["data.lines"]
+        )
+
+        history = []
+        for invoice in invoices_raw.data:
+            # Parse line items to separate subscription from overage
+            subscription_amount = 0
+            overage_amount = 0
+            other_amount = 0
+
+            for line in invoice.lines.data:
+                description = line.description or ""
+                amount = line.amount
+
+                # Identify line item type
+                if "overage" in description.lower() or (
+                    line.price and line.price.id == settings.STRIPE_OVERAGE_PRICE_ID
+                ):
+                    overage_amount += amount
+                elif line.price and line.price.id in [
+                    settings.STRIPE_STANDARD_MONTHLY_PRICE_ID,
+                    settings.STRIPE_STANDARD_YEARLY_PRICE_ID,
+                    settings.STRIPE_ENTERPRISE_MONTHLY_PRICE_ID,
+                    settings.STRIPE_ENTERPRISE_YEARLY_PRICE_ID,
+                ]:
+                    subscription_amount += amount
+                else:
+                    other_amount += amount
+
+            history.append(
+                BillingHistoryItem(
+                    id=invoice.id,
+                    amount=invoice.amount_paid,
+                    currency=invoice.currency,
+                    status=invoice.status,
+                    description=f"Invoice {invoice.number or invoice.id}",
+                    invoice_url=invoice.hosted_invoice_url,
+                    invoice_pdf=invoice.invoice_pdf,
+                    created_at=datetime.fromtimestamp(invoice.created, tz=timezone.utc).isoformat(),
+                    paid_at=(
+                        datetime.fromtimestamp(
+                            invoice.status_transitions.paid_at, tz=timezone.utc
+                        ).isoformat()
+                        if invoice.status_transitions.paid_at
+                        else None
+                    ),
+                    line_items={
+                        "subscription": subscription_amount,
+                        "overage": overage_amount,
+                        "other": other_amount,
+                    },
+                )
+            )
+
+        return history
+
+    except Exception as e:
+        logger.error(
+            "billing_history_retrieval_failed",
+            user_id=current_user.id,
+            customer_id=current_user.stripe_customer_id,
+            error=str(e),
+        )
+        return []
+
+
+@router.get("/plans", response_model=List[PricingPlanResponse])
+async def get_pricing_plans():
+    """Get available pricing plans"""
+
+    plans = [
+        PricingPlanResponse(
+            id="standard-monthly",
+            name="Standard",
+            description="Professional name parsing for businesses",
+            amount=int(settings.STANDARD_MONTHLY_PRICE * 100),  # Convert to cents
+            currency="usd",
+            interval="month",
+            price_id=settings.STRIPE_STANDARD_MONTHLY_PRICE_ID,
+            popular=True,
+            features=settings.STANDARD_PLAN_FEATURES,
+        ),
+        PricingPlanResponse(
+            id="standard-yearly",
+            name="Standard (Yearly)",
+            description="Save 20% with annual billing",
+            amount=int(settings.STANDARD_YEARLY_PRICE * 100),  # Convert to cents
+            currency="usd",
+            interval="year",
+            price_id=settings.STRIPE_STANDARD_YEARLY_PRICE_ID,
+            popular=False,
+            features=settings.STANDARD_YEARLY_FEATURES,
+        ),
+        PricingPlanResponse(
+            id="enterprise",
+            name="Enterprise",
+            description="Custom solutions for large-scale operations",
+            amount=None,
+            currency="usd",
+            interval="month",
+            price_id=None,
+            popular=False,
+            features=settings.ENTERPRISE_PLAN_FEATURES,
+        ),
+    ]
+
+    return plans
+
+
+@router.get("/config", response_model=BillingConfigResponse)
+async def get_billing_config():
+    """Get billing configuration for frontend"""
+
+    return BillingConfigResponse(
+        monthly_price=settings.STANDARD_MONTHLY_PRICE,
+        yearly_price=settings.STANDARD_YEARLY_PRICE,
+        overage_rate=settings.OVERAGE_PRICE_PER_UNIT,
+        standard_limit=settings.MONTHLY_NAME_LIMIT,
+        enterprise_limit=settings.ENTERPRISE_TIER_MONTHLY_LIMIT,
+        currency="usd",
+        standard_features=settings.STANDARD_PLAN_FEATURES,
+        standard_yearly_features=settings.STANDARD_YEARLY_FEATURES,
+        enterprise_features=settings.ENTERPRISE_PLAN_FEATURES,
+    )
 
 
 @router.post("/stripe/webhook")

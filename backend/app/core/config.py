@@ -133,7 +133,6 @@ class Settings(BaseSettings):
     ANONYMOUS_LIFETIME_LIMIT: int = (
         5  # Free anonymous trial (5 parses total per IP, lifetime)
     )
-    STANDARD_OVERAGE_PRICE: float = 0.002  # $0.002 per name after 100k
     MAX_ROWS_PER_FILE: int = 1000000
     PROCESSING_TIMEOUT_MINUTES: int = 60
 
@@ -166,11 +165,46 @@ class Settings(BaseSettings):
 
     # Billing configuration
     STANDARD_MONTHLY_PRICE: float = 80.0
-    STANDARD_YEARLY_PRICE: float = 768.0  # 20% discount
+    STANDARD_YEARLY_PRICE: float = 768.0  # 20% discount (save $192/year)
     MONTHLY_NAME_LIMIT: int = 100000
-    OVERAGE_PRICE_PER_UNIT: float = 0.01
-    STANDARD_OVERAGE_PRICE: float = 0.01  # Legacy field for compatibility
+    OVERAGE_PRICE_PER_UNIT: float = 0.01  # $0.01 per parse over limit
     RESEND_API_KEY: str = ""
+
+    # Plan features configuration
+    STANDARD_PLAN_FEATURES: List[str] = [
+        "100,000 name parses per month",
+        "CSV/Excel file upload (200MB)",
+        "Advanced AI-powered name parsing",
+        "Entity type detection (Person/Company/Trust)",
+        "Gender detection with confidence scoring",
+        "API access with authentication",
+        "Result download in Excel format",
+        "Priority processing queue",
+        "10-minute automatic data deletion",
+        "Email support",
+        "$0.01 per name over 100,000 ($10 per 1,000)",
+    ]
+
+    STANDARD_YEARLY_FEATURES: List[str] = [
+        "All Standard features",
+        "Save 20% ($192/year)",
+        "Billed annually",
+        "Same $0.01 overage rate",
+    ]
+
+    ENTERPRISE_PLAN_FEATURES: List[str] = [
+        "Unlimited name parses",
+        "Custom AI algorithms and models",
+        "Dedicated infrastructure",
+        "Custom API rate limits",
+        "Advanced entity detection",
+        "Custom data retention policies",
+        "SLA guarantees",
+        "Dedicated account manager",
+        "Priority 24/7 support",
+        "Custom integrations",
+        "On-premise deployment option",
+    ]
 
     # Email Configuration
     FROM_EMAIL: str = "noreply@tidyframe.com"

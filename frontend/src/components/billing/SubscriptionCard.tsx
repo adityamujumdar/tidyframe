@@ -11,7 +11,7 @@ import {
   Crown,
   Zap
 } from 'lucide-react';
-import { SubscriptionStatus, UsageStats } from '@/types/billing';
+import { SubscriptionStatus, UsageStats, BillingConfig } from '@/types/billing';
 import { billingService } from '@/services/billingService';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -21,15 +21,17 @@ import { ProgressBar } from '@/components/shared/ProgressBar';
 interface SubscriptionCardProps {
   subscription: SubscriptionStatus | null;
   usage: UsageStats;
+  billingConfig: BillingConfig | null;
   onManageSubscription: () => void;
   onUpgrade: () => void;
 }
 
-export function SubscriptionCard({ 
-  subscription, 
-  usage, 
-  onManageSubscription, 
-  onUpgrade 
+export function SubscriptionCard({
+  subscription,
+  usage,
+  billingConfig,
+  onManageSubscription,
+  onUpgrade
 }: SubscriptionCardProps) {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -88,6 +90,36 @@ export function SubscriptionCard({
     }
   };
 
+  // Get plan details based on plan type and config
+  const getPlanDetails = (planType: string) => {
+    switch (planType?.toUpperCase()) {
+      case 'ENTERPRISE':
+        return {
+          name: 'Enterprise',
+          amount: null,
+          currency: billingConfig?.currency || 'usd',
+          interval: 'custom',
+          features: billingConfig?.enterprise_features || ['Unlimited parses', 'Priority support', 'API access', 'Custom integrations', 'SLA guarantee']
+        };
+      case 'STANDARD':
+        return {
+          name: 'Standard',
+          amount: billingConfig ? billingConfig.monthly_price * 100 : 8000, // Convert to cents
+          currency: billingConfig?.currency || 'usd',
+          interval: 'month',
+          features: billingConfig?.standard_features || ['100,000 parses/month', 'Standard support', 'API access', '$0.01 per overage parse', 'Email notifications']
+        };
+      default:
+        return {
+          name: 'Free',
+          amount: 0,
+          currency: billingConfig?.currency || 'usd',
+          interval: 'month',
+          features: ['5 parses per upload', 'Basic CSV processing', 'Email support']
+        };
+    }
+  };
+
   // Show admin status for enterprise users
   if (user?.plan === 'enterprise' && !subscription) {
     return (
@@ -112,7 +144,7 @@ export function SubscriptionCard({
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Parses this month</span>
-              <span className="font-medium">{usage.currentMonth.parses.toLocaleString()}</span>
+              <span className="font-medium">{usage.current_month.parses.toLocaleString()}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Monthly limit</span>
@@ -125,7 +157,7 @@ export function SubscriptionCard({
   }
 
   // Show free tier status
-  if (!subscription) {
+  if (!subscription || !subscription.id) {
     return (
       <Card>
         <CardHeader>
@@ -136,18 +168,18 @@ export function SubscriptionCard({
         </CardHeader>
         <CardContent className="space-y-4">
           <ProgressBar
-            value={usage.currentMonth.parses}
-            max={usage.currentMonth.limit}
+            value={usage.current_month.parses}
+            max={usage.current_month.limit}
             showLabel
-            label={`Usage this month: ${usage.currentMonth.parses} / ${usage.currentMonth.limit}`}
+            label={`Usage this month: ${usage.current_month.parses} / ${usage.current_month.limit}`}
             dangerZone={90}
             size="sm"
           />
-          
+
           <div className="pt-2 space-y-2">
             <p className="text-sm font-medium">Free tier includes:</p>
             <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• 100 file parses per month</li>
+              <li>• 5 parses per upload</li>
               <li>• Basic CSV processing</li>
               <li>• Email support</li>
             </ul>
@@ -156,12 +188,14 @@ export function SubscriptionCard({
         <CardFooter>
           <Button onClick={onUpgrade} className="w-full">
             <Zap className="h-4 w-4 mr-2" />
-            Upgrade to Pro
+            Upgrade to Standard
           </Button>
         </CardFooter>
       </Card>
     );
   }
+
+  const planDetails = getPlanDetails(subscription.plan);
 
   return (
     <Card>
@@ -170,65 +204,73 @@ export function SubscriptionCard({
           <div>
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
-              {subscription.plan.name} Plan
+              {planDetails.name} Plan
             </CardTitle>
             <CardDescription>
-              {formatCurrency(subscription.plan.amount, subscription.plan.currency)} / {subscription.plan.interval}
+              {planDetails.amount ? `${formatCurrency(planDetails.amount, planDetails.currency)} / ${planDetails.interval}` : 'Custom pricing'}
             </CardDescription>
           </div>
-          <Badge className={getStatusColor(subscription.status)}>
-            {getStatusIcon(subscription.status)}
-            {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
+          <Badge className={getStatusColor(subscription.status || 'active')}>
+            {getStatusIcon(subscription.status || 'active')}
+            {subscription.status ? subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1) : 'Active'}
           </Badge>
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {/* Usage Statistics */}
-        {subscription.plan.name !== 'Enterprise' ? (
-          <ProgressBar
-            value={usage.currentMonth.parses}
-            max={usage.currentMonth.limit}
-            showLabel
-            label={`Usage this month: ${usage.currentMonth.parses.toLocaleString()} / ${usage.currentMonth.limit.toLocaleString()}`}
-            dangerZone={90}
-            size="sm"
-          />
+        {planDetails.name !== 'Enterprise' ? (
+          <>
+            <ProgressBar
+              value={usage.current_month.parses}
+              max={usage.current_month.limit}
+              showLabel
+              label={`Usage this month: ${usage.current_month.parses.toLocaleString()} / ${usage.current_month.limit.toLocaleString()}`}
+              dangerZone={90}
+              size="sm"
+            />
+
+            {/* Overage Warning */}
+            {usage.current_month.overage > 0 && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-warning/10 border border-warning/20">
+                <AlertTriangle className="h-4 w-4 text-warning" />
+                <div className="text-sm">
+                  <p className="text-warning font-medium">
+                    {usage.current_month.overage.toLocaleString()} overage parses
+                  </p>
+                  <p className="text-muted-foreground">
+                    Additional cost: {formatCurrency(usage.current_month.overage_cost, 'usd')}
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Usage this month</span>
-            <span className="font-medium">{usage.currentMonth.parses.toLocaleString()} / ∞</span>
+            <span className="font-medium">{usage.current_month.parses.toLocaleString()} / ∞</span>
           </div>
         )}
 
         {/* Billing Period */}
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Current period</span>
-          <span className="flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            {format(new Date(subscription.currentPeriodStart), 'MMM dd')} - {format(new Date(subscription.currentPeriodEnd), 'MMM dd')}
-          </span>
-        </div>
-
-        {/* Trial Information */}
-        {subscription.status === 'trialing' && subscription.trialEnd && (
+        {subscription.current_period_start && subscription.current_period_end && (
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Trial ends</span>
+            <span className="text-muted-foreground">Current period</span>
             <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {format(new Date(subscription.trialEnd), 'MMM dd, yyyy')}
+              <Calendar className="h-3 w-3" />
+              {format(new Date(subscription.current_period_start * 1000), 'MMM dd')} - {format(new Date(subscription.current_period_end * 1000), 'MMM dd')}
             </span>
           </div>
         )}
 
         {/* Cancellation Notice */}
-        {subscription.cancelAtPeriodEnd && (
+        {subscription.cancel_at_period_end && subscription.current_period_end && (
           <div className="flex items-center gap-2 p-3 rounded-lg bg-warning/10 border border-warning/20">
             <AlertTriangle className="h-4 w-4 text-warning" />
             <div className="text-sm">
               <p className="text-warning font-medium">Subscription will end</p>
               <p className="text-muted-foreground">
-                Your subscription will end on {format(new Date(subscription.currentPeriodEnd), 'MMMM dd, yyyy')}
+                Your subscription will end on {format(new Date(subscription.current_period_end * 1000), 'MMMM dd, yyyy')}
               </p>
             </div>
           </div>
@@ -238,7 +280,7 @@ export function SubscriptionCard({
         <div className="pt-2">
           <p className="text-sm font-medium mb-2">Plan includes:</p>
           <ul className="text-sm text-muted-foreground space-y-1">
-            {subscription.plan.features.map((feature, index) => (
+            {planDetails.features.map((feature, index) => (
               <li key={index}>• {feature}</li>
             ))}
           </ul>
@@ -246,17 +288,17 @@ export function SubscriptionCard({
       </CardContent>
 
       <CardFooter className="flex gap-2">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={onManageSubscription}
           disabled={isLoading}
         >
           Manage Billing
         </Button>
-        
-        {!subscription.cancelAtPeriodEnd && (
-          <Button 
-            variant="destructive" 
+
+        {!subscription.cancel_at_period_end && (
+          <Button
+            variant="destructive"
             size="sm"
             onClick={handleCancelSubscription}
             disabled={isLoading}
@@ -264,10 +306,10 @@ export function SubscriptionCard({
             Cancel Subscription
           </Button>
         )}
-        
-        {subscription.cancelAtPeriodEnd && (
-          <Button 
-            variant="default" 
+
+        {subscription.cancel_at_period_end && (
+          <Button
+            variant="default"
             onClick={onUpgrade}
             disabled={isLoading}
           >

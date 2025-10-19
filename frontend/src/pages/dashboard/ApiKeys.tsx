@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ApiDocsContent } from '@/components/docs/ApiDocsContent';
 import {
   Dialog,
   DialogContent,
@@ -399,6 +400,20 @@ export default function ApiKeys() {
           )}
         </CardContent>
       </Card>
+
+      {/* API Documentation Section */}
+      <div className="mt-12 pt-12 border-t">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold mb-3">
+            API Documentation
+          </h2>
+          <p className="text-muted-foreground text-lg">
+            Complete reference for integrating tidyframe.com API into your applications
+          </p>
+        </div>
+
+        <ApiDocsContent />
+      </div>
     </div>
   );
 }

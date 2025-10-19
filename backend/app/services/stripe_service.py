@@ -59,7 +59,28 @@ class StripeService:
         self.webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
         self.meter_webhook_secret = os.getenv("STRIPE_BILLING_METER_WEBHOOK_SECRET")
 
+        # Validate critical Stripe configuration
+        self._validate_stripe_config()
+
         logger.info(f"Stripe service initialized with product {self.product_id}")
+
+    def _validate_stripe_config(self):
+        """Validate that required Stripe price IDs are configured"""
+        missing_ids = []
+
+        if not self.price_monthly:
+            missing_ids.append("STRIPE_STANDARD_MONTHLY_PRICE_ID")
+        if not self.price_annual:
+            missing_ids.append("STRIPE_STANDARD_YEARLY_PRICE_ID")
+        if not self.price_overage:
+            missing_ids.append("STRIPE_OVERAGE_PRICE_ID")
+
+        if missing_ids:
+            logger.warning(
+                "stripe_price_ids_not_configured",
+                missing_ids=missing_ids,
+                message="Billing features may not work correctly. Please configure missing Stripe price IDs."
+            )
 
     def get_checkout_urls(self) -> dict:
         """

@@ -48,7 +48,7 @@ export default function Navbar() {
             <Link to="/pricing" className="px-2 xl:px-3 py-2 text-base font-semibold transition-colors hover:text-primary">
               Pricing
             </Link>
-            <Link to="/docs" className="px-2 xl:px-3 py-2 text-base font-semibold transition-colors hover:text-primary">
+            <Link to={user ? "/dashboard/api-keys" : "/docs"} className="px-2 xl:px-3 py-2 text-base font-semibold transition-colors hover:text-primary">
               API Docs
             </Link>
             <Link to="/contact" className="px-2 xl:px-3 py-2 text-base font-semibold transition-colors hover:text-primary">

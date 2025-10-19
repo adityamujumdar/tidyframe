@@ -19,7 +19,7 @@ export default function PaymentSuccessPage() {
           logger.debug('User already active, redirecting to dashboard');
           setActivated(true);
           setTimeout(() => {
-            navigate('/dashboard/upload?payment_success=true', { replace: true });
+            navigate('/dashboard?payment_success=true', { replace: true });
           }, 1500);
           return;
         }
@@ -61,9 +61,9 @@ export default function PaymentSuccessPage() {
         setActivated(true);
         setActivating(false);
 
-        // Redirect to upload page with payment success flag for grace period
+        // Redirect to dashboard with payment success flag for grace period
         setTimeout(() => {
-          navigate('/dashboard/upload?payment_success=true', { replace: true });
+          navigate('/dashboard?payment_success=true', { replace: true });
         }, 1500);
 
       } catch (error) {
@@ -120,7 +120,7 @@ export default function PaymentSuccessPage() {
                 ✓ 100,000 monthly parses ready
               </p>
               <p className="text-sm font-medium text-success">
-                ✓ Redirecting to upload...
+                ✓ Redirecting to dashboard...
               </p>
             </div>
           )}
