@@ -100,7 +100,7 @@ export default function DashboardLayout() {
             {/* Logo */}
             <div className="flex h-16 items-center border-b px-6">
               <Link to="/" className="flex items-center space-x-2">
-                <img src="/logo-with-name.png" alt="TidyFrame" className="h-50" />
+                <img src="/logo-with-name.png" alt="TidyFrame" className="h-8 w-auto" />
               </Link>
             </div>
 
