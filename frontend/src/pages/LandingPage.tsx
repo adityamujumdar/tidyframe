@@ -130,7 +130,7 @@ export default function LandingPage() {
                 <div className="text-sm sm:text-base font-semibold text-foreground">Accuracy Rate</div>
               </div>
               <div className="text-center md:text-left">
-                <div className="text-5xl sm:text-6xl md:text-7xl font-black text-primary mb-2">1M+</div>
+                <div className="text-5xl sm:text-6xl md:text-7xl font-black text-primary mb-2">100K+</div>
                 <div className="text-sm sm:text-base font-semibold text-foreground">Names Processed</div>
               </div>
               <div className="text-center md:text-left">
@@ -185,7 +185,7 @@ export default function LandingPage() {
             Start Processing Names Today
           </h2>
           <p className="text-lg mb-8 opacity-95 max-w-2xl mx-auto">
-            Join multiple businesses processing over 1M names monthly with TidyFrame
+            Join multiple businesses processing over 100K names monthly with TidyFrame
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
