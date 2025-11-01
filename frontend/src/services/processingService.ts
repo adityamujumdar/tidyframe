@@ -67,7 +67,9 @@ class ProcessingService {
   }
 
   async getUserUsage(): Promise<UsageStats> {
-    return await apiService.get<UsageStats>('/api/usage');
+    // Use Stripe-integrated endpoint for accurate billing state
+    // This ensures dashboard reflects payment status immediately after checkout
+    return await apiService.get<UsageStats>('/api/billing/usage');
   }
 
   // Polling for job status updates
