@@ -648,8 +648,8 @@ async def download_results(
             )
             os.close(temp_fd)  # Close the file descriptor, we'll write with pandas
 
-            # Write cleaned data to temp file
-            df_cleaned.to_csv(temp_path, index=False)
+            # Write cleaned data to temp file with UTF-8-sig encoding for Excel compatibility
+            df_cleaned.to_csv(temp_path, index=False, encoding="utf-8-sig")
 
             logger.info(
                 "file_downloaded",

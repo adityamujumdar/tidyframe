@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone, FileRejection } from 'react-dropzone';
 import { useAuth } from '@/contexts/AuthContext';
@@ -51,6 +51,25 @@ export default function UniversalFileUpload({
   const [error, setError] = useState('');
   const [columnName, setColumnName] = useState('');
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+
+  // Prevent browser from navigating when files dropped outside dropzone
+  // This is critical UX - dropping files on document navigates away and loses all progress
+  useEffect(() => {
+    const preventDefaults = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    // Prevent default behavior for drag events on the entire document
+    document.addEventListener('dragover', preventDefaults);
+    document.addEventListener('drop', preventDefaults);
+
+    // Cleanup event listeners on component unmount
+    return () => {
+      document.removeEventListener('dragover', preventDefaults);
+      document.removeEventListener('drop', preventDefaults);
+    };
+  }, []);
 
   // Determine user plan and limits
   const getUserLimits = () => {

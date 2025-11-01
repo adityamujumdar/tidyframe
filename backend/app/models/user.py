@@ -149,6 +149,10 @@ class User(Base):
 
     def can_parse(self, count: int = 1) -> bool:
         """Check if user can perform additional parses"""
+        # Admin users have unlimited parsing (bypass billing)
+        if self.is_admin:
+            return True
+
         if self.plan == PlanType.ENTERPRISE:
             return True  # Unlimited for enterprise
 

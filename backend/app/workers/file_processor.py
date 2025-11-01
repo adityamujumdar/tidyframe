@@ -623,8 +623,9 @@ class OptimizedFileProcessorService:
         # Ensure results directory exists
         os.makedirs(settings.RESULTS_DIR, exist_ok=True)
 
-        # Save CSV (primary format)
-        results_df.to_csv(csv_path, index=False, encoding="utf-8")
+        # Save CSV (primary format) with UTF-8-sig encoding for Excel compatibility
+        # UTF-8-sig adds BOM (Byte Order Mark) that Excel needs to detect UTF-8
+        results_df.to_csv(csv_path, index=False, encoding="utf-8-sig")
 
         # Save Excel with performance analytics
         with pd.ExcelWriter(excel_path, engine="openpyxl") as writer:

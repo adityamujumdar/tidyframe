@@ -18,7 +18,7 @@ export default function LandingPage() {
     {
       icon: Brain,
       title: '95%+ Accuracy',
-      description: 'State-of-the-art AI models trained on millions of names for enterprise-grade parsing.'
+      description: 'State-of-the-art AI models trained on over 100K names for enterprise-grade parsing.'
     },
     {
       icon: Zap,
