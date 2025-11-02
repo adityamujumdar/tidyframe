@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { logger } from '@/utils/logger';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { isInPaymentGracePeriod, clearPaymentGracePeriod } from '@/utils/gracePeriodManager';
 import { processingService } from '@/services/processingService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,33 +42,43 @@ export default function DashboardHome() {
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Redirect free users without active subscription to pricing page
-  // This works in conjunction with ProtectedRoute as a backup check
+  // Show welcome modal for users who just completed payment (grace period active)
+  // Also poll subscription status during grace period and clear it when active
   useEffect(() => {
-    const paymentSuccess = searchParams.get('payment_success');
-
-    // Don't redirect if user just completed payment (grace period)
-    if (paymentSuccess === 'true') {
-      return;
-    }
-
-    // Redirect free users without subscription to pricing
-    if (user && user.plan !== 'enterprise' && !hasActiveSubscription) {
-      logger.debug('DashboardHome: Free user without subscription, redirecting to pricing');
-      navigate('/pricing', { replace: true });
-    }
-  }, [user, hasActiveSubscription, searchParams, navigate]);
-
-  // Check if this is a new user after payment
-  useEffect(() => {
-    const paymentSuccess = searchParams.get('payment_success');
+    const inGracePeriod = isInPaymentGracePeriod();
     const hasSeenWelcome = localStorage.getItem('welcome_modal_shown');
 
-    if (paymentSuccess === 'true' && !hasSeenWelcome) {
+    if (inGracePeriod && !hasSeenWelcome) {
       setShowWelcomeModal(true);
       localStorage.setItem('welcome_modal_shown', 'true');
     }
-  }, [searchParams]);
+
+    // Poll subscription status during grace period to auto-clear when activated
+    if (inGracePeriod) {
+      logger.debug('DashboardHome: Grace period active, starting subscription status polling');
+
+      const pollInterval = setInterval(async () => {
+        try {
+          // Refresh user data to check if subscription is now active
+          await refreshUser();
+
+          // If subscription is now active, clear grace period
+          if (hasActiveSubscription) {
+            logger.debug('DashboardHome: Subscription confirmed active, clearing grace period');
+            clearPaymentGracePeriod();
+            clearInterval(pollInterval);
+          }
+        } catch (error) {
+          logger.error('DashboardHome: Error polling subscription status', error);
+        }
+      }, 5000); // Poll every 5 seconds
+
+      // Clear polling when component unmounts or grace period expires
+      return () => {
+        clearInterval(pollInterval);
+      };
+    }
+  }, [hasActiveSubscription, refreshUser]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {

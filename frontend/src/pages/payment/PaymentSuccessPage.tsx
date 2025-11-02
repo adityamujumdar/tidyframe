@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, Loader2 } from 'lucide-react';
+import { setPaymentGracePeriod } from '@/utils/gracePeriodManager';
 
 export default function PaymentSuccessPage() {
   const navigate = useNavigate();
@@ -14,12 +15,16 @@ export default function PaymentSuccessPage() {
   useEffect(() => {
     const activateUser = async () => {
       try {
+        // Set grace period immediately - protects user for 90 seconds while webhook processes
+        setPaymentGracePeriod();
+        logger.debug('Payment grace period activated');
+
         // Check if user is already activated
         if (user) {
           logger.debug('User already active, redirecting to dashboard');
           setActivated(true);
           setTimeout(() => {
-            navigate('/dashboard?payment_success=true', { replace: true });
+            navigate('/dashboard', { replace: true });
           }, 1500);
           return;
         }
@@ -61,16 +66,16 @@ export default function PaymentSuccessPage() {
         setActivated(true);
         setActivating(false);
 
-        // Redirect to dashboard with payment success flag for grace period
+        // Redirect to dashboard - grace period manager protects access
         setTimeout(() => {
-          navigate('/dashboard?payment_success=true', { replace: true });
+          navigate('/dashboard', { replace: true });
         }, 1500);
 
       } catch (error) {
         logger.error('Error activating user:', error);
-        // On error, still try to redirect - user has valid tokens
+        // On error, still try to redirect - user has valid tokens and grace period
         setTimeout(() => {
-          navigate('/dashboard?payment_success=true', { replace: true });
+          navigate('/dashboard', { replace: true });
         }, 2000);
       }
     };

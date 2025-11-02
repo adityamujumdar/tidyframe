@@ -1,9 +1,10 @@
-import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { logger } from '@/utils/logger';
+import { isInPaymentGracePeriod, getRemainingGracePeriodMs } from '@/utils/gracePeriodManager';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -13,7 +14,6 @@ interface ProtectedRouteProps {
 export default function ProtectedRoute({ children, requireSubscription = true }: ProtectedRouteProps) {
   const { user, loading, hasActiveSubscription } = useAuth();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
   const [gracePeriod, setGracePeriod] = useState(false);
   const [checkingPendingUser, setCheckingPendingUser] = useState(true);
 
@@ -46,20 +46,32 @@ export default function ProtectedRoute({ children, requireSubscription = true }:
     checkPendingUser();
   }, [user, loading]);
 
-  // Check if user just completed payment - give grace period for webhook processing
+  // Check payment grace period - managed by gracePeriodManager
   useEffect(() => {
-    const paymentSuccess = searchParams.get('payment_success');
-    if (paymentSuccess === 'true') {
-      logger.debug('Payment success detected - activating 60 second grace period');
-      setGracePeriod(true);
-      // Give 60 second grace period for Stripe webhook to process
-      const timer = setTimeout(() => {
-        logger.debug('Grace period expired');
+    const checkGracePeriod = () => {
+      if (isInPaymentGracePeriod()) {
+        const remainingMs = getRemainingGracePeriodMs();
+        logger.debug('Payment grace period active', { remainingMs });
+        setGracePeriod(true);
+
+        // Set timer to clear grace period when it expires
+        const timer = setTimeout(() => {
+          logger.debug('Payment grace period expired');
+          setGracePeriod(false);
+        }, remainingMs);
+
+        return () => clearTimeout(timer);
+      } else {
         setGracePeriod(false);
-      }, 60000);
-      return () => clearTimeout(timer);
-    }
-  }, [searchParams]);
+      }
+    };
+
+    checkGracePeriod();
+
+    // Re-check every 5 seconds in case grace period is set mid-session
+    const interval = setInterval(checkGracePeriod, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   logger.debug('ProtectedRoute:', {
     user: user ? { id: user.id, email: user.email, plan: user.plan } : null,
