@@ -682,15 +682,17 @@ class ConsolidatedGeminiService:
         url = self.base_url.format(model=self.model_name)
         url += f"?key={self.api_key}"
 
+        # gemini-2.5-flash uses thinking tokens (100-500+) which count against maxOutputTokens
+        # Need significantly higher budget than flash-lite to avoid MAX_TOKENS errors
+        base_tokens = max(2000, len(names) * 250)
+
         payload = {
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {
                 "temperature": 0.1,
                 "topK": 10,
                 "topP": 0.95,
-                "maxOutputTokens": max(
-                    500, len(names) * 150
-                ),  # Increased to prevent truncation
+                "maxOutputTokens": base_tokens,
                 "candidateCount": 1,
             },
         }
@@ -703,35 +705,81 @@ class ConsolidatedGeminiService:
                 async with session.post(url, json=payload) as response:
                     if response.status == 200:
                         result = await response.json()
-                        if "candidates" in result and result["candidates"]:
-                            text = result["candidates"][0]["content"]["parts"][0][
-                                "text"
-                            ]
-                            # Log actual token usage from API
-                            if "usageMetadata" in result:
-                                actual_tokens = result["usageMetadata"].get(
-                                    "totalTokenCount", 0
-                                )
+
+                        # Validate response has candidates
+                        if "candidates" not in result or not result["candidates"]:
+                            logger.warning(
+                                "no_candidates_in_response",
+                                attempt=attempt,
+                                names_count=len(names)
+                            )
+                            continue  # Retry
+
+                        candidate = result["candidates"][0]
+                        finish_reason = candidate.get("finishReason", "UNKNOWN")
+                        usage_metadata = result.get("usageMetadata", {})
+
+                        # Check for MAX_TOKENS and implement progressive retry
+                        if finish_reason == "MAX_TOKENS":
+                            thoughts_tokens = usage_metadata.get("thoughtsTokenCount", 0)
+                            logger.warning(
+                                "max_tokens_exceeded",
+                                attempt=attempt,
+                                current_max=payload["generationConfig"]["maxOutputTokens"],
+                                thoughts_tokens=thoughts_tokens,
+                                names_count=len(names)
+                            )
+
+                            # Progressive retry: double tokens and try again
+                            if attempt < self.max_retries - 1:
+                                payload["generationConfig"]["maxOutputTokens"] *= 2
                                 logger.info(
-                                    "gemini_api_response",
-                                    actual_tokens=actual_tokens,
-                                    response_length=len(text),
-                                    names_count=len(names),
+                                    "retrying_with_more_tokens",
+                                    new_max=payload["generationConfig"]["maxOutputTokens"]
                                 )
+                                await asyncio.sleep(0.5)  # Brief pause before retry
+                                continue
 
-                            # Parse response
-                            parsed_results = self._parse_gemini_response(text, names)
+                        # Validate content has parts (critical for gemini-2.5-flash)
+                        content = candidate.get("content", {})
+                        if "parts" not in content or not content["parts"]:
+                            logger.error(
+                                "no_parts_in_response",
+                                finish_reason=finish_reason,
+                                has_content=bool(content),
+                                attempt=attempt
+                            )
+                            continue  # Retry
 
-                            # Apply retry logic for low-confidence results
-                            improved_results = []
-                            for i, result in enumerate(parsed_results):
-                                original_name = names[i] if i < len(names) else ""
-                                improved_result = await self._retry_low_confidence(
-                                    result, original_name
-                                )
-                                improved_results.append(improved_result)
+                        # Extract text (now safe after validation)
+                        text = content["parts"][0]["text"]
 
-                            return improved_results
+                        # Log detailed API response metrics
+                        logger.info(
+                            "gemini_api_response",
+                            finish_reason=finish_reason,
+                            total_tokens=usage_metadata.get("totalTokenCount", 0),
+                            thoughts_tokens=usage_metadata.get("thoughtsTokenCount", 0),
+                            output_tokens=usage_metadata.get("candidatesTokenCount", 0),
+                            response_length=len(text),
+                            names_count=len(names),
+                            attempt=attempt
+                        )
+
+                        # Parse response
+                        parsed_results = self._parse_gemini_response(text, names)
+
+                        # Apply retry logic for low-confidence results
+                        improved_results = []
+                        for i, result in enumerate(parsed_results):
+                            original_name = names[i] if i < len(names) else ""
+                            improved_result = await self._retry_low_confidence(
+                                result, original_name
+                            )
+                            improved_results.append(improved_result)
+
+                        return improved_results
+
                     elif response.status == 429:
                         await asyncio.sleep(2**attempt)
                     else:
@@ -743,7 +791,80 @@ class ConsolidatedGeminiService:
             except asyncio.TimeoutError:
                 logger.warning("timeout", attempt=attempt)
             except Exception as e:
-                logger.error("request_failed", error=str(e))
+                logger.error("request_failed", error=str(e), attempt=attempt)
+
+        return None
+
+    async def _call_gemini_api_raw(
+        self, prompt: str, max_output_tokens: int = 1500
+    ) -> Optional[str]:
+        """
+        Raw API call that returns just the text response.
+        Used by retry logic for single-name parsing.
+
+        Args:
+            prompt: The prompt to send to Gemini
+            max_output_tokens: Token budget (default 1500 for retries)
+
+        Returns:
+            str: Raw text response from Gemini, or None if failed
+        """
+        if not self.api_key:
+            return None
+
+        url = self.base_url.format(model=self.model_name)
+        url += f"?key={self.api_key}"
+
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {
+                "temperature": 0.1,
+                "topK": 10,
+                "topP": 0.95,
+                "maxOutputTokens": max_output_tokens,
+                "candidateCount": 1,
+            },
+        }
+
+        session = await self._get_or_create_session()
+
+        try:
+            async with session.post(url, json=payload) as response:
+                if response.status == 200:
+                    result = await response.json()
+
+                    # Validate response structure
+                    if "candidates" not in result or not result["candidates"]:
+                        logger.warning("retry_no_candidates")
+                        return None
+
+                    candidate = result["candidates"][0]
+                    finish_reason = candidate.get("finishReason", "UNKNOWN")
+                    content = candidate.get("content", {})
+
+                    # Defensive parts access (critical for gemini-2.5-flash)
+                    if "parts" not in content or not content["parts"]:
+                        usage_metadata = result.get("usageMetadata", {})
+                        logger.warning(
+                            "retry_no_parts",
+                            finish_reason=finish_reason,
+                            thoughts_tokens=usage_metadata.get("thoughtsTokenCount", 0),
+                            max_tokens=max_output_tokens
+                        )
+                        return None
+
+                    return content["parts"][0]["text"]
+
+                else:
+                    error = await response.text()
+                    logger.error(
+                        "retry_api_error",
+                        status=response.status,
+                        error=error[:200]
+                    )
+
+        except Exception as e:
+            logger.error("retry_api_call_failed", error=str(e))
 
         return None
 
