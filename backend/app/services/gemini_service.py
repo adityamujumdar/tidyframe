@@ -682,9 +682,10 @@ class ConsolidatedGeminiService:
         url = self.base_url.format(model=self.model_name)
         url += f"?key={self.api_key}"
 
-        # gemini-2.5-flash uses thinking tokens (100-500+) which count against maxOutputTokens
-        # Need significantly higher budget than flash-lite to avoid MAX_TOKENS errors
-        base_tokens = max(2000, len(names) * 250)
+        # gemini-2.5-flash uses substantial thinking tokens (~250-300 per name with complex prompts)
+        # These count against maxOutputTokens, so we need large budgets
+        # Formula: 6000 base + 800 per name (ensures ~4000-5000 thinking + 7000+ output)
+        base_tokens = max(6000, len(names) * 800)
 
         payload = {
             "contents": [{"parts": [{"text": prompt}]}],

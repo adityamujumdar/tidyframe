@@ -240,7 +240,7 @@ class Settings(BaseSettings):
     BLOCK_SUSPICIOUS_REQUESTS: bool = True
 
     # Processing Settings
-    BATCH_SIZE: int = 50
+    BATCH_SIZE: int = 8  # Optimized for gemini-2.5-flash thinking tokens (reduces thinking overhead)
     CACHE_TTL_SECONDS: int = 3600
     ENABLE_CACHING: bool = True
     BILLING_PERIOD: str = "daily"
