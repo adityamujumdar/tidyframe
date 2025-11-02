@@ -144,8 +144,13 @@ Parse {count} ownership records into structured JSON with first_name, last_name,
 Scan for markers (case-insensitive) to determine entity type:
 
 **Company markers** (check FIRST - if found, entity_type="company", skip name extraction):
+- **IMPORTANT**: Company markers MUST be standalone words (word boundaries), NOT substrings
 - Strong indicators: llc, inc, corp, corporation, incorporated, limited, ltd
 - Other indicators: company, properties, enterprises, holdings, group, partnership, lp
+- ✓ CORRECT: "Kane Farms LLC" → company (LLC is standalone word)
+- ✗ INCORRECT: "Farmer John" → NOT company (Farm is substring, not marker)
+- ✓ CORRECT: "ABC Corporation" → company
+- ✗ INCORRECT: "Incorporate" → NOT company (Corp is substring within word)
 
 **Trust markers** (if no company markers, check for these → entity_type="trust"):
 - trust, ttee, trs, tste, trustee, rev, revocable, irrevocable, living
@@ -156,6 +161,12 @@ Scan for markers (case-insensitive) to determine entity type:
 ### Step 2: Name Extraction (for trust and person only)
 
 **CRITICAL**: Extract ALL potential name words. Do not skip or ignore names.
+
+**MANDATORY for entity_type='trust'**:
+- Trusts MUST have at least one name (first_name OR last_name populated)
+- If no names found initially, re-scan original text for proper nouns (capitalized words)
+- Trust without names is INVALID - force re-extraction
+- Example: "Baker Family Trust" → MUST extract "Baker" as last_name
 
 **Remove these non-name elements**:
 - Entity markers: trust, ttee, trs, trustee, rev, revocable, living, family, estate
@@ -177,6 +188,7 @@ Scan for markers (case-insensitive) to determine entity type:
 - "Mills Edwin L & Gloria F Rev Trs" → Extract: ["Mills", "Edwin", "Gloria"]
 - "Gifford Roseann - 1/2" → Extract: ["Gifford", "Roseann"]
 - "Smith John" → Extract: ["Smith", "John"]
+- "Baker Family Trust" → Extract: ["Baker"] (MANDATORY - trust must have name)
 
 ### Step 3: Joint Ownership Prioritization (MANDATORY for & or / patterns)
 
@@ -199,31 +211,60 @@ Scan for markers (case-insensitive) to determine entity type:
   - Jason = male, Shari = female → USE Jason Clark
   - Result: first="Jason", last="Clark"
 
-### Step 4: Name Assignment
+### Step 4: Name Assignment with Confidence Scoring
 
 **For single name (Family Trust pattern)**:
 - "Cheslak Family Trust" → last="Cheslak", first=""
 
-**For two names, determine order using these rules**:
+**For two names, use this SCORING SYSTEM to determine order**:
 
-1. **Surname prefix rule** (HIGHEST PRIORITY):
+**SCORING TABLE** (0-100 points):
+┌─────────────────────────────────────────┬────────┐
+│ Rule                                     │ Points │
+├─────────────────────────────────────────┼────────┤
+│ Surname prefix (Van, De, Di, Mac, Mc)   │  100   │ ← HIGHEST PRIORITY
+│ Very common first name (John, Mary)      │   95   │
+│ Common first name (Dennis, Gloria)       │   85   │
+│ Moderate first name (Cole, Dale)         │   75   │
+│ Female ending (-a, -ah, -ia, -ie, -y)   │   80   │
+│ Male ending (-son, -ton)                 │   70   │
+│ Rare/unknown name                        │   60   │
+│ Default position (first word)            │   50   │
+└─────────────────────────────────────────┴────────┘
+
+**ALGORITHM**:
+1. Check surname prefix rule (100 pts) - if match, word is PART OF LAST NAME
+2. Score each word as potential first_name using table above
+3. Word with HIGHEST score = first_name
+4. Remaining word(s) = last_name
+5. For joint ownership: prioritize male name as first_name
+
+**DETAILED RULES**:
+
+1. **Surname prefix rule** (HIGHEST PRIORITY - 100 points):
    - If word starts with Mc, Mac, Van, Von, De, O' → it's a LAST name
-   - "Mcculley Phyllis" → last="Mcculley", first="Phyllis"
-   - "Van Meter Eva" → last="Van Meter", first="Eva"
+   - "Mcculley Phyllis" → Mcculley(100) vs Phyllis(85) → last="Mcculley", first="Phyllis"
+   - "Van Meter Eva" → Van(100+prefix) → last="Van Meter", first="Eva"
 
-2. **Common first name rule**:
-   - Very common first names: John, Mary, James, Linda, Robert, Patricia, Michael, Jennifer, David, Barbara, William, Susan, Joseph, Nancy, Charles, Betty, Thomas, Helen, Christopher, Sandra, Paul, Donna, Mark, Carol, Donald, Ruth, George, Sharon, Kenneth, Dorothy
+2. **Very common first name rule** (95 points):
+   - John, Mary, James, Linda, Robert, Patricia, Michael, Jennifer, David, Barbara, William, Susan, Joseph, Nancy, Charles, Betty, Thomas, Helen, Christopher, Sandra, Paul, Donna, Mark, Carol, Donald, Ruth, George, Sharon, Kenneth, Dorothy
+   - "Baker Cleo" → Baker(60) vs Cleo(85) → first="Cleo", last="Baker"
+
+3. **Common first name rule** (85 points):
    - Common male: Dennis, Edwin, Wayne, Gary, Larry, Carl, Warren, Virgil
    - Common female: Judy, Phyllis, Gloria, Marilyn, Cleo, Roseann
-   - If one name is clearly a common first name → it's the first name
-   - "Baker Cleo" → Cleo is common first → first="Cleo", last="Baker"
-   - "Daake Dennis" → Dennis is common first → first="Dennis", last="Daake"
+   - "Daake Dennis" → Daake(60) vs Dennis(85) → first="Dennis", last="Daake"
 
-3. **Female ending rule**:
-   - Names ending in -a, -y, -ie, -ine, -elle, -lyn → likely first names
-   - "Uhl Judy" → Judy has -y ending → first="Judy", last="Uhl"
+4. **Moderate first name rule** (75 points):
+   - Moderately common: Cole, Dale, Drew, Beulah, Dale
+   - "Cole Beulah Trust" → Cole(75) vs Beulah(80+female) → first="Beulah", last="Cole"
 
-4. **Default pattern** (when ambiguous):
+5. **Female ending rule** (80 points):
+   - Names ending in -a, -ah, -ia, -y, -ie, -ine, -elle, -lyn → likely first names
+   - "Uhl Judy" → Uhl(60) vs Judy(85+female) → first="Judy", last="Uhl"
+   - "Hansen Linda" → Hansen(60) vs Linda(95) → first="Linda", last="Hansen"
+
+6. **Default pattern** (50 points - when ambiguous):
    - For trusts: Often [LastName] [FirstName] pattern (70% in property records)
    - "Smith John Trust" → first="John", last="Smith"
    - But verify with rules above first!
@@ -352,10 +393,10 @@ class ConsolidatedGeminiService:
             )
 
         # Load configuration from environment with defaults
-        self.model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
+        self.model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
         # Optimized batch size for better accuracy and performance
-        # Testing shows 25 is the sweet spot - larger batches reduce accuracy
-        self.max_batch_size = int(os.getenv("BATCH_SIZE", "25"))
+        # gemini-2.5-flash handles larger batches better than lite: 30 is optimal
+        self.max_batch_size = int(os.getenv("BATCH_SIZE", "30"))
         self.max_concurrent_requests = int(os.getenv("GEMINI_MAX_CONCURRENT", "20"))
         self.max_retries = 2
         self.timeout = int(os.getenv("GEMINI_TIMEOUT_SECONDS", "10"))
@@ -388,6 +429,10 @@ class ConsolidatedGeminiService:
             "start_time": time.time(),
             "cache_hits": 0,
             "concurrent_batches": 0,
+            "retry_attempts": 0,
+            "retry_success": 0,
+            "retry_no_improvement": 0,
+            "retry_failed": 0,
         }
 
         # Initialize cache for repeated names (if enabled)
@@ -673,7 +718,20 @@ class ConsolidatedGeminiService:
                                     response_length=len(text),
                                     names_count=len(names),
                                 )
-                            return self._parse_gemini_response(text, names)
+
+                            # Parse response
+                            parsed_results = self._parse_gemini_response(text, names)
+
+                            # Apply retry logic for low-confidence results
+                            improved_results = []
+                            for i, result in enumerate(parsed_results):
+                                original_name = names[i] if i < len(names) else ""
+                                improved_result = await self._retry_low_confidence(
+                                    result, original_name
+                                )
+                                improved_results.append(improved_result)
+
+                            return improved_results
                     elif response.status == 429:
                         await asyncio.sleep(2**attempt)
                     else:
@@ -1005,6 +1063,99 @@ class ConsolidatedGeminiService:
             result.last_name = ""
             result.warnings.append("Company should not have names")
 
+        return result
+
+    async def _retry_low_confidence(
+        self, result: ParsedName, original_name: str
+    ) -> ParsedName:
+        """
+        Retry parsing for low-confidence results with enhanced prompt.
+        Only retries if confidence < 70% and not already a retry.
+        """
+        # Skip if confidence is acceptable
+        if result.parsing_confidence >= 0.70:
+            return result
+
+        # Skip if this is already a retry (prevent infinite loops)
+        if "Retried due to low confidence" in result.warnings:
+            return result
+
+        logger.info(
+            f"Retrying low-confidence parse: '{original_name}' "
+            f"(confidence: {result.parsing_confidence:.2f})"
+        )
+
+        # Track retry attempt
+        self.stats["retry_attempts"] = self.stats.get("retry_attempts", 0) + 1
+
+        # Enhanced prompt with extra instructions
+        enhanced_prompt = f"""
+CRITICAL PARSING - RETRY REQUIRED
+
+Original parse had LOW CONFIDENCE: {result.parsing_confidence:.2f}
+
+Re-parse this name with EXTRA CARE:
+"{original_name}"
+
+{OptimizedPromptTemplates.PROPERTY_OWNERSHIP_PROMPT.replace('{names}', original_name).replace('{count}', '1')}
+
+DOUBLE-CHECK REQUIREMENTS:
+✓ Entity type: Is this person/company/trust?
+✓ Name extraction: Did I extract ALL names?
+✓ Name assignment: Did I use the scoring table correctly?
+✓ Trust names: If trust, do I have at least one name?
+✓ Company markers: Did I check word boundaries?
+
+Return ONLY the JSON array with your improved parse.
+"""
+
+        try:
+            # Call Gemini API with enhanced prompt
+            response = await self._call_gemini_api_raw(
+                enhanced_prompt, max_output_tokens=500
+            )
+
+            if not response:
+                self.stats["retry_failed"] = self.stats.get("retry_failed", 0) + 1
+                return result
+
+            # Parse retry response
+            retry_results = self._parse_gemini_response(response, [original_name])
+
+            if retry_results and len(retry_results) > 0:
+                retry_result = retry_results[0]
+
+                # Use retry result if confidence improved by at least 5%
+                if retry_result.parsing_confidence > result.parsing_confidence + 0.05:
+                    retry_result.warnings.append(
+                        f"Retried due to low confidence "
+                        f"(original: {result.parsing_confidence:.2f}, "
+                        f"improved: {retry_result.parsing_confidence:.2f})"
+                    )
+                    self.stats["retry_success"] = (
+                        self.stats.get("retry_success", 0) + 1
+                    )
+                    logger.info(
+                        f"Retry SUCCESS for '{original_name}': "
+                        f"{result.parsing_confidence:.2f} → "
+                        f"{retry_result.parsing_confidence:.2f}"
+                    )
+                    return retry_result
+                else:
+                    self.stats["retry_no_improvement"] = (
+                        self.stats.get("retry_no_improvement", 0) + 1
+                    )
+                    logger.debug(
+                        f"Retry NO IMPROVEMENT for '{original_name}': "
+                        f"{result.parsing_confidence:.2f} → "
+                        f"{retry_result.parsing_confidence:.2f}"
+                    )
+
+        except Exception as e:
+            logger.warning(f"Retry failed for '{original_name}': {e}")
+            self.stats["retry_failed"] = self.stats.get("retry_failed", 0) + 1
+
+        # Return original if retry failed or didn't improve
         return result
 
     def _fallback_parse(self, name: str) -> ParsedName:

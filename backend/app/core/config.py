@@ -144,8 +144,8 @@ class Settings(BaseSettings):
 
     # Gemini Configuration
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-2.5-flash-lite"
-    GEMINI_FALLBACK_MODEL: str = "gemini-2.5-flash-lite"
+    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_FALLBACK_MODEL: str = "gemini-2.5-flash"
     GEMINI_MAX_CONCURRENT: int = 20
     GEMINI_RATE_LIMIT_PER_MINUTE: int = 60
     GEMINI_TIMEOUT_SECONDS: int = 30
