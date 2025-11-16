@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { logger } from '@/utils/logger';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { isInPaymentGracePeriod, clearPaymentGracePeriod, getRemainingGracePeriodMs } from '@/utils/gracePeriodManager';
+import { isInPaymentGracePeriod, clearPaymentGracePeriod } from '@/utils/gracePeriodManager';
 import { processingService } from '@/services/processingService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,7 +37,6 @@ type JobStatus = 'pending' | 'processing' | 'completed' | 'failed';
 export default function DashboardHome() {
   const { user, refreshUser, hasActiveSubscription } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [recentJobs, setRecentJobs] = useState<ProcessingJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);

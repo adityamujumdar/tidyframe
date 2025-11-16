@@ -78,7 +78,7 @@ class ApiService {
             case 400:
               toast.error(data.message || 'Invalid request');
               break;
-            case 402:
+            case 402: {
               // Payment Required - check grace period before redirecting
               const inGracePeriod = isInPaymentGracePeriod();
 
@@ -102,6 +102,7 @@ class ApiService {
                 }
               }
               break;
+            }
             case 403:
               toast.error('Access forbidden');
               break;
