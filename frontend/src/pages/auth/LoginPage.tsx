@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
+import { isInPaymentGracePeriod } from '@/utils/gracePeriodManager';
 
 export default function LoginPage() {
   const { user, login, hasActiveSubscription, checkSubscriptionStatus } = useAuth();
@@ -21,12 +22,14 @@ export default function LoginPage() {
 
   // Redirect if already authenticated
   if (user) {
-    // Check if user has active subscription or is enterprise
-    if (user.plan === 'enterprise' || hasActiveSubscription) {
+    // Check grace period in addition to subscription (handles post-payment period)
+    const inGracePeriod = isInPaymentGracePeriod();
+
+    if (user.plan === 'enterprise' || hasActiveSubscription || inGracePeriod) {
       const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
       return <Navigate to={from} replace />;
     } else {
-      // No active subscription, redirect to pricing
+      // No active subscription AND not in grace period, redirect to pricing
       return <Navigate to="/pricing" replace />;
     }
   }
@@ -39,14 +42,15 @@ export default function LoginPage() {
     try {
       await login(email, password);
       toast.success('Login successful!');
-      
-      // Check subscription status after login
+
+      // Check subscription status and grace period after login
+      const inGracePeriod = isInPaymentGracePeriod();
       const hasSubscription = await checkSubscriptionStatus();
-      if (hasSubscription) {
+      if (hasSubscription || inGracePeriod) {
         const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
         navigate(from, { replace: true });
       } else {
-        // No active subscription, redirect to pricing
+        // No active subscription AND not in grace period, redirect to pricing
         navigate('/pricing', { replace: true });
         toast.info('Please complete your subscription to access all features.');
       }

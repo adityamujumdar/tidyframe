@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import ConsentCheckboxes from '@/components/legal/ConsentCheckboxes';
 import { Loader2, Mail, Lock, Eye, EyeOff, User } from 'lucide-react';
 import { toast } from 'sonner';
+import { isInPaymentGracePeriod } from '@/utils/gracePeriodManager';
 
 export default function RegisterPage() {
   const { user, register, hasActiveSubscription } = useAuth();
@@ -32,9 +33,15 @@ export default function RegisterPage() {
 
   // Redirect if already authenticated (but not during registration loading)
   if (user && !loading) {
-    // If user has active subscription, go to dashboard; otherwise go to pricing
-    const redirectTo = (user.plan === 'enterprise' || hasActiveSubscription) ? '/dashboard' : '/pricing';
-    return <Navigate to={redirectTo} replace />;
+    // Check grace period in addition to subscription (handles post-payment period)
+    const inGracePeriod = isInPaymentGracePeriod();
+
+    if (user.plan === 'enterprise' || hasActiveSubscription || inGracePeriod) {
+      return <Navigate to="/dashboard" replace />;
+    } else {
+      // No active subscription AND not in grace period, redirect to pricing
+      return <Navigate to="/pricing" replace />;
+    }
   }
 
   const validateForm = () => {

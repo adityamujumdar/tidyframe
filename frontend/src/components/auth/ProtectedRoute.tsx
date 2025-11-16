@@ -14,26 +14,46 @@ interface ProtectedRouteProps {
 export default function ProtectedRoute({ children, requireSubscription = true }: ProtectedRouteProps) {
   const { user, loading, hasActiveSubscription } = useAuth();
   const location = useLocation();
-  const [gracePeriod, setGracePeriod] = useState(false);
+
+  // CRITICAL: Use lazy initialization to check grace period BEFORE first render
+  // This prevents race condition where component redirects before useEffect sets gracePeriod
+  const [gracePeriod, setGracePeriod] = useState(() => {
+    const hasPaymentGrace = isInPaymentGracePeriod();
+    const hasPendingUser = !!(
+      localStorage.getItem('pending_user') &&
+      localStorage.getItem('registration_complete')
+    );
+    const initialGracePeriod = hasPaymentGrace || hasPendingUser;
+
+    if (initialGracePeriod) {
+      logger.debug('ProtectedRoute: Initial grace period detected', {
+        hasPaymentGrace,
+        hasPendingUser
+      });
+    }
+
+    return initialGracePeriod;
+  });
+
   const [checkingPendingUser, setCheckingPendingUser] = useState(true);
 
-  // Check for pending user from registration (before Stripe payment)
+  // Manage pending user grace period timer
   useEffect(() => {
-    const checkPendingUser = () => {
+    const managePendingUserTimer = () => {
       if (!user && !loading) {
-        const pendingUserStr = localStorage.getItem('pending_user');
-        const registrationComplete = localStorage.getItem('registration_complete');
+        const hasPendingUser = !!(
+          localStorage.getItem('pending_user') &&
+          localStorage.getItem('registration_complete')
+        );
 
-        if (pendingUserStr && registrationComplete) {
-          logger.debug('ProtectedRoute: Pending user detected, allowing temporary access');
-          // User has completed registration but hasn't gone through payment yet
-          // OR has completed payment but hasn't been activated yet
-          // Grant temporary grace period
-          setGracePeriod(true);
+        if (hasPendingUser) {
+          logger.debug('ProtectedRoute: Managing pending user grace period timer');
+          // State already set in lazy init, just manage timer
           // Extended grace period for pending users (60 seconds)
           const timer = setTimeout(() => {
-            logger.debug('Pending user grace period expired');
-            setGracePeriod(false);
+            logger.debug('Pending user grace period timer expired, checking payment grace');
+            // After pending user timer expires, check if payment grace period is still active
+            setGracePeriod(isInPaymentGracePeriod());
             setCheckingPendingUser(false);
           }, 60000);
           setCheckingPendingUser(false);
@@ -43,15 +63,17 @@ export default function ProtectedRoute({ children, requireSubscription = true }:
       setCheckingPendingUser(false);
     };
 
-    checkPendingUser();
+    managePendingUserTimer();
   }, [user, loading]);
 
-  // Check payment grace period - managed by gracePeriodManager
+  // Monitor payment grace period - state already set in lazy init
   useEffect(() => {
-    const checkGracePeriod = () => {
+    const monitorGracePeriod = () => {
       if (isInPaymentGracePeriod()) {
         const remainingMs = getRemainingGracePeriodMs();
-        logger.debug('Payment grace period active', { remainingMs });
+        logger.debug('Payment grace period active - monitoring expiry', { remainingMs });
+
+        // Ensure state is true (should already be from lazy init)
         setGracePeriod(true);
 
         // Set timer to clear grace period when it expires
@@ -62,14 +84,23 @@ export default function ProtectedRoute({ children, requireSubscription = true }:
 
         return () => clearTimeout(timer);
       } else {
-        setGracePeriod(false);
+        // No payment grace period - check if pending user grace is active
+        const hasPendingUser = !!(
+          localStorage.getItem('pending_user') &&
+          localStorage.getItem('registration_complete')
+        );
+
+        if (!hasPendingUser) {
+          // No grace period at all
+          setGracePeriod(false);
+        }
       }
     };
 
-    checkGracePeriod();
+    monitorGracePeriod();
 
     // Re-check every 5 seconds in case grace period is set mid-session
-    const interval = setInterval(checkGracePeriod, 5000);
+    const interval = setInterval(monitorGracePeriod, 5000);
     return () => clearInterval(interval);
   }, []);
 

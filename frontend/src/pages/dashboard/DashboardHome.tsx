@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { logger } from '@/utils/logger';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { isInPaymentGracePeriod, clearPaymentGracePeriod } from '@/utils/gracePeriodManager';
+import { isInPaymentGracePeriod, clearPaymentGracePeriod, getRemainingGracePeriodMs } from '@/utils/gracePeriodManager';
 import { processingService } from '@/services/processingService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,8 @@ import {
   AlertCircle,
   PartyPopper,
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -41,20 +42,22 @@ export default function DashboardHome() {
   const [loading, setLoading] = useState(true);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [inGracePeriod, setInGracePeriod] = useState(isInPaymentGracePeriod());
 
   // Show welcome modal for users who just completed payment (grace period active)
   // Also poll subscription status during grace period and clear it when active
   useEffect(() => {
-    const inGracePeriod = isInPaymentGracePeriod();
+    const checkGracePeriod = isInPaymentGracePeriod();
+    setInGracePeriod(checkGracePeriod);
     const hasSeenWelcome = localStorage.getItem('welcome_modal_shown');
 
-    if (inGracePeriod && !hasSeenWelcome) {
+    if (checkGracePeriod && !hasSeenWelcome) {
       setShowWelcomeModal(true);
       localStorage.setItem('welcome_modal_shown', 'true');
     }
 
     // Poll subscription status during grace period to auto-clear when activated
-    if (inGracePeriod) {
+    if (checkGracePeriod) {
       logger.debug('DashboardHome: Grace period active, starting subscription status polling');
 
       const pollInterval = setInterval(async () => {
@@ -66,7 +69,11 @@ export default function DashboardHome() {
           if (hasActiveSubscription) {
             logger.debug('DashboardHome: Subscription confirmed active, clearing grace period');
             clearPaymentGracePeriod();
+            setInGracePeriod(false);
             clearInterval(pollInterval);
+          } else {
+            // Check if grace period expired
+            setInGracePeriod(isInPaymentGracePeriod());
           }
         } catch (error) {
           logger.error('DashboardHome: Error polling subscription status', error);
@@ -203,8 +210,31 @@ export default function DashboardHome() {
         </p>
       </div>
 
-      {/* Subscription Status Refresh - Show for FREE plan users who may have just paid */}
-      {user?.plan === 'free' && (
+      {/* Activation Banner - Show during grace period */}
+      {inGracePeriod && (
+        <Card className="border-success/50 bg-success/5">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <Loader2 className="h-6 w-6 text-success animate-spin" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-sm mb-1">Activating Your Subscription</h3>
+                <p className="text-sm text-muted-foreground">
+                  Your payment was successful! We're processing your subscription and updating your account.
+                  This usually takes just a few seconds.
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  You can start using the dashboard - your subscription will be activated automatically.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Subscription Status Refresh - Show for FREE plan users who may have just paid (but not in grace period) */}
+      {user?.plan === 'free' && !inGracePeriod && (
         <Card className="border-primary/50 bg-primary/5">
           <CardContent className="pt-6">
             <div className="flex items-start justify-between gap-4">

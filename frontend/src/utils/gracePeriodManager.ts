@@ -10,6 +10,8 @@
  * wait for webhook or manually refresh subscription status).
  */
 
+import { logger } from './logger';
+
 const GRACE_PERIOD_KEY = 'payment_grace_period_timestamp';
 const GRACE_PERIOD_DURATION_MS = 90000; // 90 seconds
 
@@ -19,6 +21,11 @@ const GRACE_PERIOD_DURATION_MS = 90000; // 90 seconds
 export function setPaymentGracePeriod(): void {
   const timestamp = Date.now();
   sessionStorage.setItem(GRACE_PERIOD_KEY, timestamp.toString());
+  logger.debug('Grace period activated', {
+    timestamp,
+    durationMs: GRACE_PERIOD_DURATION_MS,
+    expiresAt: new Date(timestamp + GRACE_PERIOD_DURATION_MS).toISOString()
+  });
 }
 
 /**
@@ -41,7 +48,12 @@ export function isInPaymentGracePeriod(): boolean {
     return true;
   }
 
-  // Grace period expired - clean up
+  // Grace period expired - clean up and log
+  logger.debug('Grace period expired', {
+    timestamp,
+    elapsedMs,
+    durationMs: GRACE_PERIOD_DURATION_MS
+  });
   clearPaymentGracePeriod();
   return false;
 }
@@ -50,6 +62,19 @@ export function isInPaymentGracePeriod(): boolean {
  * Clear the grace period (call this when subscription is confirmed active)
  */
 export function clearPaymentGracePeriod(): void {
+  const timestampStr = sessionStorage.getItem(GRACE_PERIOD_KEY);
+
+  if (timestampStr) {
+    const timestamp = parseInt(timestampStr, 10);
+    const elapsedMs = Date.now() - timestamp;
+
+    logger.debug('Grace period cleared', {
+      timestamp,
+      elapsedMs,
+      reason: 'Subscription confirmed active or grace period expired'
+    });
+  }
+
   sessionStorage.removeItem(GRACE_PERIOD_KEY);
 }
 

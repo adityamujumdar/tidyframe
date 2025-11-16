@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { toast } from 'sonner';
+import { isInPaymentGracePeriod } from '@/utils/gracePeriodManager';
 
 class ApiService {
   private api: AxiosInstance;
@@ -78,19 +79,27 @@ class ApiService {
               toast.error(data.message || 'Invalid request');
               break;
             case 402:
-              // Payment Required - redirect to pricing or checkout
-              toast.error(data.message || 'Subscription required to access this feature');
-              if (data.checkout_url) {
-                // If checkout URL is absolute, use it directly
-                if (data.checkout_url.startsWith('http')) {
-                  window.location.href = data.checkout_url;
-                } else {
-                  // Otherwise, treat as relative path
-                  window.location.href = data.checkout_url;
-                }
+              // Payment Required - check grace period before redirecting
+              const inGracePeriod = isInPaymentGracePeriod();
+
+              if (inGracePeriod) {
+                // User just paid, waiting for webhook processing - don't redirect
+                toast.info('Your subscription is being activated. Please wait a moment...');
               } else {
-                // Default to pricing page
-                window.location.href = '/pricing';
+                // No grace period, genuinely needs to pay
+                toast.error(data.message || 'Subscription required to access this feature');
+                if (data.checkout_url) {
+                  // If checkout URL is absolute, use it directly
+                  if (data.checkout_url.startsWith('http')) {
+                    window.location.href = data.checkout_url;
+                  } else {
+                    // Otherwise, treat as relative path
+                    window.location.href = data.checkout_url;
+                  }
+                } else {
+                  // Default to pricing page
+                  window.location.href = '/pricing';
+                }
               }
               break;
             case 403:
