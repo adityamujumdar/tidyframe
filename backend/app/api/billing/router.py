@@ -274,8 +274,8 @@ async def get_subscription(current_user: User = Depends(require_auth)):
 
         # Get subscription base amount
         base_amount = 0
-        if subscription.get("items") and subscription["items"]["data"]:
-            price = subscription["items"]["data"][0].get("price", {})
+        if subscription.get("items") and subscription["items"]:
+            price = subscription["items"][0].get("price", {})
             base_amount = price.get("unit_amount", 0)
 
         # Calculate usage percentage and estimated invoice

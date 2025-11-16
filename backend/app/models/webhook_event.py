@@ -52,5 +52,5 @@ class WebhookEvent(Base):
     def mark_failed(self, error_message: str):
         """Mark event as failed processing"""
         self.processed = False
-        self.processing_attempts += 1
+        self.processing_attempts = (self.processing_attempts or 0) + 1
         self.error_message = error_message
