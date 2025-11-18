@@ -203,25 +203,56 @@ class StripeService:
             return False
 
     async def get_current_usage(self, customer_id: str) -> Dict[str, Any]:
-        """Get current billing period usage"""
+        """Get current billing period usage from Meter Events API"""
         try:
+            # Get active subscription to determine billing period
             subscriptions = self.stripe.Subscription.list(
                 customer=customer_id, status="active", limit=1
             )
 
             if not subscriptions.data:
+                logger.warning(f"No active subscription for customer {customer_id}")
                 return {"usage": 0, "limit": 0, "overage": 0}
 
             subscription = subscriptions.data[0]
+            period_start = subscription["current_period_start"]
+            period_end = subscription["current_period_end"]
 
-            # Get usage summary for current period
-            usage_summary = self.stripe.SubscriptionItem.list_usage_record_summaries(
-                subscription_item=subscription["items"]["data"][0]["id"], limit=1
-            )
+            # Get meter ID from environment
+            meter_id = os.getenv("STRIPE_METER_ID", self.meter_name)
+            if not meter_id or meter_id.startswith("mtr_your-"):
+                logger.error(
+                    "STRIPE_METER_ID not configured! Cannot read meter data. "
+                    "Falling back to local database."
+                )
+                # Fallback to local database count
+                return await self._get_usage_from_local_db(customer_id)
 
-            current_usage = (
-                usage_summary.data[0]["total_usage"] if usage_summary.data else 0
-            )
+            # Read from Meter Events API (correct approach for v2 billing meters)
+            try:
+                meter_summaries = self.stripe.billing.Meter.list_event_summaries(
+                    meter_id,
+                    customer=customer_id,
+                    start_time=period_start,
+                    end_time=period_end,
+                )
+
+                # Aggregate total usage across all summaries
+                current_usage = 0
+                for summary in meter_summaries.data:
+                    current_usage += summary.get("aggregated_value", 0)
+
+                logger.info(
+                    f"Meter usage for customer {customer_id}: {current_usage} "
+                    f"(period: {period_start}-{period_end})"
+                )
+
+            except stripe.error.StripeError as e:
+                logger.error(f"Failed to read meter summaries: {e}")
+                # Fallback to local database
+                return await self._get_usage_from_local_db(customer_id)
+
+            # Calculate overage
             overage = max(0, current_usage - self.monthly_limit)
 
             return {
@@ -229,11 +260,47 @@ class StripeService:
                 "limit": self.monthly_limit,
                 "overage": overage,
                 "overage_cost": overage * self.overage_price,
-                "period_end": subscription["current_period_end"],
+                "period_end": period_end,
+                "data_source": "stripe_meter",  # For debugging
             }
 
         except stripe.error.StripeError as e:
             logger.error(f"Failed to get usage: {e}")
+            return await self._get_usage_from_local_db(customer_id)
+
+    async def _get_usage_from_local_db(self, customer_id: str) -> Dict[str, Any]:
+        """Fallback: Get usage from local database when Stripe API fails"""
+        try:
+            from app.core.database import async_session_maker
+            from app.models.user import User
+            from sqlalchemy import select
+
+            async with async_session_maker() as db:
+                stmt = select(User).where(User.stripe_customer_id == customer_id)
+                result = await db.execute(stmt)
+                user = result.scalar_one_or_none()
+
+                if not user:
+                    return {"usage": 0, "limit": 0, "overage": 0}
+
+                current_usage = user.parses_this_month or 0
+                overage = max(0, current_usage - user.monthly_limit)
+
+                logger.warning(
+                    f"Using local DB fallback for customer {customer_id}: "
+                    f"{current_usage} parses"
+                )
+
+                return {
+                    "usage": current_usage,
+                    "limit": user.monthly_limit,
+                    "overage": overage,
+                    "overage_cost": overage * settings.OVERAGE_PRICE_PER_UNIT,
+                    "period_end": None,
+                    "data_source": "local_db_fallback",  # For debugging
+                }
+        except Exception as e:
+            logger.error(f"Local DB fallback failed: {e}")
             return {"usage": 0, "limit": 0, "overage": 0}
 
     async def create_checkout_session(

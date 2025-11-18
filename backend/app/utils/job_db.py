@@ -155,9 +155,13 @@ def update_job_status(
                             else:
                                 rows_parsed = job.processed_rows
                             if rows_parsed and rows_parsed > 0:
-                                user.parses_this_month = (
-                                    user.parses_this_month or 0
-                                ) + rows_parsed
+                                # CRITICAL: Calculate overage status BEFORE incrementing counter
+                                user_limit = user.monthly_limit
+                                parses_before_job = user.parses_this_month or 0
+                                is_overage_parse = parses_before_job >= user_limit
+
+                                # Now increment the counter
+                                user.parses_this_month = parses_before_job + rows_parsed
 
                                 # Report usage to Stripe for overage billing IMMEDIATELY
                                 # Use synchronous Stripe call for immediate reporting
@@ -169,7 +173,7 @@ def update_job_status(
                                         stripe.api_key = settings.STRIPE_SECRET_KEY
 
                                         # Report usage immediately using Meter Events API v2
-                                        meter_event = stripe.billing.MeterEvent.create(
+                                        meter_event = stripe.v2.billing.MeterEvent.create(
                                             event_name="tidyframe_token",  # Meter name configured in Stripe
                                             payload={
                                                 "value": rows_parsed,
@@ -203,7 +207,7 @@ def update_job_status(
                                             f"Fallback: Queued {rows_parsed} usage for customer {user.stripe_customer_id}"
                                         )
 
-                                # Create ParseLog entry for tracking
+                                # Create ParseLog entry for tracking with correct overage flag
                                 parse_log = ParseLog(
                                     user_id=job.user_id,
                                     job_id=job.id,
@@ -211,7 +215,7 @@ def update_job_status(
                                     timestamp=current_time,
                                     processing_time_ms=job.processing_time_ms or 0,
                                     success=True,
-                                    is_overage=False,
+                                    is_overage=is_overage_parse,  # ✅ FIXED: Dynamic flag based on user limit
                                 )
                                 db.add(parse_log)
 
@@ -220,6 +224,8 @@ def update_job_status(
                                     user_id=str(job.user_id),
                                     rows_parsed=rows_parsed,
                                     new_total=user.parses_this_month,
+                                    is_overage=is_overage_parse,  # ✅ ADDED: Log overage status
+                                    overage_amount=max(0, user.parses_this_month - user_limit),  # ✅ ADDED: Log overage amount
                                 )
 
                     # Update fallback tracking fields

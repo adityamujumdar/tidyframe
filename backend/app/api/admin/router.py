@@ -7,7 +7,7 @@ from typing import List, Optional
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -59,6 +59,15 @@ class UserLimitUpdate(BaseModel):
 
 class UserPlanUpdate(BaseModel):
     plan: str
+
+
+class SetParseCountRequest(BaseModel):
+    """Request to manually set user's parse count - for testing threshold behavior"""
+
+    parse_count: int = Field(
+        ge=0, le=10_000_000, description="Parse count to set (0-10M)"
+    )
+    reason: str = Field(min_length=10, description="Reason for manual adjustment")
 
 
 @router.get("/stats", response_model=SystemStats)
@@ -316,6 +325,87 @@ async def reset_user_usage(
         "message": "Usage reset successfully",
         "old_count": old_count,
         "new_count": reset_data.reset_count,
+    }
+
+
+@router.post("/users/{user_id}/set-parse-count")
+async def set_user_parse_count(
+    user_id: str,
+    request_data: SetParseCountRequest,
+    current_user: User = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Set user's parse count to a specific value - for testing overage threshold behavior.
+
+    Use cases:
+    - Set to 99,999 to test 100K threshold behavior
+    - Set to 150,000 to test overage billing calculation
+    - Set to 0 for clean testing runs
+
+    This endpoint requires a reason for audit trail purposes.
+    """
+
+    import uuid
+
+    try:
+        user_uuid = uuid.UUID(user_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user ID format"
+        )
+
+    result = await db.execute(select(User).where(User.id == user_uuid))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+
+    # Validate parse count against user's limit
+    if request_data.parse_count > user.monthly_limit * 2:
+        logger.warning(
+            "parse_count_set_exceeds_2x_limit",
+            admin_id=current_user.id,
+            user_id=user.id,
+            parse_count=request_data.parse_count,
+            limit=user.monthly_limit,
+        )
+
+    old_count = user.parses_this_month
+    user.parses_this_month = request_data.parse_count
+
+    await db.commit()
+
+    # Calculate overage status
+    overage_amount = max(0, request_data.parse_count - user.monthly_limit)
+    is_overage = request_data.parse_count >= user.monthly_limit
+
+    logger.info(
+        "parse_count_set_by_admin",
+        admin_id=str(current_user.id),
+        admin_email=current_user.email,
+        target_user_id=str(user.id),
+        target_user_email=user.email,
+        old_count=old_count,
+        new_count=request_data.parse_count,
+        user_limit=user.monthly_limit,
+        is_overage=is_overage,
+        overage_amount=overage_amount,
+        reason=request_data.reason,
+    )
+
+    return {
+        "message": "Parse count set successfully",
+        "user_email": user.email,
+        "old_count": old_count,
+        "new_count": request_data.parse_count,
+        "monthly_limit": user.monthly_limit,
+        "is_overage": is_overage,
+        "overage_amount": overage_amount,
+        "overage_cost_usd": overage_amount * 0.01,  # $0.01 per parse
+        "reason": request_data.reason,
     }
 
 
