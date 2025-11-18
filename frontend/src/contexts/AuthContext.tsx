@@ -48,7 +48,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       // FALLBACK: If API fails, check user plan directly from local state
       // This prevents false negatives when Stripe API is temporarily unavailable
-      const hasPaidPlan = user.plan === 'standard' || user.plan === 'enterprise';
+      const hasPaidPlan = user.plan === 'STANDARD' || user.plan === 'ENTERPRISE';
 
       if (hasPaidPlan) {
         logger.warn('Subscription API failed, using plan-based fallback', {

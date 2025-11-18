@@ -118,9 +118,9 @@ export const PAYMENT_STATUS = {
 
 // Plan types
 export const PLAN_TYPES = {
-  ANONYMOUS: 'anonymous',
-  STANDARD: 'standard',
-  ENTERPRISE: 'enterprise',
+  ANONYMOUS: 'ANONYMOUS',
+  STANDARD: 'STANDARD',
+  ENTERPRISE: 'ENTERPRISE',
 } as const;
 
 // Pricing configuration

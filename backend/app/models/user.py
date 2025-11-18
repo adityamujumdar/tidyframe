@@ -25,10 +25,10 @@ from app.core.database import Base
 
 
 class PlanType(str, enum.Enum):
-    FREE = "free"  # Registered but no subscription
-    ANONYMOUS = "anonymous"
-    STANDARD = "standard"
-    ENTERPRISE = "enterprise"
+    FREE = "FREE"  # Registered but no subscription
+    ANONYMOUS = "ANONYMOUS"
+    STANDARD = "STANDARD"
+    ENTERPRISE = "ENTERPRISE"
 
 
 class User(Base):

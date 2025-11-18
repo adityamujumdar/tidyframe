@@ -92,7 +92,7 @@ export default function PricingPage() {
               'Authorization': `Bearer ${localStorage.getItem('token')}` // Use correct token key
             },
             body: JSON.stringify({
-              plan: 'standard',
+              plan: 'STANDARD',
               billing_period: billingPeriod
             })
           });

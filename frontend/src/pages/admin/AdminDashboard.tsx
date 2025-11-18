@@ -100,7 +100,7 @@ export default function AdminDashboard() {
           {
             id: '1',
             email: 'user@example.com',
-            plan: 'standard',
+            plan: 'STANDARD',
             parsesThisMonth: 10,
             monthlyLimit: 100,
             isActive: true,
@@ -110,7 +110,7 @@ export default function AdminDashboard() {
           {
             id: '2',
             email: 'admin@example.com',
-            plan: 'enterprise',
+            plan: 'ENTERPRISE',
             parsesThisMonth: 50,
             monthlyLimit: 999999999,
             isActive: true,
@@ -218,8 +218,8 @@ export default function AdminDashboard() {
 
   const getPlanBadgeVariant = (plan: string) => {
     switch (plan) {
-      case 'enterprise': return 'default';
-      case 'standard': return 'secondary';
+      case 'ENTERPRISE': return 'default';
+      case 'STANDARD': return 'secondary';
       default: return 'outline';
     }
   };

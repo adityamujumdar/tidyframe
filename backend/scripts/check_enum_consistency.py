@@ -36,8 +36,9 @@ async def check_enum_consistency():
         )
         db_values = [row[0] for row in result]
 
+        python_values = [e.value for e in PlanType]
         print(f"Database plan values: {db_values}")
-        print(f"Python enum values: {[e.value for e in PlanType]}")
+        print(f"Python enum values: {python_values}")
 
         # Check for case mismatches
         python_values_lower = {e.value.lower() for e in PlanType}

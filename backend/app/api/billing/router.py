@@ -26,7 +26,7 @@ router = APIRouter()
 
 
 class CheckoutRequest(BaseModel):
-    plan: str  # "standard" or "enterprise"
+    plan: str  # "STANDARD" or "ENTERPRISE"
     billing_period: str = "monthly"  # "monthly" or "yearly"
 
 
@@ -136,7 +136,7 @@ async def create_checkout_session(
     stripe_service = StripeService()
 
     # Validate plan
-    if checkout_data.plan not in ["standard", "enterprise"]:
+    if checkout_data.plan not in ["STANDARD", "ENTERPRISE"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid plan selected"
         )
@@ -149,7 +149,7 @@ async def create_checkout_session(
         )
 
     # Get price ID based on plan and billing period
-    if checkout_data.plan == "standard":
+    if checkout_data.plan == "STANDARD":
         if checkout_data.billing_period == "yearly":
             price_id = settings.STRIPE_STANDARD_YEARLY_PRICE_ID
         else:
@@ -814,7 +814,7 @@ async def handle_checkout_completed(session_data: dict, db: AsyncSession) -> dic
     customer_id = session_data["customer"]
     subscription_id = session_data.get("subscription")
     metadata = session_data.get("metadata", {})
-    plan = metadata.get("plan", "standard")
+    plan = metadata.get("plan", "STANDARD")
 
     # Find user by Stripe customer ID with row-level locking to prevent race conditions
     from sqlalchemy import select

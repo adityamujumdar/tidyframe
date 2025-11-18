@@ -23,9 +23,9 @@ stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 class SubscriptionTier(Enum):
     """Subscription tiers with limits"""
 
-    FREE = "free"
-    STANDARD = "standard"
-    ENTERPRISE = "enterprise"
+    FREE = "FREE"
+    STANDARD = "STANDARD"
+    ENTERPRISE = "ENTERPRISE"
 
     @property
     def monthly_limit(self):

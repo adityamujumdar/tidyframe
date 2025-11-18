@@ -6,7 +6,7 @@ export interface User {
   lastName?: string;
   companyName?: string;
   googleId?: string;
-  plan: 'free' | 'standard' | 'enterprise';
+  plan: 'FREE' | 'STANDARD' | 'ENTERPRISE';
   parsesThisMonth: number;     // Now in camelCase from backend
   monthlyLimit: number;         // Now in camelCase from backend
   monthResetDate?: string;      // Now in camelCase from backend

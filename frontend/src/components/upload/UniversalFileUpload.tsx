@@ -87,13 +87,13 @@ export default function UniversalFileUpload({
     }
 
     switch (user.plan) {
-      case 'enterprise':
+      case 'ENTERPRISE':
         return {
           ...PLAN_CONFIG.enterprise,
           planIcon: Building,
           currentUsage: user.parsesThisMonth || 0
         };
-      case 'standard':
+      case 'STANDARD':
       default:
         return {
           ...PLAN_CONFIG.standard,

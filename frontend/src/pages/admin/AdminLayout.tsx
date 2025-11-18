@@ -74,7 +74,7 @@ export default function AdminLayout() {
   // In development mode, allow all authenticated users to access admin
   // In production, only allow enterprise and standard plan users
   const isDevelopment = import.meta.env.DEV || import.meta.env.MODE === 'development';
-  const hasValidPlan = user?.plan === 'enterprise' || user?.plan === 'standard';
+  const hasValidPlan = user?.plan === 'ENTERPRISE' || user?.plan === 'STANDARD';
   // Also allow if user exists but has no plan (development scenario)
   const isAdmin = isDevelopment || hasValidPlan || (isDevelopment && user && !user.plan);
   

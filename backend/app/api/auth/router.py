@@ -201,7 +201,7 @@ async def register_user(
             checkout_url = await stripe_service.create_checkout_session(
                 customer_id=user.stripe_customer_id,
                 price_id=price_id,
-                metadata={"user_id": str(user.id), "plan": "standard"},
+                metadata={"user_id": str(user.id), "plan": "STANDARD"},
             )
     except Exception as e:
         logger.error(
