@@ -173,8 +173,9 @@ def update_job_status(
                                         stripe.api_key = settings.STRIPE_SECRET_KEY
 
                                         # Report usage immediately using Meter Events API v2
+                                        meter_event_name = settings.STRIPE_METER_EVENT_NAME or "tidyframe_token"
                                         meter_event = stripe.v2.billing.MeterEvent.create(
-                                            event_name="tidyframe_token",  # Meter name configured in Stripe
+                                            event_name=meter_event_name,  # Meter event name from settings
                                             payload={
                                                 "value": rows_parsed,
                                                 "stripe_customer_id": user.stripe_customer_id,

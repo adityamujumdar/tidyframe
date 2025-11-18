@@ -49,7 +49,12 @@ class StripeService:
         self.price_monthly = os.getenv("STRIPE_STANDARD_MONTHLY_PRICE_ID")
         self.price_annual = os.getenv("STRIPE_STANDARD_YEARLY_PRICE_ID")
         self.price_overage = os.getenv("STRIPE_OVERAGE_PRICE_ID")
-        self.meter_name = os.getenv("STRIPE_METER_ID", "tidyframe_token")
+
+        # Meter configuration - CRITICAL: Separate event name from meter ID
+        # Event name is used for REPORTING usage (MeterEvent.create)
+        # Meter ID is used for READING summaries (Meter.list_event_summaries)
+        self.meter_event_name = os.getenv("STRIPE_METER_EVENT_NAME", "tidyframe_token")
+        self.meter_id = os.getenv("STRIPE_METER_ID")
 
         # Billing configuration
         self.monthly_limit = int(os.getenv("MONTHLY_NAME_LIMIT", "100000"))
@@ -188,13 +193,13 @@ class StripeService:
             # Use Stripe Meter Events API v2 for usage-based billing
             # This reports to the meter configured in Stripe dashboard
             meter_event = self.stripe.v2.billing.MeterEvent.create(
-                event_name=self.meter_name,  # 'tidyframe_token' meter
+                event_name=self.meter_event_name,  # Event name (e.g., 'tidyframe_token')
                 payload={"value": quantity, "stripe_customer_id": customer_id},
                 timestamp=int(timestamp.timestamp()),
             )
 
             logger.info(
-                f"Reported {quantity} usage to meter '{self.meter_name}' for customer {customer_id}"
+                f"Reported {quantity} usage to meter event '{self.meter_event_name}' for customer {customer_id}"
             )
             return True
 
@@ -218,12 +223,13 @@ class StripeService:
             period_start = subscription["current_period_start"]
             period_end = subscription["current_period_end"]
 
-            # Get meter ID from environment
-            meter_id = os.getenv("STRIPE_METER_ID", self.meter_name)
-            if not meter_id or meter_id.startswith("mtr_your-"):
+            # Get meter ID for reading summaries
+            # CRITICAL: This must be the meter ID (mtr_xxx), NOT the event name
+            if not self.meter_id or self.meter_id.startswith("mtr_your-") or not self.meter_id.startswith("mtr_"):
                 logger.error(
-                    "STRIPE_METER_ID not configured! Cannot read meter data. "
-                    "Falling back to local database."
+                    "STRIPE_METER_ID not configured or invalid! "
+                    f"Current value: {self.meter_id or 'None'}. "
+                    "Cannot read meter data from Stripe. Falling back to local database."
                 )
                 # Fallback to local database count
                 return await self._get_usage_from_local_db(customer_id)
@@ -231,7 +237,7 @@ class StripeService:
             # Read from Meter Events API (correct approach for v2 billing meters)
             try:
                 meter_summaries = self.stripe.billing.Meter.list_event_summaries(
-                    meter_id,
+                    self.meter_id,  # Use meter ID (mtr_xxx), not event name
                     customer=customer_id,
                     start_time=period_start,
                     end_time=period_end,

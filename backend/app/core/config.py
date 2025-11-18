@@ -161,7 +161,8 @@ class Settings(BaseSettings):
     STRIPE_ENTERPRISE_YEARLY_PRICE_ID: str = ""
     STRIPE_OVERAGE_PRICE_ID: str = ""
     STRIPE_PRODUCT_ID: str = ""
-    STRIPE_METER_ID: str = ""
+    STRIPE_METER_EVENT_NAME: str = ""  # Event name for reporting usage (e.g., "tidyframe_token")
+    STRIPE_METER_ID: str = ""  # Meter ID for reading summaries (e.g., "mtr_xxx")
 
     # Billing configuration
     STANDARD_MONTHLY_PRICE: float = 80.0
