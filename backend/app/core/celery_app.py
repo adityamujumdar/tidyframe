@@ -17,6 +17,7 @@ celery_app = Celery(
         "app.workers.file_processor",
         "app.workers.email_sender",
         "app.workers.cleanup",
+        "app.workers.webhook_retry",
     ],
 )
 
@@ -62,6 +63,14 @@ celery_app.conf.update(
         "cleanup-anonymous-usage": {
             "task": "app.workers.cleanup.cleanup_anonymous_usage",
             "schedule": 60.0 * 60.0 * 24.0,  # Daily
+        },
+        "retry-failed-webhooks": {
+            "task": "app.workers.webhook_retry.retry_failed_webhooks",
+            "schedule": 60.0 * 5.0,  # Every 5 minutes - retry failed webhooks
+        },
+        "sync-subscription-status": {
+            "task": "app.workers.webhook_retry.sync_subscription_status",
+            "schedule": 60.0 * 60.0,  # Every hour - sync subscription status from Stripe
         },
     },
 )

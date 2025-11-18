@@ -243,6 +243,22 @@ async def get_subscription(current_user: User = Depends(require_auth)):
     """Get user's subscription details with usage and overage information"""
 
     if not current_user.stripe_subscription_id:
+        # Data consistency check: User has paid plan but no Stripe subscription ID
+        if current_user.plan in [PlanType.STANDARD, PlanType.ENTERPRISE]:
+            logger.error(
+                "subscription_data_inconsistency",
+                user_id=current_user.id,
+                user_plan=current_user.plan.value,
+                stripe_subscription_id=None,
+                stripe_customer_id=current_user.stripe_customer_id,
+                message="User has paid plan but no subscription ID - data inconsistency",
+            )
+            # Return with warning status to alert frontend
+            return SubscriptionResponse(
+                plan=current_user.plan.value,
+                status="error",  # Special status to indicate data issue
+            )
+
         return SubscriptionResponse(plan=current_user.plan.value, status="inactive")
 
     stripe_service = StripeService()
@@ -800,11 +816,13 @@ async def handle_checkout_completed(session_data: dict, db: AsyncSession) -> dic
     metadata = session_data.get("metadata", {})
     plan = metadata.get("plan", "standard")
 
-    # Find user by Stripe customer ID
+    # Find user by Stripe customer ID with row-level locking to prevent race conditions
     from sqlalchemy import select
 
     result = await db.execute(
-        select(User).where(User.stripe_customer_id == customer_id)
+        select(User)
+        .where(User.stripe_customer_id == customer_id)
+        .with_for_update()  # Row-level lock prevents concurrent webhook updates
     )
     user = result.scalar_one_or_none()
 
@@ -885,11 +903,13 @@ async def handle_subscription_created(
     customer_id = subscription_data["customer"]
     subscription_id = subscription_data["id"]
 
-    # Find user by Stripe customer ID
+    # Find user by Stripe customer ID with row-level locking
     from sqlalchemy import select
 
     result = await db.execute(
-        select(User).where(User.stripe_customer_id == customer_id)
+        select(User)
+        .where(User.stripe_customer_id == customer_id)
+        .with_for_update()  # Row-level lock prevents concurrent updates
     )
     user = result.scalar_one_or_none()
 
@@ -916,11 +936,13 @@ async def handle_subscription_updated(
     subscription_id = subscription_data["id"]
     status = subscription_data["status"]
 
-    # Find user
+    # Find user with row-level locking
     from sqlalchemy import select
 
     result = await db.execute(
-        select(User).where(User.stripe_customer_id == customer_id)
+        select(User)
+        .where(User.stripe_customer_id == customer_id)
+        .with_for_update()  # Row-level lock prevents concurrent updates
     )
     user = result.scalar_one_or_none()
 
@@ -966,11 +988,13 @@ async def handle_subscription_deleted(
     customer_id = subscription_data["customer"]
     subscription_id = subscription_data["id"]
 
-    # Find user
+    # Find user with row-level locking
     from sqlalchemy import select
 
     result = await db.execute(
-        select(User).where(User.stripe_customer_id == customer_id)
+        select(User)
+        .where(User.stripe_customer_id == customer_id)
+        .with_for_update()  # Row-level lock prevents concurrent updates
     )
     user = result.scalar_one_or_none()
 

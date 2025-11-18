@@ -13,7 +13,7 @@
 import { logger } from './logger';
 
 const GRACE_PERIOD_KEY = 'payment_grace_period_timestamp';
-const GRACE_PERIOD_DURATION_MS = 90000; // 90 seconds
+const GRACE_PERIOD_DURATION_MS = 180000; // 180 seconds (3 minutes)
 
 /**
  * Set the grace period timestamp (call this immediately after payment success)

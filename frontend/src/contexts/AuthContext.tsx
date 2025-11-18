@@ -31,20 +31,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const checkSubscriptionStatus = useCallback(async (): Promise<boolean> => {
     if (!user) return false;
-    
+
     try {
       // Check if user is enterprise (always has access)
       if (user.plan === 'enterprise') {
         setHasActiveSubscription(true);
         return true;
       }
-      
+
       // Check subscription status via billing service
       const isActive = await billingService.hasActiveSubscription();
       setHasActiveSubscription(isActive);
       return isActive;
     } catch (error) {
       logger.error('Error checking subscription status:', error);
+
+      // FALLBACK: If API fails, check user plan directly from local state
+      // This prevents false negatives when Stripe API is temporarily unavailable
+      const hasPaidPlan = user.plan === 'standard' || user.plan === 'enterprise';
+
+      if (hasPaidPlan) {
+        logger.warn('Subscription API failed, using plan-based fallback', {
+          plan: user.plan,
+          usingFallback: true
+        });
+        setHasActiveSubscription(true);
+        return true;
+      }
+
       setHasActiveSubscription(false);
       return false;
     }
