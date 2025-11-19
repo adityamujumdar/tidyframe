@@ -64,12 +64,17 @@ export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
 
     setIsLoading(true);
     try {
-      const { url } = await billingService.createCheckoutSession({
+      const response = await billingService.createCheckoutSession({
         priceId: selectedPlan.price_id || '',
       });
 
       // Redirect to Stripe Checkout
-      window.location.href = url;
+      if (response.url || response.checkout_url) {
+        window.location.href = response.url || response.checkout_url || '';
+      } else {
+        toast.error('Failed to create checkout session');
+        logger.error('No checkout URL in response:', response);
+      }
     } catch (error) {
       toast.error('Failed to create checkout session');
       logger.error('Error creating checkout session:', error);
