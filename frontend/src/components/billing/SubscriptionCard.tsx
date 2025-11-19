@@ -121,7 +121,7 @@ export function SubscriptionCard({
   };
 
   // Show admin status for enterprise users
-  if (user?.plan === 'enterprise' && !subscription) {
+  if (user?.plan === 'ENTERPRISE' && !subscription) {
     return (
       <Card className="border-warning/20">
         <CardHeader>

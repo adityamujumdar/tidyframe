@@ -100,7 +100,7 @@ export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
   };
 
   // Don't show modal for enterprise users (admins)
-  if (user?.plan === 'enterprise') {
+  if (user?.plan === 'ENTERPRISE') {
     return null;
   }
 

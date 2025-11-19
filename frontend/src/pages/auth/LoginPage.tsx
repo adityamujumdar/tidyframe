@@ -25,7 +25,7 @@ export default function LoginPage() {
     // Check grace period in addition to subscription (handles post-payment period)
     const inGracePeriod = isInPaymentGracePeriod();
 
-    if (user.plan === 'enterprise' || hasActiveSubscription || inGracePeriod) {
+    if (user.plan === 'ENTERPRISE' || hasActiveSubscription || inGracePeriod) {
       const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
       return <Navigate to={from} replace />;
     } else {

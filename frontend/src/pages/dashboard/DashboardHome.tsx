@@ -233,7 +233,7 @@ export default function DashboardHome() {
       )}
 
       {/* Subscription Status Refresh - Show for FREE plan users who may have just paid (but not in grace period) */}
-      {user?.plan === 'free' && !inGracePeriod && (
+      {user?.plan === 'FREE' && !inGracePeriod && (
         <Card className="border-primary/50 bg-primary/5">
           <CardContent className="pt-6">
             <div className="flex items-start justify-between gap-4">

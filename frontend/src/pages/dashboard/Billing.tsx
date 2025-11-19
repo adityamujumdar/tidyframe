@@ -184,7 +184,7 @@ export default function Billing() {
           </p>
         </div>
         
-        {(!subscription || subscription.status !== 'active') && user?.plan !== 'enterprise' && (
+        {(!subscription || subscription.status !== 'active') && user?.plan !== 'ENTERPRISE' && (
           <Button onClick={() => setShowPaymentModal(true)}>
             <Zap className="h-4 w-4 mr-2" />
             Upgrade Plan

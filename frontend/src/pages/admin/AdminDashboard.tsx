@@ -394,7 +394,7 @@ export default function AdminDashboard() {
                     <TableCell>
                       <Badge variant={getPlanBadgeVariant(user.plan)}>
                         {user.plan}
-                        {user.plan === 'enterprise' && <Crown className="h-3 w-3 ml-1" />}
+                        {user.plan === 'ENTERPRISE' && <Crown className="h-3 w-3 ml-1" />}
                       </Badge>
                     </TableCell>
                     <TableCell>

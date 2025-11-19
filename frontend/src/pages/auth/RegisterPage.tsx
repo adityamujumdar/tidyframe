@@ -36,7 +36,7 @@ export default function RegisterPage() {
     // Check grace period in addition to subscription (handles post-payment period)
     const inGracePeriod = isInPaymentGracePeriod();
 
-    if (user.plan === 'enterprise' || hasActiveSubscription || inGracePeriod) {
+    if (user.plan === 'ENTERPRISE' || hasActiveSubscription || inGracePeriod) {
       return <Navigate to="/dashboard" replace />;
     } else {
       // No active subscription AND not in grace period, redirect to pricing

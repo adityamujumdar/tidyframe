@@ -129,7 +129,7 @@ export default function DashboardLayout() {
               })}
               
               {/* Admin Panel Link for Enterprise Users */}
-              {user?.plan === 'enterprise' && (
+              {user?.plan === 'ENTERPRISE' && (
                 <Link
                   to="/admin"
                   className="flex items-center space-x-3 rounded-md px-3 py-2 text-base font-medium transition-colors text-muted-foreground hover:bg-primary/10 hover:text-primary border border-dashed border-muted-foreground/50"
@@ -199,7 +199,7 @@ export default function DashboardLayout() {
               <div className="lg:hidden" /> {/* Spacer for mobile */}
               <div className="flex items-center space-x-4">
                 <span className="text-sm text-muted-foreground">
-                  {user?.parsesThisMonth || 0} / {user?.plan === 'enterprise' ? '∞' : PARSE_LIMITS.STANDARD.toLocaleString()} parses this month
+                  {user?.parsesThisMonth || 0} / {user?.plan === 'ENTERPRISE' ? '∞' : PARSE_LIMITS.STANDARD.toLocaleString()} parses this month
                 </span>
               </div>
             </div>

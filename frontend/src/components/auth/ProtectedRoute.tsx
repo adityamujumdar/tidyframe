@@ -133,7 +133,7 @@ export default function ProtectedRoute({ children, requireSubscription = true }:
     // Enterprise users always have access
     // OR user in grace period after payment (webhook processing)
     // OR has active subscription
-    if (user.plan !== 'enterprise' && !hasActiveSubscription && !gracePeriod) {
+    if (user.plan !== 'ENTERPRISE' && !hasActiveSubscription && !gracePeriod) {
       logger.debug('ProtectedRoute: No active subscription and not in grace period, redirecting to pricing');
       return <Navigate to="/pricing" replace />;
     }

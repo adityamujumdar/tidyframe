@@ -119,7 +119,7 @@ export default function Profile() {
           <CardContent className="space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium">Plan</span>
-              <Badge variant={user?.plan === 'enterprise' ? 'default' : 'secondary'}>
+              <Badge variant={user?.plan === 'ENTERPRISE' ? 'default' : 'secondary'}>
                 {user?.plan || 'Standard'}
               </Badge>
             </div>
@@ -177,7 +177,7 @@ export default function Profile() {
                 <CreditCard className="h-4 w-4 mr-2" />
                 Billing Portal
               </Button>
-              {user?.plan !== 'enterprise' && (
+              {user?.plan !== 'ENTERPRISE' && (
                 <Button className="flex-1">
                   Upgrade Plan
                 </Button>

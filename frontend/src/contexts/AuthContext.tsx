@@ -34,7 +34,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     try {
       // Check if user is enterprise (always has access)
-      if (user.plan === 'enterprise') {
+      if (user.plan === 'ENTERPRISE') {
         setHasActiveSubscription(true);
         return true;
       }
@@ -74,7 +74,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setUser(userData);
 
           // Check subscription status after setting user
-          if (userData.plan !== 'enterprise') {
+          if (userData.plan !== 'ENTERPRISE') {
             await checkSubscriptionStatus();
           } else {
             setHasActiveSubscription(true);
@@ -176,7 +176,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(userData);
 
       // Also refresh subscription status
-      if (userData.plan !== 'enterprise') {
+      if (userData.plan !== 'ENTERPRISE') {
         await checkSubscriptionStatus();
       } else {
         setHasActiveSubscription(true);
