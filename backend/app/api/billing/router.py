@@ -135,8 +135,24 @@ async def create_checkout_session(
 
     stripe_service = StripeService()
 
+    # Log incoming request for debugging
+    logger.info(
+        "checkout_session_requested",
+        user_id=current_user.id,
+        plan=checkout_data.plan,
+        billing_period=checkout_data.billing_period,
+        plan_type=type(checkout_data.plan).__name__,
+    )
+
     # Validate plan
     if checkout_data.plan not in ["STANDARD", "ENTERPRISE"]:
+        logger.error(
+            "invalid_plan_validation_failed",
+            user_id=current_user.id,
+            plan_received=checkout_data.plan,
+            plan_type=type(checkout_data.plan).__name__,
+            expected_plans=["STANDARD", "ENTERPRISE"],
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid plan selected"
         )

@@ -83,32 +83,27 @@ export default function PricingPage() {
       if (planName === 'Standard') {
         setIsLoading(true);
         try {
-          // Call the backend directly with the correct format
-          const response = await fetch('/api/billing/create-checkout', {
-            method: 'POST',
-            credentials: 'include', // Include cookies for site password
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('token')}` // Use correct token key
-            },
-            body: JSON.stringify({
-              plan: 'STANDARD',
-              billing_period: billingPeriod
-            })
-          });
-
-          const data = await response.json();
+          // Use billingService for proper abstraction
+          const { billingService } = await import('@/services/billingService');
+          const response = await billingService.createCheckoutSessionByPlan('STANDARD', billingPeriod);
 
           // Redirect to Stripe checkout
-          if (data.checkout_url) {
-            window.location.href = data.checkout_url;
-          } else if (data.detail) {
-            toast.error(data.detail);
+          if (response.checkout_url) {
+            window.location.href = response.checkout_url;
           } else {
             toast.error('Failed to create checkout session');
+            logger.error('No checkout_url in response:', response);
           }
         } catch (error) {
-          toast.error('Failed to create checkout session. Please try again.');
+          const errorMessage = error instanceof Error && 'response' in error &&
+            error.response && typeof error.response === 'object' &&
+            'data' in error.response &&
+            error.response.data && typeof error.response.data === 'object' &&
+            'detail' in error.response.data &&
+            typeof error.response.data.detail === 'string'
+            ? error.response.data.detail
+            : 'Failed to create checkout session. Please try again.';
+          toast.error(errorMessage);
           logger.error('Checkout error:', error);
         } finally {
           setIsLoading(false);

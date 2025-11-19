@@ -61,11 +61,19 @@ class BillingService {
       successUrl: `${window.location.origin}/dashboard/billing?success=true`,
       cancelUrl: `${window.location.origin}/dashboard/billing?canceled=true`
     };
-    
+
     return await apiService.post<CheckoutSessionResponse>('/api/billing/create-checkout', {
       ...request,
       successUrl: request.successUrl || defaultUrls.successUrl,
       cancelUrl: request.cancelUrl || defaultUrls.cancelUrl
+    });
+  }
+
+  // Create checkout session by plan name (simpler API for pricing page)
+  async createCheckoutSessionByPlan(plan: 'STANDARD' | 'ENTERPRISE', billingPeriod: 'monthly' | 'yearly' = 'monthly'): Promise<CheckoutSessionResponse> {
+    return await apiService.post<CheckoutSessionResponse>('/api/billing/create-checkout', {
+      plan,
+      billing_period: billingPeriod
     });
   }
 

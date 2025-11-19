@@ -81,9 +81,15 @@ export interface CheckoutSessionRequest {
   cancelUrl?: string;
 }
 
+export interface CheckoutSessionByPlanRequest {
+  plan: 'STANDARD' | 'ENTERPRISE';
+  billing_period: 'monthly' | 'yearly';
+}
+
 export interface CheckoutSessionResponse {
-  sessionId: string;
-  url: string;
+  checkout_url?: string;
+  sessionId?: string;
+  url?: string;
 }
 
 export interface CustomerPortalResponse {
