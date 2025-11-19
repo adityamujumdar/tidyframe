@@ -10,7 +10,8 @@ import {
   Search,
   Filter,
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  ChevronDown
 } from 'lucide-react';
 import { ProcessingJob, ParseResult, ParseResultResponse, JobResultsResponse } from '@/types/processing';
 import { toast } from 'sonner';
@@ -27,6 +28,8 @@ export default function Results() {
   const [results, setResults] = useState<ParseResult[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showAllResults, setShowAllResults] = useState(false);
+  const [totalResults, setTotalResults] = useState(0);
   
   const jobId = searchParams.get('jobId');
 
@@ -52,9 +55,14 @@ export default function Results() {
     }
   }, [jobId]);
 
-  const fetchJobResults = async (jobId: string) => {
+  const fetchJobResults = async (jobId: string, limit?: number) => {
     try {
-      const resultsData = await processingService.getJobResults(jobId, 100) as JobResultsResponse;
+      // Default to 5 rows preview, or use provided limit (100 for "Show All")
+      const fetchLimit = limit || 5;
+      const resultsData = await processingService.getJobResults(jobId, fetchLimit) as JobResultsResponse;
+
+      // Store total results count for "Show More" button
+      setTotalResults(resultsData.total_results || 0);
 
       // Convert the raw results to ParseResult format with proper typing
       const parsedResults: ParseResult[] = resultsData.results.map((result: ParseResultResponse, index: number) => ({
@@ -87,6 +95,7 @@ export default function Results() {
         toast.error('Failed to fetch job results. The file may have expired.');
       }
       setResults([]);
+      setTotalResults(0);
     }
   };
 
@@ -96,9 +105,19 @@ export default function Results() {
 
   useEffect(() => {
     if (selectedJob) {
-      fetchJobResults(selectedJob.id);
+      // Reset show all when switching jobs
+      setShowAllResults(false);
+      fetchJobResults(selectedJob.id, 5);
     }
   }, [selectedJob]);
+
+  // Handle show all results
+  const handleShowAllResults = async () => {
+    if (selectedJob) {
+      setShowAllResults(true);
+      await fetchJobResults(selectedJob.id, 100);
+    }
+  };
 
   const handleDownload = async (job: ProcessingJob) => {
     try {
@@ -287,10 +306,41 @@ export default function Results() {
             {/* Quality Metrics Panel */}
             <QualityMetricsPanel results={results} job={selectedJob} />
 
+            {/* Preview Indicator and Show More Button */}
+            {results.length > 0 && !showAllResults && totalResults > 5 && (
+              <div className="flex items-center justify-between p-4 bg-status-info-bg border border-status-info-border rounded-lg">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-status-info" />
+                  <p className="text-sm text-status-info font-medium">
+                    Showing first 5 of {totalResults.toLocaleString()} results (preview)
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleShowAllResults}
+                  className="border-status-info text-status-info hover:bg-status-info hover:text-white"
+                >
+                  <ChevronDown className="h-4 w-4 mr-2" />
+                  Show More Results
+                </Button>
+              </div>
+            )}
+
+            {/* Show All indicator */}
+            {results.length > 0 && showAllResults && (
+              <div className="flex items-center gap-2 p-4 bg-status-success-bg border border-status-success-border rounded-lg">
+                <FileText className="h-4 w-4 text-status-success" />
+                <p className="text-sm text-status-success font-medium">
+                  Showing {results.length.toLocaleString()} of {totalResults.toLocaleString()} results
+                </p>
+              </div>
+            )}
+
             {/* Results Table */}
             {results.length > 0 ? (
-              <ResultsTable 
-                results={results} 
+              <ResultsTable
+                results={results}
                 searchTerm={searchTerm}
               />
             ) : (

@@ -127,6 +127,7 @@ export interface JobResultsResponse {
   job_id: string;
   filename: string;
   total_rows: number;
+  total_results: number;
   returned_rows: number;
   results: ParseResultResponse[];
 }

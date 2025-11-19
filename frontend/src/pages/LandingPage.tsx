@@ -55,12 +55,12 @@ export default function LandingPage() {
         <div className="container mx-auto">
           <div className="text-center mb-12">
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl 2xl:text-[6.8rem] 3xl:text-[7.5rem] leading-none font-black tracking-tight mb-6">
-              Name Parsing, Entity Detection.
+              Name Extraction, Gender Identification.
               <span className="text-primary"> Instantly.</span>
             </h1>
 
             <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-              AI that splits first/last names AND identifies gender + entity type (person/company/trust) with 95%+ accuracy.
+              Transform messy name data into structured insights. Extract first/last names, identify gender, and detect entity types (person, company, trust) with 95%+ AI-powered accuracy.
             </p>
           </div>
 
