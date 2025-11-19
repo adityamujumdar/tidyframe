@@ -104,9 +104,9 @@ class BillingService {
     }
   }
 
-  // Cancel subscription
+  // Cancel subscription (sets cancel_at_period_end, keeps active until period ends)
   async cancelSubscription(): Promise<void> {
-    await apiService.delete('/api/billing/subscription');
+    await apiService.post('/api/billing/cancel');
   }
 
   // Update subscription

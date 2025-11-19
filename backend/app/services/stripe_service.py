@@ -326,14 +326,25 @@ class StripeService:
                 success_url = success_url or urls["success"]
                 cancel_url = cancel_url or urls["cancel"]
 
+            # Build line items - include base subscription + overage metered pricing
+            line_items = [
+                {
+                    "price": price_id,
+                    "quantity": 1,
+                }
+            ]
+
+            # Add metered overage price if configured (CRITICAL for overage billing)
+            if self.price_overage:
+                line_items.append({
+                    "price": self.price_overage,
+                    # No quantity for metered items - usage reported via Meter Events API
+                })
+                logger.info(f"Added overage price {self.price_overage} to checkout session")
+
             session = self.stripe.checkout.Session.create(
                 payment_method_types=["card"],
-                line_items=[
-                    {
-                        "price": price_id,
-                        "quantity": 1,
-                    }
-                ],
+                line_items=line_items,
                 mode="subscription",
                 customer=customer_id,
                 success_url=success_url,
