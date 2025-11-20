@@ -334,13 +334,10 @@ class StripeService:
                 }
             ]
 
-            # Add metered overage price if configured (CRITICAL for overage billing)
-            if self.price_overage:
-                line_items.append({
-                    "price": self.price_overage,
-                    # No quantity for metered items - usage reported via Meter Events API
-                })
-                logger.info(f"Added overage price {self.price_overage} to checkout session")
+            # NOTE: Overage price is NOT added here to avoid billing interval conflicts
+            # (recurring base + metered overage = Stripe error: "Checkout does not support
+            # multiple prices with different billing intervals"). Instead, overage price is
+            # added in _handle_subscription_created webhook after subscription is created.
 
             session = self.stripe.checkout.Session.create(
                 payment_method_types=["card"],
@@ -567,10 +564,29 @@ class StripeService:
     async def _handle_subscription_created(
         self, event: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Handle new subscription creation"""
+        """Handle new subscription creation - add overage price after creation"""
         subscription = event["data"]["object"]
-        logger.info(f"Subscription created: {subscription['id']}")
-        return {"status": "processed", "subscription_id": subscription["id"]}
+        subscription_id = subscription["id"]
+
+        logger.info(f"Subscription created: {subscription_id}")
+
+        # Add overage price to subscription (done here to avoid billing interval conflicts)
+        if self.price_overage:
+            try:
+                self.stripe.SubscriptionItem.create(
+                    subscription=subscription_id,
+                    price=self.price_overage,
+                )
+                logger.info(
+                    f"Added overage price {self.price_overage} to subscription {subscription_id}"
+                )
+            except stripe.error.StripeError as e:
+                logger.error(
+                    f"Failed to add overage price to subscription {subscription_id}: {e}"
+                )
+                # Don't fail the webhook - subscription still created successfully
+
+        return {"status": "processed", "subscription_id": subscription_id}
 
     async def _handle_subscription_updated(
         self, event: Dict[str, Any]
