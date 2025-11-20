@@ -64,9 +64,23 @@ export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
 
     setIsLoading(true);
     try {
-      const response = await billingService.createCheckoutSession({
-        priceId: selectedPlan.price_id || '',
-      });
+      // Map plan name to backend format (STANDARD or ENTERPRISE)
+      const planType = selectedPlan.name.toLowerCase().includes('enterprise')
+        ? 'ENTERPRISE'
+        : 'STANDARD';
+
+      // Map interval to billing period (monthly or yearly)
+      const billingPeriod = selectedPlan.interval === 'year'
+        ? 'yearly'
+        : 'monthly';
+
+      logger.info(`Creating checkout session for ${planType} plan with ${billingPeriod} billing`);
+
+      // Use plan-based API that matches backend expectations
+      const response = await billingService.createCheckoutSessionByPlan(
+        planType,
+        billingPeriod
+      );
 
       // Redirect to Stripe Checkout
       if (response.url || response.checkout_url) {
