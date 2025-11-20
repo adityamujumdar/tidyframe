@@ -115,6 +115,8 @@ services:
   celery-worker:
     build: ./backend
     command: celery -A app.core.celery_app worker --loglevel=info --concurrency=2
+    env_file:
+      - ${ENV_FILE:-.env}
     environment:
       # Database
       DATABASE_URL: postgresql+asyncpg://tidyframe:${POSTGRES_PASSWORD:-password}@postgres:5432/tidyframe
@@ -161,6 +163,8 @@ services:
   celery-beat:
     build: ./backend
     command: celery -A app.core.celery_app beat --loglevel=info
+    env_file:
+      - ${ENV_FILE:-.env}
     environment:
       # Database
       DATABASE_URL: postgresql+asyncpg://tidyframe:${POSTGRES_PASSWORD:-password}@postgres:5432/tidyframe
