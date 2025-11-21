@@ -512,7 +512,11 @@ async def get_job_results(
 
         # Replace NaN/Inf with None for JSON compatibility
         # NaN and Inf values are not JSON compliant and will cause serialization errors
+        # Step 1: Replace Inf values with None
         df_limited = df_limited.replace([np.inf, -np.inf], None)
+        # Step 2: Convert to object dtype to allow mixed types (needed for proper None handling)
+        df_limited = df_limited.astype(object)
+        # Step 3: Replace NaN with None using where (keeps values where condition is True)
         df_limited = df_limited.where(pd.notnull(df_limited), None)
 
         # Convert to records format for JSON response
