@@ -222,6 +222,12 @@ export default {
           'processing-border': 'hsl(var(--color-status-processing-border))',
         },
       },
+      /* Enhanced Border System - Three-tier hierarchy for nested elements */
+      borderColor: {
+        subtle: 'hsl(var(--color-border-subtle))',
+        DEFAULT: 'hsl(var(--color-border-default))',
+        strong: 'hsl(var(--color-border-strong))',
+      },
     },
   },
 }

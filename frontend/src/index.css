@@ -201,8 +201,11 @@
   --color-status-processing-bg: var(--color-secondary-50);
   --color-status-processing-border: var(--color-secondary-200);
 
-  /* Borders */
+  /* Borders - Enhanced system for nested elements */
   --color-border: 0 0% 65%;                   /* #a6a6a6 - Darker gray (4.5:1+ contrast) */
+  --color-border-subtle: 0 0% 85%;            /* #d9d9d9 - Subtle borders for inner elements */
+  --color-border-default: 0 0% 65%;           /* #a6a6a6 - Default border (alias) */
+  --color-border-strong: 0 0% 50%;            /* #808080 - Emphasized borders for focus/active */
   --color-input: 0 0% 65%;                    /* Match border for consistency */
   --color-ring: 228 93% 42%;                  /* Primary blue focus */
 
@@ -227,7 +230,7 @@
   color-scheme: dark;
 
   /* DARK MODE - TidyFrame Brand Colors */
-  --color-background: 0 0% 12%;               /* #1f1f1f - Dark grey instead of pure black */
+  --color-background: 0 0% 10%;               /* #1a1a1a - Darker base for better hierarchy */
   --color-foreground: 0 0% 98%;               /* #fafafa - Near white */
 
   /* Primary Brand Color - Adjusted for dark mode (slightly brighter) */
@@ -259,17 +262,17 @@
   --color-secondary-foreground: 0 0% 0%;
 
   /* Neutral/Muted */
-  --color-muted: 0 0% 22%;                    /* #383838 - Increased for better visibility */
+  --color-muted: 0 0% 24%;                    /* #3d3d3d - Enhanced contrast (14% from background) */
   --color-muted-foreground: 0 0% 65%;         /* #a6a6a6 - Lighter gray for better contrast */
 
   /* Cards & Popovers (elevated surfaces) */
-  --color-card: 0 0% 18%;                     /* #2e2e2e - Increased +2% from background */
+  --color-card: 0 0% 16%;                     /* #292929 - 6% lighter than background for clear hierarchy */
   --color-card-foreground: 0 0% 98%;
-  --color-popover: 0 0% 20%;                  /* #333333 - Between card and muted */
+  --color-popover: 0 0% 18%;                  /* #2e2e2e - Between card and muted for clear layering */
   --color-popover-foreground: 0 0% 98%;
 
   /* Accent - Brand tinted */
-  --color-accent: 192 85% 28%;                /* #123d45 - Increased for better visibility */
+  --color-accent: 0 0% 20%;                   /* #333333 - Neutral for better hover contrast */
   --color-accent-foreground: 192 92% 85%;     /* Brighter text for better contrast */
 
   /* Semantic Colors - BRAND DERIVED (dark mode adjusted) */
@@ -318,8 +321,11 @@
   --color-status-processing-bg: var(--color-secondary-50);
   --color-status-processing-border: var(--color-secondary-100);
 
-  /* Borders (dark mode) */
+  /* Borders (dark mode) - Enhanced system for nested elements */
   --color-border: 0 0% 38%;                   /* #616161 - WCAG AA compliant (3.2:1 contrast) */
+  --color-border-subtle: 0 0% 25%;            /* #404040 - Subtle borders for inner elements */
+  --color-border-default: 0 0% 38%;           /* #616161 - Default border (alias) */
+  --color-border-strong: 0 0% 50%;            /* #808080 - Emphasized borders for focus/active */
   --color-input: 0 0% 38%;                    /* Match border for consistency */
   --color-ring: 192 92% 76%;                  /* Secondary blue focus (bright) */
 
