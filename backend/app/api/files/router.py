@@ -502,12 +502,18 @@ async def get_job_results(
         pass
 
         import pandas as pd
+        import numpy as np
 
         # Read the CSV file
         df = pd.read_csv(job.result_file_path)
 
         # Limit results
         df_limited = df.head(limit)
+
+        # Replace NaN/Inf with None for JSON compatibility
+        # NaN and Inf values are not JSON compliant and will cause serialization errors
+        df_limited = df_limited.replace([np.inf, -np.inf], None)
+        df_limited = df_limited.where(pd.notnull(df_limited), None)
 
         # Convert to records format for JSON response
         results = df_limited.to_dict("records")

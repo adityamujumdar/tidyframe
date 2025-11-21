@@ -64,7 +64,7 @@ class JobStatus(ResponseModel):
             return str(v)
         return v
 
-    model_config = {"from_attributes": True}
+    # model_config inherited from ResponseModel (includes from_attributes + alias_generator)
 
 
 class JobList(ResponseModel):
