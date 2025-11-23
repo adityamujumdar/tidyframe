@@ -32,33 +32,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const checkSubscriptionStatus = useCallback(async (): Promise<boolean> => {
     if (!user) return false;
 
-    try {
-      // Check if user is enterprise (always has access)
-      if (user.plan === 'ENTERPRISE') {
-        setHasActiveSubscription(true);
-        return true;
-      }
+    // PRIMARY CHECK: User's plan is the source of truth
+    // The database is updated by Stripe webhook BEFORE the user needs access
+    // This ensures payment status persists correctly across login/logout
+    const hasPaidPlan = user.plan === 'STANDARD' || user.plan === 'ENTERPRISE';
 
-      // Check subscription status via billing service
+    if (hasPaidPlan) {
+      setHasActiveSubscription(true);
+      logger.debug('User has paid plan, granting access', { plan: user.plan });
+      return true;
+    }
+
+    // SECONDARY CHECK: For FREE users, optionally verify via Stripe API
+    // This catches edge cases where user might have active subscription but plan not updated yet
+    try {
       const isActive = await billingService.hasActiveSubscription();
       setHasActiveSubscription(isActive);
       return isActive;
     } catch (error) {
       logger.error('Error checking subscription status:', error);
-
-      // FALLBACK: If API fails, check user plan directly from local state
-      // This prevents false negatives when Stripe API is temporarily unavailable
-      const hasPaidPlan = user.plan === 'STANDARD' || user.plan === 'ENTERPRISE';
-
-      if (hasPaidPlan) {
-        logger.warn('Subscription API failed, using plan-based fallback', {
-          plan: user.plan,
-          usingFallback: true
-        });
-        setHasActiveSubscription(true);
-        return true;
-      }
-
       setHasActiveSubscription(false);
       return false;
     }
@@ -71,14 +63,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const token = localStorage.getItem('token');
         if (token) {
           const userData = await authService.getCurrentUser();
-          setUser(userData);
 
-          // Check subscription status after setting user
-          if (userData.plan !== 'ENTERPRISE') {
-            await checkSubscriptionStatus();
-          } else {
-            setHasActiveSubscription(true);
-          }
+          // Set subscription status IMMEDIATELY based on plan (prevents race condition with ProtectedRoute)
+          // This must happen BEFORE setUser to ensure ProtectedRoute sees correct subscription status
+          const hasPaidPlan = userData.plan === 'STANDARD' || userData.plan === 'ENTERPRISE';
+          setHasActiveSubscription(hasPaidPlan);
+
+          setUser(userData);
 
           // Clean up stale registration flags after successful auth
           localStorage.removeItem('pending_user');
@@ -87,6 +78,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } catch (error) {
         logger.error('Auth initialization error:', error);
         localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
       } finally {
         setLoading(false);
       }
@@ -109,8 +101,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const response = await authService.login(email, password);
     localStorage.setItem('token', response.access_token);
     localStorage.setItem('refreshToken', response.refresh_token);
+
+    // Set subscription status IMMEDIATELY based on plan (prevents race condition with ProtectedRoute)
+    // User's plan is the source of truth - DB is updated by webhook before user needs access
+    const hasPaidPlan = response.user.plan === 'STANDARD' || response.user.plan === 'ENTERPRISE';
+    setHasActiveSubscription(hasPaidPlan);
+
     setUser(response.user);
-    
+
     // Reinitialize token manager after login
     const { tokenManager } = await import('@/utils/tokenManager');
     tokenManager.init();
@@ -144,13 +142,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = async () => {
     try {
       await authService.logout();
-      localStorage.removeItem('token');
-      setUser(null);
     } catch (error) {
       logger.error('Logout error:', error);
-      // Clear local state even if API call fails
+    } finally {
+      // Always clear both tokens and state, even if API call fails
       localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
       setUser(null);
+      setHasActiveSubscription(false);
     }
   };
 
@@ -173,14 +172,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const refreshUser = async (): Promise<void> => {
     try {
       const userData = await authService.getCurrentUser();
-      setUser(userData);
 
-      // Also refresh subscription status
-      if (userData.plan !== 'ENTERPRISE') {
-        await checkSubscriptionStatus();
-      } else {
-        setHasActiveSubscription(true);
-      }
+      // Set subscription status IMMEDIATELY based on plan (consistent with login/initAuth)
+      const hasPaidPlan = userData.plan === 'STANDARD' || userData.plan === 'ENTERPRISE';
+      setHasActiveSubscription(hasPaidPlan);
+
+      setUser(userData);
 
       logger.debug('User refreshed successfully:', userData.email);
     } catch (error) {

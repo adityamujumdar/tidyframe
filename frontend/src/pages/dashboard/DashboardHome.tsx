@@ -199,14 +199,17 @@ export default function DashboardHome() {
         </DialogContent>
       </Dialog>
 
-      {/* Welcome Section */}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Welcome back{user?.fullName ? `, ${user.fullName}` : ''}!
-        </h1>
-        <p className="text-muted-foreground">
-          Here's what's happening with your name parsing projects today.
-        </p>
+      {/* Welcome Section with Gradient */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-secondary/10 p-6 border border-primary/10">
+        <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,transparent,black)]" />
+        <div className="relative flex flex-col gap-2">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Welcome back{user?.fullName ? `, ${user.fullName.split(' ')[0]}` : ''}! 👋
+          </h1>
+          <p className="text-muted-foreground">
+            Here's what's happening with your name parsing projects today.
+          </p>
+        </div>
       </div>
 
       {/* Activation Banner - Show during grace period */}
@@ -272,49 +275,55 @@ export default function DashboardHome() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
+        <Card className="group hover:shadow-lg hover:border-primary/20 transition-all duration-normal">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Parses This Month</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Parses This Month</CardTitle>
+            <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors">
+              <FileText className="h-5 w-5 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {user?.parsesThisMonth || 0}
+            <div className="text-3xl font-black tracking-tight">
+              {(user?.parsesThisMonth || 0).toLocaleString()}
             </div>
-            <p className="text-caption text-muted-foreground">
-              of {user?.monthlyLimit === -1 ? '∞' : user?.monthlyLimit || 100000} limit
+            <p className="text-sm text-muted-foreground mt-1">
+              of {user?.monthlyLimit === -1 ? '∞' : (user?.monthlyLimit || 100000).toLocaleString()} limit
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="group hover:shadow-lg hover:border-secondary/20 transition-all duration-normal">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Jobs</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Active Jobs</CardTitle>
+            <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-secondary/10 group-hover:bg-secondary/15 transition-colors">
+              <Activity className="h-5 w-5 text-secondary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-3xl font-black tracking-tight">
               {recentJobs.filter(job => job.status === 'processing' || job.status === 'pending').length}
             </div>
-            <p className="text-caption text-muted-foreground">
+            <p className="text-sm text-muted-foreground mt-1">
               Currently processing
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="group hover:shadow-lg hover:border-success/20 transition-all duration-normal">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed Today</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Completed Today</CardTitle>
+            <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-success/10 group-hover:bg-success/15 transition-colors">
+              <CheckCircle className="h-5 w-5 text-success" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {recentJobs.filter(job => 
-                job.status === 'completed' && 
+            <div className="text-3xl font-black tracking-tight">
+              {recentJobs.filter(job =>
+                job.status === 'completed' &&
                 new Date(job.completedAt!).toDateString() === new Date().toDateString()
               ).length}
             </div>
-            <p className="text-caption text-muted-foreground">
+            <p className="text-sm text-muted-foreground mt-1">
               Files processed
             </p>
           </CardContent>
@@ -324,21 +333,36 @@ export default function DashboardHome() {
 
       {/* Usage Progress */}
       {user && user.monthlyLimit !== -1 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Monthly Usage</CardTitle>
-            <CardDescription>
-              Your parsing usage for this billing period
-            </CardDescription>
+        <Card className="overflow-hidden border-primary/10">
+          <CardHeader className="bg-gradient-to-r from-primary/5 via-transparent to-secondary/5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10">
+                  <Activity className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <CardTitle>Monthly Usage</CardTitle>
+                  <CardDescription>
+                    Your parsing usage for this billing period
+                  </CardDescription>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold text-primary">
+                  {Math.round((user.parsesThisMonth / user.monthlyLimit) * 100)}%
+                </p>
+                <p className="text-xs text-muted-foreground">used</p>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <ProgressBar
               value={user.parsesThisMonth}
               max={user.monthlyLimit}
               showLabel
-              label={`Parses Used: ${user.parsesThisMonth} / ${user.monthlyLimit}`}
+              label={`${user.parsesThisMonth.toLocaleString()} / ${user.monthlyLimit.toLocaleString()} parses`}
               dangerZone={80}
-              size="sm"
+              size="md"
             />
           </CardContent>
         </Card>
@@ -346,52 +370,76 @@ export default function DashboardHome() {
 
       <div className="grid gap-4 md:grid-cols-2">
         {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+        <Card className="overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-muted/30 to-muted/10">
+            <CardTitle className="flex items-center gap-2">
+              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10">
+                <Activity className="h-4 w-4 text-primary" />
+              </div>
+              Quick Actions
+            </CardTitle>
             <CardDescription>
               Get started with common tasks
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-2">
+          <CardContent className="grid gap-3 pt-6">
             <Link to="/dashboard/upload">
-              <Button className="w-full justify-start" variant="outline">
-                <Upload className="mr-2 h-4 w-4" />
+              <Button className="w-full justify-start h-12 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-normal" size="lg">
+                <div className="flex items-center justify-center h-8 w-8 rounded-md bg-white/20 mr-3">
+                  <Upload className="h-4 w-4" />
+                </div>
                 Upload New File
+                <ArrowRight className="ml-auto h-4 w-4 opacity-60" />
               </Button>
             </Link>
             <Link to="/dashboard/results">
-              <Button className="w-full justify-start border border-info/20 hover:border-info/40" variant="secondary">
-                <FileText className="mr-2 h-4 w-4" />
+              <Button className="w-full justify-start h-12 border-2 border-secondary/30 hover:border-secondary/50 hover:bg-secondary/5 transition-all duration-normal" variant="outline" size="lg">
+                <div className="flex items-center justify-center h-8 w-8 rounded-md bg-secondary/10 mr-3">
+                  <FileText className="h-4 w-4 text-secondary" />
+                </div>
                 View Results
+                <ArrowRight className="ml-auto h-4 w-4 opacity-40" />
               </Button>
             </Link>
           </CardContent>
         </Card>
 
         {/* Recent Jobs */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Jobs</CardTitle>
+        <Card className="overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-muted/30 to-muted/10">
+            <CardTitle className="flex items-center gap-2">
+              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-info/10">
+                <FileText className="h-4 w-4 text-info" />
+              </div>
+              Recent Jobs
+            </CardTitle>
             <CardDescription>
               Your latest file processing jobs
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             {recentJobs.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
-                No jobs yet. Upload your first file to get started!
-              </p>
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="flex items-center justify-center h-12 w-12 rounded-full bg-muted/50 mb-3">
+                  <FileText className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground text-sm font-medium">
+                  No jobs yet
+                </p>
+                <p className="text-muted-foreground text-xs mt-1">
+                  Upload your first file to get started!
+                </p>
+              </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {recentJobs.map((job) => (
                   <div
                     key={job.id}
-                    className="flex items-center justify-between p-2 rounded border"
+                    className="flex items-center justify-between p-3 rounded-lg border bg-muted/20 hover:bg-muted/40 transition-colors duration-normal"
                     role="article"
                     aria-label={`Job ${job.filename}, ${job.status}`}
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                       <StatusIndicator
                         status={job.status as JobStatus}
                         mode="icon"
@@ -414,8 +462,9 @@ export default function DashboardHome() {
                   </div>
                 ))}
                 <Link to="/dashboard/processing">
-                  <Button variant="ghost" size="sm" className="w-full">
+                  <Button variant="outline" size="sm" className="w-full mt-2 border-dashed hover:border-solid hover:border-primary/40 hover:bg-primary/5 transition-all duration-normal">
                     View All Jobs
+                    <ArrowRight className="ml-2 h-3 w-3" />
                   </Button>
                 </Link>
               </div>
