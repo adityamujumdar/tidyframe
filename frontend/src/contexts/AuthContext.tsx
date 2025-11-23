@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import { logger } from '@/utils/logger';
 import { authService } from '@/services/authService';
 import { billingService } from '@/services/billingService';
+import { clearPaymentGracePeriod } from '@/utils/gracePeriodManager';
 import { User, LoginResponse, ConsentData } from '@/types/auth';
 
 interface AuthContextType {
@@ -145,9 +146,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error) {
       logger.error('Logout error:', error);
     } finally {
-      // Always clear both tokens and state, even if API call fails
+      // Clear all auth-related tokens
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
+
+      // Clear registration flow state
+      localStorage.removeItem('pending_user');
+      localStorage.removeItem('registration_complete');
+
+      // Clear welcome modal flag (so next login shows welcome)
+      localStorage.removeItem('welcome_modal_shown');
+
+      // Clear payment grace period to prevent stuck "Activating" state on re-login
+      clearPaymentGracePeriod();
+
+      // Reset auth state
       setUser(null);
       setHasActiveSubscription(false);
     }
