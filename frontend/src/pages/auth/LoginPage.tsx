@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { isInPaymentGracePeriod } from '@/utils/gracePeriodManager';
 
 export default function LoginPage() {
-  const { user, login, hasActiveSubscription, checkSubscriptionStatus } = useAuth();
+  const { user, login, hasActiveSubscription } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -40,13 +40,13 @@ export default function LoginPage() {
     setError('');
 
     try {
-      await login(email, password);
+      // login() returns subscription status directly (avoids stale closure issues)
+      const hasPaidPlan = await login(email, password);
       toast.success('Login successful!');
 
-      // Check subscription status and grace period after login
+      // Check grace period in addition to subscription status
       const inGracePeriod = isInPaymentGracePeriod();
-      const hasSubscription = await checkSubscriptionStatus();
-      if (hasSubscription || inGracePeriod) {
+      if (hasPaidPlan || inGracePeriod) {
         const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
         navigate(from, { replace: true });
       } else {

@@ -9,7 +9,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   hasActiveSubscription: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string, fullName?: string, consent?: ConsentData) => Promise<LoginResponse>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -98,7 +98,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     const response = await authService.login(email, password);
     localStorage.setItem('token', response.access_token);
     localStorage.setItem('refreshToken', response.refresh_token);
@@ -113,6 +113,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Reinitialize token manager after login
     const { tokenManager } = await import('@/utils/tokenManager');
     tokenManager.init();
+
+    // Return subscription status to caller (avoids stale closure issues)
+    return hasPaidPlan;
   };
 
   const register = async (email: string, password: string, fullName?: string, consent?: ConsentData) => {
