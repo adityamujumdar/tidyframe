@@ -14,6 +14,7 @@ export interface User {
   updatedAt?: string;
   isActive: boolean;
   emailVerified: boolean;
+  isAdmin: boolean;            // Admin flag for admin panel access
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
 }

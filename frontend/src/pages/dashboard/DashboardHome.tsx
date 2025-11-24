@@ -200,13 +200,15 @@ export default function DashboardHome() {
       </Dialog>
 
       {/* Welcome Section with Gradient */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-secondary/10 p-6 border border-primary/10">
-        <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,transparent,black)]" />
-        <div className="relative flex flex-col gap-2">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-secondary/15 p-8 border border-primary/20 shadow-xl shadow-primary/5">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-secondary/10" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-secondary/20 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-primary/20 to-transparent rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+        <div className="relative flex flex-col gap-3">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight bg-gradient-to-r from-foreground via-foreground to-foreground/80 bg-clip-text">
             Welcome back{user?.fullName ? `, ${user.fullName.split(' ')[0]}` : ''}! 👋
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-foreground/70 text-lg max-w-xl">
             Here's what's happening with your name parsing projects today.
           </p>
         </div>
@@ -275,55 +277,58 @@ export default function DashboardHome() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="group hover:shadow-lg hover:border-primary/20 transition-all duration-normal">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Parses This Month</CardTitle>
-            <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors">
-              <FileText className="h-5 w-5 text-primary" />
+        <Card className="group relative overflow-hidden hover:shadow-xl hover:shadow-primary/10 hover:border-primary/30 transition-all duration-normal">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="text-sm font-semibold text-foreground/80">Parses This Month</CardTitle>
+            <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/25 group-hover:scale-110 transition-transform">
+              <FileText className="h-6 w-6 text-primary-foreground" />
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-black tracking-tight">
+          <CardContent className="relative">
+            <div className="text-4xl font-black tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
               {(user?.parsesThisMonth || 0).toLocaleString()}
             </div>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm text-muted-foreground mt-1.5">
               of {user?.monthlyLimit === -1 ? '∞' : (user?.monthlyLimit || 100000).toLocaleString()} limit
             </p>
           </CardContent>
         </Card>
 
-        <Card className="group hover:shadow-lg hover:border-secondary/20 transition-all duration-normal">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Active Jobs</CardTitle>
-            <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-secondary/10 group-hover:bg-secondary/15 transition-colors">
-              <Activity className="h-5 w-5 text-secondary" />
+        <Card className="group relative overflow-hidden hover:shadow-xl hover:shadow-secondary/10 hover:border-secondary/30 transition-all duration-normal">
+          <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 via-transparent to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="text-sm font-semibold text-foreground/80">Active Jobs</CardTitle>
+            <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-secondary to-secondary/80 shadow-lg shadow-secondary/25 group-hover:scale-110 transition-transform">
+              <Activity className="h-6 w-6 text-secondary-foreground" />
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-black tracking-tight">
+          <CardContent className="relative">
+            <div className="text-4xl font-black tracking-tight bg-gradient-to-r from-secondary to-secondary/70 bg-clip-text text-transparent">
               {recentJobs.filter(job => job.status === 'processing' || job.status === 'pending').length}
             </div>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm text-muted-foreground mt-1.5">
               Currently processing
             </p>
           </CardContent>
         </Card>
 
-        <Card className="group hover:shadow-lg hover:border-success/20 transition-all duration-normal">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Completed Today</CardTitle>
-            <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-success/10 group-hover:bg-success/15 transition-colors">
-              <CheckCircle className="h-5 w-5 text-success" />
+        <Card className="group relative overflow-hidden hover:shadow-xl hover:shadow-success/10 hover:border-success/30 transition-all duration-normal">
+          <div className="absolute inset-0 bg-gradient-to-br from-success/5 via-transparent to-success/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="text-sm font-semibold text-foreground/80">Completed Today</CardTitle>
+            <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-success to-success/80 shadow-lg shadow-success/25 group-hover:scale-110 transition-transform">
+              <CheckCircle className="h-6 w-6 text-success-foreground" />
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-black tracking-tight">
+          <CardContent className="relative">
+            <div className="text-4xl font-black tracking-tight bg-gradient-to-r from-success to-success/70 bg-clip-text text-transparent">
               {recentJobs.filter(job =>
                 job.status === 'completed' &&
                 new Date(job.completedAt!).toDateString() === new Date().toDateString()
               ).length}
             </div>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm text-muted-foreground mt-1.5">
               Files processed
             </p>
           </CardContent>
@@ -333,29 +338,30 @@ export default function DashboardHome() {
 
       {/* Usage Progress */}
       {user && user.monthlyLimit !== -1 && (
-        <Card className="overflow-hidden border-primary/10">
-          <CardHeader className="bg-gradient-to-r from-primary/5 via-transparent to-secondary/5">
+        <Card className="relative overflow-hidden border-primary/20 shadow-lg shadow-primary/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
+          <CardHeader className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-secondary/10 border-b border-primary/10">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10">
-                  <Activity className="h-5 w-5 text-primary" />
+              <div className="flex items-center gap-4">
+                <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/25">
+                  <Activity className="h-6 w-6 text-primary-foreground" />
                 </div>
                 <div>
-                  <CardTitle>Monthly Usage</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-lg font-bold">Monthly Usage</CardTitle>
+                  <CardDescription className="text-foreground/60">
                     Your parsing usage for this billing period
                   </CardDescription>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-primary">
+                <p className="text-3xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                   {Math.round((user.parsesThisMonth / user.monthlyLimit) * 100)}%
                 </p>
-                <p className="text-xs text-muted-foreground">used</p>
+                <p className="text-xs text-muted-foreground font-medium">used</p>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent className="pt-6 relative">
             <ProgressBar
               value={user.parsesThisMonth}
               max={user.monthlyLimit}
@@ -368,62 +374,64 @@ export default function DashboardHome() {
         </Card>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2">
         {/* Quick Actions */}
-        <Card className="overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-muted/30 to-muted/10">
-            <CardTitle className="flex items-center gap-2">
-              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10">
-                <Activity className="h-4 w-4 text-primary" />
+        <Card className="relative overflow-hidden border-primary/10 shadow-md hover:shadow-lg transition-shadow">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/3 via-transparent to-secondary/3" />
+          <CardHeader className="relative bg-gradient-to-r from-primary/10 via-transparent to-secondary/10 border-b border-primary/10">
+            <CardTitle className="flex items-center gap-3">
+              <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-md shadow-primary/20">
+                <Activity className="h-5 w-5 text-primary-foreground" />
               </div>
-              Quick Actions
+              <span className="font-bold">Quick Actions</span>
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-foreground/60">
               Get started with common tasks
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-3 pt-6">
+          <CardContent className="grid gap-4 pt-6 relative">
             <Link to="/dashboard/upload">
-              <Button className="w-full justify-start h-12 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-normal" size="lg">
-                <div className="flex items-center justify-center h-8 w-8 rounded-md bg-white/20 mr-3">
-                  <Upload className="h-4 w-4" />
+              <Button className="w-full justify-start h-14 bg-gradient-to-r from-primary via-primary to-primary/90 hover:from-primary/95 hover:via-primary/90 hover:to-primary/85 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] transition-all duration-normal" size="lg">
+                <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-white/20 mr-4">
+                  <Upload className="h-5 w-5" />
                 </div>
-                Upload New File
-                <ArrowRight className="ml-auto h-4 w-4 opacity-60" />
+                <span className="font-semibold">Upload New File</span>
+                <ArrowRight className="ml-auto h-5 w-5 opacity-70" />
               </Button>
             </Link>
             <Link to="/dashboard/results">
-              <Button className="w-full justify-start h-12 border-2 border-secondary/30 hover:border-secondary/50 hover:bg-secondary/5 transition-all duration-normal" variant="outline" size="lg">
-                <div className="flex items-center justify-center h-8 w-8 rounded-md bg-secondary/10 mr-3">
-                  <FileText className="h-4 w-4 text-secondary" />
+              <Button className="w-full justify-start h-14 border-2 border-secondary/40 hover:border-secondary/60 hover:bg-secondary/10 hover:scale-[1.02] transition-all duration-normal" variant="outline" size="lg">
+                <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-secondary/15 mr-4">
+                  <FileText className="h-5 w-5 text-secondary" />
                 </div>
-                View Results
-                <ArrowRight className="ml-auto h-4 w-4 opacity-40" />
+                <span className="font-semibold text-foreground/80">View Results</span>
+                <ArrowRight className="ml-auto h-5 w-5 opacity-50" />
               </Button>
             </Link>
           </CardContent>
         </Card>
 
         {/* Recent Jobs */}
-        <Card className="overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-muted/30 to-muted/10">
-            <CardTitle className="flex items-center gap-2">
-              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-info/10">
-                <FileText className="h-4 w-4 text-info" />
+        <Card className="relative overflow-hidden border-info/10 shadow-md hover:shadow-lg transition-shadow">
+          <div className="absolute inset-0 bg-gradient-to-br from-info/3 via-transparent to-secondary/3" />
+          <CardHeader className="relative bg-gradient-to-r from-info/10 via-transparent to-secondary/10 border-b border-info/10">
+            <CardTitle className="flex items-center gap-3">
+              <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-info to-info/80 shadow-md shadow-info/20">
+                <FileText className="h-5 w-5 text-info-foreground" />
               </div>
-              Recent Jobs
+              <span className="font-bold">Recent Jobs</span>
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-foreground/60">
               Your latest file processing jobs
             </CardDescription>
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent className="pt-6 relative">
             {recentJobs.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <div className="flex items-center justify-center h-12 w-12 rounded-full bg-muted/50 mb-3">
-                  <FileText className="h-6 w-6 text-muted-foreground" />
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-to-br from-muted to-muted/50 mb-4">
+                  <FileText className="h-8 w-8 text-muted-foreground/60" />
                 </div>
-                <p className="text-muted-foreground text-sm font-medium">
+                <p className="text-foreground/70 text-sm font-semibold">
                   No jobs yet
                 </p>
                 <p className="text-muted-foreground text-xs mt-1">
@@ -435,7 +443,7 @@ export default function DashboardHome() {
                 {recentJobs.map((job) => (
                   <div
                     key={job.id}
-                    className="flex items-center justify-between p-3 rounded-lg border bg-muted/20 hover:bg-muted/40 transition-colors duration-normal"
+                    className="flex items-center justify-between p-4 rounded-xl border border-border/50 bg-gradient-to-r from-muted/30 to-muted/10 hover:from-muted/50 hover:to-muted/30 hover:border-primary/20 transition-all duration-normal"
                     role="article"
                     aria-label={`Job ${job.filename}, ${job.status}`}
                   >
@@ -447,7 +455,7 @@ export default function DashboardHome() {
                         animate
                       />
                       <div>
-                        <p className="text-sm font-medium truncate max-w-32">
+                        <p className="text-sm font-semibold truncate max-w-32 text-foreground/90">
                           {job.filename}
                         </p>
                         <p className="text-caption text-muted-foreground">
@@ -462,9 +470,9 @@ export default function DashboardHome() {
                   </div>
                 ))}
                 <Link to="/dashboard/processing">
-                  <Button variant="outline" size="sm" className="w-full mt-2 border-dashed hover:border-solid hover:border-primary/40 hover:bg-primary/5 transition-all duration-normal">
+                  <Button variant="outline" size="sm" className="w-full mt-3 border-dashed border-primary/30 hover:border-solid hover:border-primary/50 hover:bg-primary/5 font-semibold transition-all duration-normal">
                     View All Jobs
-                    <ArrowRight className="ml-2 h-3 w-3" />
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
               </div>
