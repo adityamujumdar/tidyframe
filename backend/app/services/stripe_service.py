@@ -4,17 +4,17 @@ Gilfoyle-approved implementation with proper architecture
 """
 
 import asyncio
-import logging
 import os
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List
 
 import stripe
+import structlog
 
 from app.core.config import settings
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 # Load Stripe configuration from environment
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
