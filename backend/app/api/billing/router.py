@@ -1031,7 +1031,7 @@ async def handle_subscription_deleted(
 
 
 async def handle_payment_succeeded(invoice_data: dict, db: AsyncSession) -> dict:
-    """Handle successful payment"""
+    """Handle successful payment and reset usage based on Stripe billing period"""
 
     customer_id = invoice_data["customer"]
 
@@ -1045,14 +1045,65 @@ async def handle_payment_succeeded(invoice_data: dict, db: AsyncSession) -> dict
 
     if user:
         # Reset monthly usage for new billing period
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime, timezone
 
         user.parses_this_month = 0
-        user.month_reset_date = datetime.now(timezone.utc) + timedelta(days=30)
+
+        # Use Stripe's actual billing period end (handles monthly/yearly correctly)
+        # Extract period_end from invoice data - supports multiple Stripe webhook formats
+        period_end_timestamp = None
+
+        # Try direct period_end field
+        if "period_end" in invoice_data:
+            period_end_timestamp = invoice_data["period_end"]
+        # Try lines.data[0].period.end (standard invoice format)
+        elif "lines" in invoice_data and "data" in invoice_data["lines"]:
+            lines_data = invoice_data["lines"]["data"]
+            if lines_data and len(lines_data) > 0:
+                period_data = lines_data[0].get("period", {})
+                period_end_timestamp = period_data.get("end")
+
+        if period_end_timestamp:
+            # Convert Stripe timestamp to datetime
+            user.month_reset_date = datetime.fromtimestamp(
+                period_end_timestamp, tz=timezone.utc
+            )
+            logger.info(
+                "payment_succeeded_processed",
+                user_id=user.id,
+                next_reset=user.month_reset_date.isoformat(),
+                period_end_timestamp=period_end_timestamp,
+            )
+        else:
+            # Fallback: fetch subscription data from Stripe if timestamp not in invoice
+            try:
+                from app.services.stripe_service import StripeService
+
+                stripe_service = StripeService()
+                subscription = await stripe_service.get_subscription(
+                    user.stripe_subscription_id
+                )
+                user.month_reset_date = datetime.fromtimestamp(
+                    subscription["current_period_end"], tz=timezone.utc
+                )
+                logger.info(
+                    "payment_succeeded_fallback_used",
+                    user_id=user.id,
+                    next_reset=user.month_reset_date.isoformat(),
+                )
+            except Exception as e:
+                # Last resort: 30 days (better than nothing, but logs warning)
+                from datetime import timedelta
+
+                user.month_reset_date = datetime.now(timezone.utc) + timedelta(days=30)
+                logger.warning(
+                    "payment_succeeded_fallback_failed",
+                    user_id=user.id,
+                    error=str(e),
+                    using_30day_fallback=True,
+                )
 
         await db.commit()
-
-        logger.info("payment_succeeded_processed", user_id=user.id)
 
     return {"processed": True}
 
