@@ -148,14 +148,32 @@ class User(Base):
         return self.plan == PlanType.ENTERPRISE
 
     def can_parse(self, count: int = 1) -> bool:
-        """Check if user can perform additional parses"""
+        """
+        Check if user can perform additional parses
+
+        Returns True for:
+        - Admin users (unlimited, bypass billing)
+        - Enterprise users (unlimited, included in plan)
+        - Standard users (unlimited, overage billing applies after limit)
+
+        Returns False for:
+        - Free users (hard limit at 5 parses, must upgrade)
+        """
         # Admin users have unlimited parsing (bypass billing)
         if self.is_admin:
             return True
 
+        # Enterprise users have unlimited parsing (no overage charges)
         if self.plan == PlanType.ENTERPRISE:
-            return True  # Unlimited for enterprise
+            return True
 
+        # CRITICAL: STANDARD users can always parse (overage billing after limit)
+        # This enables the $0.01/parse overage revenue model
+        if self.plan == PlanType.STANDARD:
+            return True
+
+        # FREE users have hard limit (same as ANONYMOUS - 5 parses)
+        # They must upgrade to STANDARD to parse more
         return (self.parses_this_month + count) <= self.monthly_limit
 
     def is_account_locked(self) -> bool:
