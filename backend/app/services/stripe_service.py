@@ -140,7 +140,7 @@ class StripeService:
             raise
 
     async def create_subscription(
-        self, customer_id: str, price_id: str = None, trial_days: int = 0
+        self, customer_id: str, price_id: str = None, trial_days: int = 0, payment_required: bool = True
     ) -> Dict[str, Any]:
         """Create a subscription with usage-based billing"""
         try:
@@ -160,16 +160,23 @@ class StripeService:
                     }
                 )
 
-            subscription = self.stripe.Subscription.create(
-                customer=customer_id,
-                items=items,
-                trial_period_days=trial_days,
-                billing_mode={"type": "flexible"},  # Required for mixed intervals (monthly + metered)
-                metadata={
+            # Configure payment behavior based on whether payment method is required
+            subscription_params = {
+                "customer": customer_id,
+                "items": items,
+                "trial_period_days": trial_days,
+                "billing_mode": {"type": "flexible"},  # Required for mixed intervals (monthly + metered)
+                "metadata": {
                     "monthly_limit": str(self.monthly_limit),
                     "overage_price": str(self.overage_price),
                 },
-            )
+            }
+
+            # If payment not required (for testing), allow incomplete subscriptions
+            if not payment_required:
+                subscription_params["payment_behavior"] = "default_incomplete"
+
+            subscription = self.stripe.Subscription.create(**subscription_params)
 
             logger.info(
                 f"Created subscription {subscription.id} for customer {customer_id}"
