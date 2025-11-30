@@ -184,7 +184,7 @@ class StripeService:
             return {
                 "subscription_id": subscription.id,
                 "status": subscription.status,
-                "current_period_end": subscription.current_period_end,
+                "current_period_end": getattr(subscription, "current_period_end", None),
                 "items": subscription.items.data,
             }
         except stripe.error.StripeError as e:
