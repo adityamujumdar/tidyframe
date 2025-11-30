@@ -164,7 +164,7 @@ class StripeService:
                 customer=customer_id,
                 items=items,
                 trial_period_days=trial_days,
-                billing_mode="flexible",  # Required for mixed intervals (monthly + metered)
+                billing_mode={"type": "flexible"},  # Required for mixed intervals (monthly + metered)
                 metadata={
                     "monthly_limit": str(self.monthly_limit),
                     "overage_price": str(self.overage_price),

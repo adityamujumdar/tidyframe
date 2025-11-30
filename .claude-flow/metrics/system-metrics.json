@@ -1,53 +1,5 @@
 [
   {
-    "timestamp": 1764446487520,
-    "memoryTotal": 8280825856,
-    "memoryUsed": 3566231552,
-    "memoryFree": 4714594304,
-    "memoryUsagePercent": 43.06613391001372,
-    "memoryEfficiency": 56.93386608998628,
-    "cpuCount": 12,
-    "cpuLoad": 0.0016666666666666668,
-    "platform": "linux",
-    "uptime": 1135191.86
-  },
-  {
-    "timestamp": 1764446520003,
-    "memoryTotal": 8280825856,
-    "memoryUsed": 3558461440,
-    "memoryFree": 4722364416,
-    "memoryUsagePercent": 42.97230133660717,
-    "memoryEfficiency": 57.02769866339283,
-    "cpuCount": 12,
-    "cpuLoad": 0.0008333333333333334,
-    "platform": "linux",
-    "uptime": 1135221.88
-  },
-  {
-    "timestamp": 1764446552448,
-    "memoryTotal": 8280825856,
-    "memoryUsed": 3558916096,
-    "memoryFree": 4721909760,
-    "memoryUsagePercent": 42.97779180347492,
-    "memoryEfficiency": 57.02220819652508,
-    "cpuCount": 12,
-    "cpuLoad": 0.005,
-    "platform": "linux",
-    "uptime": 1135251.9
-  },
-  {
-    "timestamp": 1764446584958,
-    "memoryTotal": 8280825856,
-    "memoryUsed": 3556294656,
-    "memoryFree": 4724531200,
-    "memoryUsagePercent": 42.946135057570764,
-    "memoryEfficiency": 57.053864942429236,
-    "cpuCount": 12,
-    "cpuLoad": 0.0033333333333333335,
-    "platform": "linux",
-    "uptime": 1135281.92
-  },
-  {
     "timestamp": 1764446617499,
     "memoryTotal": 8280825856,
     "memoryUsed": 3559563264,
@@ -31366,5 +31318,41 @@
     "cpuLoad": 0.06,
     "platform": "linux",
     "uptime": 1213633.79
+  },
+  {
+    "timestamp": 1764532920694,
+    "memoryTotal": 8280825856,
+    "memoryUsed": 4071919616,
+    "memoryFree": 4208906240,
+    "memoryUsagePercent": 49.17286858592284,
+    "memoryEfficiency": 50.82713141407716,
+    "cpuCount": 12,
+    "cpuLoad": 0.051666666666666666,
+    "platform": "linux",
+    "uptime": 1213663.8
+  },
+  {
+    "timestamp": 1764532954007,
+    "memoryTotal": 8280825856,
+    "memoryUsed": 4071243776,
+    "memoryFree": 4209582080,
+    "memoryUsagePercent": 49.164707081119424,
+    "memoryEfficiency": 50.835292918880576,
+    "cpuCount": 12,
+    "cpuLoad": 0.07166666666666667,
+    "platform": "linux",
+    "uptime": 1213693.81
+  },
+  {
+    "timestamp": 1764532987375,
+    "memoryTotal": 8280825856,
+    "memoryUsed": 4079083520,
+    "memoryFree": 4201742336,
+    "memoryUsagePercent": 49.25938053683905,
+    "memoryEfficiency": 50.74061946316095,
+    "cpuCount": 12,
+    "cpuLoad": 0.05333333333333334,
+    "platform": "linux",
+    "uptime": 1213723.82
   }
 ]
