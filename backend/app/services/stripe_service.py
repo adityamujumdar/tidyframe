@@ -16,10 +16,9 @@ from app.core.config import settings
 
 logger = structlog.get_logger()
 
-# Load Stripe configuration from environment
+# Load Stripe API key from environment (module-level for global access)
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
-# Use 2025-06-30.basil API version for flexible billing mode support
-stripe.api_version = "2025-06-30.basil"
+# API version is set per-instance in StripeService.__init__ for proper encapsulation
 
 
 class SubscriptionTier(Enum):
@@ -142,7 +141,16 @@ class StripeService:
     async def create_subscription(
         self, customer_id: str, price_id: str = None, trial_days: int = 0, payment_required: bool = True
     ) -> Dict[str, Any]:
-        """Create a subscription with usage-based billing"""
+        """
+        Create a subscription with usage-based billing
+
+        Args:
+            customer_id: Stripe customer ID
+            price_id: Base subscription price ID (defaults to monthly)
+            trial_days: Trial period in days
+            payment_required: If False, creates incomplete subscription without payment method
+                             WARNING: False should only be used for testing/development
+        """
         try:
             # Use monthly as default
             if not price_id:
@@ -172,7 +180,8 @@ class StripeService:
                 },
             }
 
-            # If payment not required (for testing), allow incomplete subscriptions
+            # TEST ONLY: Allow incomplete subscriptions without payment method
+            # WARNING: This creates subscriptions that won't charge until payment method added
             if not payment_required:
                 subscription_params["payment_behavior"] = "default_incomplete"
 
@@ -582,16 +591,31 @@ class StripeService:
 
         logger.info(f"Subscription created: {subscription_id}")
 
-        # Add overage price to subscription (done here to avoid billing interval conflicts)
+        # Add overage price to subscription if not already present
+        # NOTE: Checkout flow creates base only, direct creation adds base + overage
+        # This handler safely adds overage only if missing (prevents duplicates)
         if self.price_overage:
             try:
-                self.stripe.SubscriptionItem.create(
-                    subscription=subscription_id,
-                    price=self.price_overage,
+                # Check if overage price already exists in subscription items
+                existing_items = subscription.get("items", {}).get("data", [])
+                has_overage = any(
+                    item.get("price", {}).get("id") == self.price_overage
+                    for item in existing_items
                 )
-                logger.info(
-                    f"Added overage price {self.price_overage} to subscription {subscription_id}"
-                )
+
+                if has_overage:
+                    logger.info(
+                        f"Subscription {subscription_id} already has overage price - skipping"
+                    )
+                else:
+                    # Add overage price only if missing
+                    self.stripe.SubscriptionItem.create(
+                        subscription=subscription_id,
+                        price=self.price_overage,
+                    )
+                    logger.info(
+                        f"Added overage price {self.price_overage} to subscription {subscription_id}"
+                    )
             except stripe.error.StripeError as e:
                 logger.error(
                     f"Failed to add overage price to subscription {subscription_id}: {e}"
