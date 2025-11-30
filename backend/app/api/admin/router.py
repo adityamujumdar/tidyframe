@@ -309,7 +309,24 @@ async def reset_user_usage(
 
     old_count = user.parses_this_month
     user.parses_this_month = reset_data.reset_count
-    user.month_reset_date = datetime.now(timezone.utc) + timedelta(days=30)
+
+    # Set next reset date based on subscription status
+    if user.stripe_subscription_id:
+        # Use Stripe's next period_end for STANDARD users
+        try:
+            from app.services.stripe_service import StripeService
+
+            stripe_service = StripeService()
+            subscription = await stripe_service.get_subscription(user.stripe_subscription_id)
+            user.month_reset_date = datetime.fromtimestamp(
+                subscription["current_period_end"], tz=timezone.utc
+            )
+        except Exception:
+            # Fallback if Stripe fetch fails
+            user.month_reset_date = datetime.now(timezone.utc) + timedelta(days=30)
+    else:
+        # FREE user - use 30-day approximation
+        user.month_reset_date = datetime.now(timezone.utc) + timedelta(days=30)
 
     await db.commit()
 

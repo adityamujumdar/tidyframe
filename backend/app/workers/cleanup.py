@@ -195,6 +195,9 @@ def reset_monthly_usage() -> Dict[str, int]:
     """
     Reset monthly usage counters for users whose billing cycle has reset
     Runs daily to check for users who need their monthly counters reset
+
+    For STANDARD users with Stripe subscriptions: Uses Stripe's actual period_end
+    For FREE users without subscriptions: Uses 30-day approximation
     """
     logger.info("reset_monthly_usage_started")
 
@@ -216,17 +219,47 @@ def reset_monthly_usage() -> Dict[str, int]:
                     # Reset parse count
                     user.parses_this_month = 0
 
-                    # Set next reset date (30 days from now)
-                    user.month_reset_date = current_time + timedelta(days=30)
+                    # Determine next reset date based on subscription status
+                    if user.stripe_subscription_id:
+                        # STANDARD user with Stripe subscription - use Stripe's period_end
+                        try:
+                            from app.services.stripe_service import StripeService
+                            stripe_service = StripeService()
+                            subscription = stripe_service.stripe.Subscription.retrieve(
+                                user.stripe_subscription_id
+                            )
+                            # Use Stripe's next period_end for accurate billing alignment
+                            user.month_reset_date = datetime.fromtimestamp(
+                                subscription["current_period_end"], tz=timezone.utc
+                            )
+                            logger.info(
+                                "user_monthly_usage_reset_stripe",
+                                user_id=str(user.id),
+                                email=user.email,
+                                next_reset=user.month_reset_date.isoformat(),
+                                source="stripe_period_end"
+                            )
+                        except Exception as e:
+                            # Fallback to 30 days if Stripe fetch fails
+                            user.month_reset_date = current_time + timedelta(days=30)
+                            logger.warning(
+                                "user_reset_stripe_fallback",
+                                user_id=str(user.id),
+                                error=str(e),
+                                next_reset=user.month_reset_date.isoformat()
+                            )
+                    else:
+                        # FREE user without subscription - use 30-day approximation
+                        user.month_reset_date = current_time + timedelta(days=30)
+                        logger.info(
+                            "user_monthly_usage_reset_free",
+                            user_id=str(user.id),
+                            email=user.email,
+                            next_reset=user.month_reset_date.isoformat(),
+                            source="30_day_approximation"
+                        )
 
                     result["users_reset"] += 1
-
-                    logger.info(
-                        "user_monthly_usage_reset",
-                        user_id=str(user.id),
-                        email=user.email,
-                        next_reset=user.month_reset_date.isoformat(),
-                    )
 
                 except Exception as e:
                     logger.error(
