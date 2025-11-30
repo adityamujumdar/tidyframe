@@ -1,41 +1,5 @@
 [
   {
-    "timestamp": 1764446390016,
-    "memoryTotal": 8280825856,
-    "memoryUsed": 3568078848,
-    "memoryFree": 4712747008,
-    "memoryUsagePercent": 43.08844202314306,
-    "memoryEfficiency": 56.91155797685694,
-    "cpuCount": 12,
-    "cpuLoad": 0.008333333333333333,
-    "platform": "linux",
-    "uptime": 1135101.79
-  },
-  {
-    "timestamp": 1764446422466,
-    "memoryTotal": 8280825856,
-    "memoryUsed": 3567312896,
-    "memoryFree": 4713512960,
-    "memoryUsagePercent": 43.07919231769919,
-    "memoryEfficiency": 56.92080768230081,
-    "cpuCount": 12,
-    "cpuLoad": 0.005,
-    "platform": "linux",
-    "uptime": 1135131.82
-  },
-  {
-    "timestamp": 1764446454939,
-    "memoryTotal": 8280825856,
-    "memoryUsed": 3564883968,
-    "memoryFree": 4715941888,
-    "memoryUsagePercent": 43.04986036407236,
-    "memoryEfficiency": 56.95013963592764,
-    "cpuCount": 12,
-    "cpuLoad": 0.0025,
-    "platform": "linux",
-    "uptime": 1135161.83
-  },
-  {
     "timestamp": 1764446487520,
     "memoryTotal": 8280825856,
     "memoryUsed": 3566231552,
@@ -31366,5 +31330,41 @@
     "cpuLoad": 0.04083333333333333,
     "platform": "linux",
     "uptime": 1213543.72
+  },
+  {
+    "timestamp": 1764532820607,
+    "memoryTotal": 8280825856,
+    "memoryUsed": 4057939968,
+    "memoryFree": 4222885888,
+    "memoryUsagePercent": 49.0040490956558,
+    "memoryEfficiency": 50.9959509043442,
+    "cpuCount": 12,
+    "cpuLoad": 0.0675,
+    "platform": "linux",
+    "uptime": 1213573.74
+  },
+  {
+    "timestamp": 1764532853980,
+    "memoryTotal": 8280825856,
+    "memoryUsed": 4065042432,
+    "memoryFree": 4215783424,
+    "memoryUsagePercent": 49.089819091589895,
+    "memoryEfficiency": 50.910180908410105,
+    "cpuCount": 12,
+    "cpuLoad": 0.08,
+    "platform": "linux",
+    "uptime": 1213603.77
+  },
+  {
+    "timestamp": 1764532887315,
+    "memoryTotal": 8280825856,
+    "memoryUsed": 4062519296,
+    "memoryFree": 4218306560,
+    "memoryUsagePercent": 49.059349473657136,
+    "memoryEfficiency": 50.940650526342864,
+    "cpuCount": 12,
+    "cpuLoad": 0.06,
+    "platform": "linux",
+    "uptime": 1213633.79
   }
 ]

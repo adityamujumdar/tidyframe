@@ -18,6 +18,8 @@ logger = structlog.get_logger()
 
 # Load Stripe configuration from environment
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+# Use 2025-06-30.basil API version for flexible billing mode support
+stripe.api_version = "2025-06-30.basil"
 
 
 class SubscriptionTier(Enum):
@@ -43,6 +45,8 @@ class StripeService:
         """Initialize with environment configuration"""
         self.stripe = stripe
         self.stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+        # Ensure we're using the correct API version for flexible billing
+        self.stripe.api_version = "2025-06-30.basil"
 
         # Product and Price IDs
         self.product_id = os.getenv("STRIPE_PRODUCT_ID")
