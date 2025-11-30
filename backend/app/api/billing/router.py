@@ -450,14 +450,10 @@ async def get_usage_stats(
         period_start = current_user.month_reset_date
         period_end = period_start + timedelta(days=30)
 
-    # Query local ParseLog for current month (backup/validation)
-    current_month_result = await db.execute(
-        select(func.sum(ParseLog.row_count))
-        .where(ParseLog.user_id == current_user.id)
-        .where(ParseLog.timestamp >= period_start)
-        .where(ParseLog.timestamp < period_end)
-    )
-    local_current_count = current_month_result.scalar() or 0
+    # Use user's parses_this_month as the source of truth for billing
+    # This field is incremented during processing and reset monthly via webhooks
+    # parse_logs is kept for audit/debugging but not used for billing calculations
+    local_current_count = current_user.parses_this_month
 
     # Get previous month usage
     prev_month_start = period_start - timedelta(days=30)
