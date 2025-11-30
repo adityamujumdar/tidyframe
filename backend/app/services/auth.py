@@ -49,8 +49,10 @@ class AuthService:
         if not self.verify_password(password, user.password_hash):
             # Update failed login attempts
             user.failed_login_attempts += 1
-            if user.failed_login_attempts >= 5:
-                user.locked_until = datetime.utcnow() + timedelta(minutes=30)
+            if user.failed_login_attempts >= settings.MAX_LOGIN_ATTEMPTS:
+                user.locked_until = datetime.utcnow() + timedelta(
+                    minutes=settings.LOCKOUT_DURATION_MINUTES
+                )
             await self.db.commit()
             return None
 
@@ -149,15 +151,15 @@ class AuthService:
 
     def create_verification_token(self, email: str) -> str:
         """Create email verification token"""
-        expire = datetime.utcnow() + timedelta(hours=24)
+        expire = datetime.utcnow() + timedelta(hours=settings.EMAIL_VERIFICATION_EXPIRE_HOURS)
         payload = {"email": email, "exp": expire, "type": "email_verification"}
-        return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+        return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
     def create_reset_token(self, email: str) -> str:
         """Create password reset token"""
-        expire = datetime.utcnow() + timedelta(hours=1)
+        expire = datetime.utcnow() + timedelta(hours=settings.PASSWORD_RESET_EXPIRE_HOURS)
         payload = {"email": email, "exp": expire, "type": "password_reset"}
-        return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+        return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
     async def send_verification_email(self, email: str):
         """Send email verification"""
@@ -178,7 +180,7 @@ class AuthService:
         """Verify email verification token"""
         try:
             payload = jwt.decode(
-                token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+                token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
             )
             if payload.get("type") != "email_verification":
                 return False
@@ -201,7 +203,7 @@ class AuthService:
         """Reset password with token"""
         try:
             payload = jwt.decode(
-                token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+                token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
             )
             if payload.get("type") != "password_reset":
                 return False

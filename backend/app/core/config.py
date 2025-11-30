@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     PASSWORD_MIN_LENGTH: int = 12  # Increased from 8 to 12 for better security
     MAX_LOGIN_ATTEMPTS: int = 5
     LOCKOUT_DURATION_MINUTES: int = 30
+    EMAIL_VERIFICATION_EXPIRE_HOURS: int = 24
+    PASSWORD_RESET_EXPIRE_HOURS: int = 1
 
     # Additional security settings
     PASSWORD_REQUIRE_UPPERCASE: bool = True

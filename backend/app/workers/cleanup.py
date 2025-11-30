@@ -416,10 +416,12 @@ def cleanup_processed_files_10min() -> Dict[str, int]:
                     )
                     result["errors"] += 1
 
-            # Also clean up any orphaned upload files that are older than 10 minutes
+            # Also clean up any orphaned upload files that are older than retention period
             upload_dir = settings.UPLOAD_DIR
             if os.path.exists(upload_dir):
-                cutoff_time = current_time - timedelta(minutes=10)
+                cutoff_time = current_time - timedelta(
+                    minutes=settings.POST_PROCESSING_RETENTION_MINUTES
+                )
 
                 for filename in os.listdir(upload_dir):
                     file_path = os.path.join(upload_dir, filename)

@@ -397,9 +397,11 @@ async def verify_email(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid verification token"
         )
 
-    # Check if token is expired (24 hours)
+    # Check if token is expired
     if user.email_verification_sent_at:
-        expires_at = user.email_verification_sent_at + timedelta(hours=24)
+        expires_at = user.email_verification_sent_at + timedelta(
+            hours=settings.EMAIL_VERIFICATION_EXPIRE_HOURS
+        )
         if datetime.now(timezone.utc) > expires_at:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -492,9 +494,11 @@ async def confirm_password_reset(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token"
         )
 
-    # Check if token is expired (1 hour)
+    # Check if token is expired
     if user.password_reset_sent_at:
-        expires_at = user.password_reset_sent_at + timedelta(hours=1)
+        expires_at = user.password_reset_sent_at + timedelta(
+            hours=settings.PASSWORD_RESET_EXPIRE_HOURS
+        )
         if datetime.now(timezone.utc) > expires_at:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
