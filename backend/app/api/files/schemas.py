@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, field_validator, validator
+from pydantic import BaseModel, Field, field_validator, validator
 
 from app.core.schemas import ResponseModel
 
@@ -38,7 +38,7 @@ class JobStatus(ResponseModel):
     estimated_completion_time: Optional[int] = None  # seconds remaining
 
     # Results (when completed)
-    total_rows: Optional[int] = None
+    total_rows: Optional[int] = Field(None, validation_alias="row_count")
     processed_rows: Optional[int] = None
     successful_parses: Optional[int] = None
     failed_parses: Optional[int] = None

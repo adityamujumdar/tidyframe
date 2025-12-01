@@ -89,6 +89,8 @@ def update_job_status(
 
                 # Update processing results if provided
                 if processing_results:
+                    # CRITICAL: Set row_count from total_rows for frontend display
+                    job.row_count = processing_results.get("total_rows", 0)
                     job.processed_rows = processing_results.get("processed_rows", 0)
                     # Handle None values - if successful_parses is None, don't update it
                     if (
