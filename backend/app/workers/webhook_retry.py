@@ -3,7 +3,7 @@ Webhook retry worker for processing failed webhook events
 Ensures reliable webhook processing with exponential backoff
 """
 
-import logging
+import structlog
 from datetime import datetime, timedelta, timezone
 
 from celery import Task
@@ -16,7 +16,7 @@ from app.core.config import settings
 from app.models.webhook_event import WebhookEvent
 from app.services.stripe_service import StripeService
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 # Create async database engine for Celery tasks
 async_engine = create_async_engine(
